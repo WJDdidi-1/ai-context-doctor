@@ -2,6 +2,7 @@
   "name": "ai-context-doctor",
   "version": "0.0.0",
   "description": "Find the files your AI coding agent should not read before sending it your repo.",
+  "license": "MIT",
   "bin": {
     "ai-context-doctor": "./bin/ai-context-doctor.js"
   },
@@ -11,10 +12,31 @@
   "engines": {
     "node": ">=18"
   },
+  "files": [
+    "bin/",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WJDdidi-1/ai-context-doctor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WJDdidi-1/ai-context-doctor/issues"
+  },
+  "homepage": "https://github.com/WJDdidi-1/ai-context-doctor#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "ai",
+    "ai-coding",
     "coding-agent",
     "context",
-    "cli"
+    "cli",
+    "developer-tools",
+    "local-first",
+    "repository"
   ]
 }

@@ -1,12 +1,43 @@
 # AI Context Doctor
 
+[中文说明](./README.zh-CN.md)
+
 Find what your AI coding agent should not read.
 
-AI Context Doctor is a local CLI that scans your repository and shows which files are likely wasting context before you use Claude Code, Codex, Cursor, Cline, or another repo-aware coding agent.
+AI Context Doctor is an early usable local CLI prototype that scans a repository and shows files that are likely wasting context before you use Claude Code, Codex, Cursor, Cline, or another repo-aware coding agent.
+
+## Current status
+
+AI Context Doctor currently runs as a local Node.js CLI from this repository.
+
+- Usable today: clone the repo and run it with `node`.
+- Not published yet: `npx ai-context-doctor` is a future npm goal, not the current install path.
+- No login, API key, or file upload is required.
+- Results are heuristic, not precise token accounting or security analysis.
+
+## Quick start
+
+Clone the repository and run the local CLI:
 
 ```bash
-npx ai-context-doctor
+git clone https://github.com/WJDdidi-1/ai-context-doctor.git
+cd ai-context-doctor
+node bin/ai-context-doctor.js
 ```
+
+## Scan Current Directory
+
+```bash
+node bin/ai-context-doctor.js
+```
+
+## Scan Another Directory
+
+```bash
+node bin/ai-context-doctor.js ../some-repo
+```
+
+## Example Output
 
 ```text
 AI Context Doctor
@@ -41,65 +72,63 @@ coverage/
 .env*
 
 Next step:
-Create a small .aiignore before asking your coding agent to inspect this repo.
+Run this before asking your coding agent to inspect a larger repo.
 ```
 
-No login. No API key. No files uploaded.
+## What It Does Now
 
-Use it before sending your repo to an AI coding agent.
+- Scans the current working directory or one directory path you pass in.
+- Detects common context noise such as build output, framework caches, coverage output, lockfiles, and log files.
+- Highlights environment-like files and deployment scripts for review before sharing.
+- Prints a screenshot-friendly terminal report.
+- Suggests starter `.aiignore` entries based on simple heuristics.
 
-## Run locally
+## What It Does Not Do
 
-```bash
-node bin/ai-context-doctor.js
-node bin/ai-context-doctor.js ./some-repo
-npm start
-```
+- It does not call an AI API.
+- It does not upload files.
+- It does not modify your repository.
+- It does not generate `.aiignore` automatically.
+- It does not provide JSON output or a configuration system.
+- It is not a security scanner or vulnerability detector.
+- It does not perform precise token counting or AST analysis.
 
-By default, the CLI scans the current working directory. Pass a directory path to scan another local repository.
-
-This early prototype uses simple file and directory heuristics. It does not call an AI API, upload files, or modify your repository.
-
-## GitHub description
-
-Find the files your AI coding agent should not read before sending it your repo.
-
-## Why use it
+## Why It Exists
 
 AI coding tools work better when they read the right files. Real repositories often include generated output, caches, logs, lockfiles, coverage reports, and other files that add noise before the agent reaches the source code that matters.
 
-AI Context Doctor is meant to make that noise visible in a few seconds.
+AI Context Doctor is meant to make that noise visible in a few seconds, before you send a repository to an AI coding agent.
 
-## MVP scope
+## Current Heuristics And Limits
 
-The first MVP should stay small:
+Current noise rules are intentionally simple:
 
-- Scan the current repository from the command line.
-- Detect common context noise such as build output, caches, coverage, logs, lockfiles, and large generated files.
-- Show a simple AI Context Health score.
-- List the top files or directories likely wasting context.
-- Suggest a starter `.aiignore`.
-- Print a screenshot-friendly terminal report.
-- Run locally without login, API keys, or file uploads.
+- Directories: `dist/`, `build/`, `coverage/`, `.next/`, `.turbo/`
+- Lockfiles: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`
+- Logs: `*.log`
+- Review hints: `.env*` files and paths containing `deploy`
+- Skipped traversal: `.git/` and `node_modules/`
 
-The first version should prioritize JavaScript and TypeScript repositories while keeping the rules general enough to support other stacks later.
+The health score and noise percentage are rough estimates based on matched file sizes. They should be treated as a quick signal, not an exact measurement.
 
-## Non-goals
+## Future npm usage
 
-This project should not become a large platform in the first version.
+The package is not published to npm yet. The intended future usage is:
 
-- Not a security scanner.
-- Not a vulnerability detector.
-- Not an AI API wrapper.
-- Not a SaaS dashboard.
-- Not an account-based product.
-- Not a code quality analyzer.
-- Not a complex AST analysis tool.
-- Not an automatic file modifier.
-- Not a replacement for `.gitignore`.
+```bash
+npx ai-context-doctor
+```
 
-Potentially sensitive files may be highlighted for review, but the project should avoid making heavy security claims.
+Until then, use the local `node bin/ai-context-doctor.js` workflow shown above.
 
-## Status
+## Roadmap
 
-This repository now contains a minimal runnable CLI prototype. The next step is to keep improving scanning rules in small, reviewable iterations.
+Near-term next steps:
+
+- Keep scanning rules small and explainable.
+- Add a minimal smoke test before npm release.
+- Prepare the first npm publish once metadata and docs are ready.
+
+## Privacy
+
+AI Context Doctor runs locally. It does not require login, does not need an API key, does not call an AI service, and does not upload files.
