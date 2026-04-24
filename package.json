@@ -1,0 +1,20 @@
+{
+  "name": "ai-context-doctor",
+  "version": "0.0.0",
+  "description": "Find the files your AI coding agent should not read before sending it your repo.",
+  "bin": {
+    "ai-context-doctor": "./bin/ai-context-doctor.js"
+  },
+  "scripts": {
+    "start": "node bin/ai-context-doctor.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "ai",
+    "coding-agent",
+    "context",
+    "cli"
+  ]
+}

@@ -48,6 +48,15 @@ No login. No API key. No files uploaded.
 
 Use it before sending your repo to an AI coding agent.
 
+## Run locally
+
+```bash
+node bin/ai-context-doctor.js
+npm start
+```
+
+This early prototype uses simple file and directory heuristics. It does not call an AI API, upload files, or modify your repository.
+
 ## GitHub description
 
 Find the files your AI coding agent should not read before sending it your repo.
@@ -90,4 +99,4 @@ Potentially sensitive files may be highlighted for review, but the project shoul
 
 ## Status
 
-This repository is currently in early product definition. The next step is to implement the smallest possible CLI that can produce the example report above.
+This repository now contains a minimal runnable CLI prototype. The next step is to keep improving scanning rules in small, reviewable iterations.
