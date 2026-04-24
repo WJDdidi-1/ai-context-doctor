@@ -36,6 +36,8 @@ const lockfiles = new Set([
   'yarn.lock'
 ]);
 
+const largeFileThresholdBytes = 1024 * 1024;
+
 function printHelp() {
   console.log('AI Context Doctor');
   console.log('');
@@ -137,6 +139,11 @@ function classify(relativePath, size) {
   if (basename.endsWith('.log')) {
     addNoise(normalized, size, 'local log file');
     suggestions.add('*.log');
+    return;
+  }
+
+  if (size > largeFileThresholdBytes) {
+    addNoise(normalized, size, 'large file');
     return;
   }
 
