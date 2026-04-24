@@ -18,7 +18,7 @@ AI Context Doctor 是一个早期可用的本地 CLI 原型。它会扫描一个
 ## 现在能做什么
 
 - 扫描当前目录，或扫描你传入的一个本地目录。
-- 识别常见上下文噪音，例如构建产物、框架缓存、覆盖率输出、lockfile、日志文件。
+- 识别常见上下文噪音，例如构建产物、框架缓存、覆盖率输出、lockfile、日志文件，以及超过 1 MB 的单文件。
 - 提醒你在分享给 AI 前检查 `.env*` 文件和部署脚本。
 - 输出适合截图展示的终端报告。
 - 基于简单规则给出 `.aiignore` 建议。
@@ -72,9 +72,9 @@ Context noise estimate:
 
 Top context waste:
 1. dist/                  18.4 MB   generated build output
-2. package-lock.json       1.9 MB   lockfile
-3. coverage/               1.2 MB   test coverage output
-4. .next/cache/            980 KB   framework cache
+2. data/export.json        2.4 MB   large file
+3. package-lock.json       1.9 MB   lockfile
+4. coverage/               1.2 MB   test coverage output
 5. logs/dev.log            420 KB   local log file
 
 Review before sharing:
@@ -84,7 +84,6 @@ Review before sharing:
 Suggested .aiignore:
 dist/
 coverage/
-.next/cache/
 *.log
 *.lock
 .env*
@@ -103,10 +102,22 @@ AI Context Doctor 的目标是在几秒内把这些噪音暴露出来。
 - 目录：`dist/`、`build/`、`coverage/`、`.next/`、`.turbo/`
 - Lockfile：`package-lock.json`、`pnpm-lock.yaml`、`yarn.lock`
 - 日志：`*.log`
+- 大文件：超过 1 MB 的单文件，除非它已经命中更具体的规则
 - 需要检查：`.env*` 文件，以及路径中包含 `deploy` 的文件
 - 跳过遍历：`.git/`、`node_modules/`
 
 健康分和噪音比例是基于命中文件大小的粗略估算，只能作为快速信号，不是精确分析。
+
+## 发布前检查
+
+准备 npm 发布前，先运行：
+
+```bash
+npm run smoke
+npm run pack:check
+```
+
+这些检查不会发布 npm 包。
 
 ## 未来 npm 用法
 
@@ -124,4 +135,4 @@ AI Context Doctor 只在本地运行。它不需要登录，不需要 API key，
 
 ## 下一步
 
-近期目标是继续保持规则小而清楚，补最小验证流程，并准备第一次 npm 发布。
+近期目标是继续保持规则小而清楚，保持发布前检查快速且零依赖，并在确认包内容和发布权限后准备第一次 npm 发布。
