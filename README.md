@@ -54,9 +54,9 @@ Context noise estimate:
 
 Top context waste:
 1. dist/                  18.4 MB   generated build output
-2. package-lock.json       1.9 MB   lockfile
-3. coverage/               1.2 MB   test coverage output
-4. .next/cache/            980 KB   framework cache
+2. data/export.json        2.4 MB   large file
+3. package-lock.json       1.9 MB   lockfile
+4. coverage/               1.2 MB   test coverage output
 5. logs/dev.log            420 KB   local log file
 
 Review before sharing:
@@ -66,7 +66,6 @@ Review before sharing:
 Suggested .aiignore:
 dist/
 coverage/
-.next/cache/
 *.log
 *.lock
 .env*
@@ -78,7 +77,7 @@ Run this before asking your coding agent to inspect a larger repo.
 ## What It Does Now
 
 - Scans the current working directory or one directory path you pass in.
-- Detects common context noise such as build output, framework caches, coverage output, lockfiles, and log files.
+- Detects common context noise such as build output, framework caches, coverage output, lockfiles, log files, and individual files over 1 MB.
 - Highlights environment-like files and deployment scripts for review before sharing.
 - Prints a screenshot-friendly terminal report.
 - Suggests starter `.aiignore` entries based on simple heuristics.
@@ -106,10 +105,22 @@ Current noise rules are intentionally simple:
 - Directories: `dist/`, `build/`, `coverage/`, `.next/`, `.turbo/`
 - Lockfiles: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`
 - Logs: `*.log`
+- Large files: individual files over 1 MB, unless a more specific rule already matched
 - Review hints: `.env*` files and paths containing `deploy`
 - Skipped traversal: `.git/` and `node_modules/`
 
 The health score and noise percentage are rough estimates based on matched file sizes. They should be treated as a quick signal, not an exact measurement.
+
+## Release Checks
+
+Before preparing an npm release, run:
+
+```bash
+npm run smoke
+npm run pack:check
+```
+
+These checks do not publish the package.
 
 ## Future npm usage
 
@@ -126,8 +137,8 @@ Until then, use the local `node bin/ai-context-doctor.js` workflow shown above.
 Near-term next steps:
 
 - Keep scanning rules small and explainable.
-- Add a minimal smoke test before npm release.
-- Prepare the first npm publish once metadata and docs are ready.
+- Keep release checks fast and dependency-free.
+- Prepare the first npm publish once package contents and ownership are confirmed.
 
 ## Privacy
 
