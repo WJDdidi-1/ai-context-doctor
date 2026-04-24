@@ -4,7 +4,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const cwd = process.cwd();
+const targetArg = process.argv[2];
+const cwd = targetArg ? path.resolve(process.cwd(), targetArg) : process.cwd();
 const repoName = path.basename(cwd);
 const noise = new Map();
 const review = new Map();
@@ -27,6 +28,29 @@ const lockfiles = new Set([
   'pnpm-lock.yaml',
   'yarn.lock'
 ]);
+
+function exitWithDirectoryError() {
+  const target = targetArg || cwd;
+  console.log('AI Context Doctor');
+  console.log('');
+  console.error(`Error: ${target} is not a readable directory.`);
+  process.exit(1);
+}
+
+function assertReadableDirectory(dir) {
+  let stats;
+
+  try {
+    stats = fs.statSync(dir);
+    fs.accessSync(dir, fs.constants.R_OK);
+  } catch {
+    exitWithDirectoryError();
+  }
+
+  if (!stats.isDirectory()) {
+    exitWithDirectoryError();
+  }
+}
 
 function walk(dir) {
   let entries = [];
@@ -143,6 +167,7 @@ function printTable(items, emptyMessage) {
   });
 }
 
+assertReadableDirectory(cwd);
 walk(cwd);
 
 const noiseBytes = [...noise.values()].reduce((sum, item) => sum + item.size, 0);

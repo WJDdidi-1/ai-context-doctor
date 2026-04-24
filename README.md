@@ -52,8 +52,11 @@ Use it before sending your repo to an AI coding agent.
 
 ```bash
 node bin/ai-context-doctor.js
+node bin/ai-context-doctor.js ./some-repo
 npm start
 ```
+
+By default, the CLI scans the current working directory. Pass a directory path to scan another local repository.
 
 This early prototype uses simple file and directory heuristics. It does not call an AI API, upload files, or modify your repository.
 
