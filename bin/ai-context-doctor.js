@@ -4,7 +4,14 @@
 const fs = require('fs');
 const path = require('path');
 
-const targetArg = process.argv[2];
+const firstArg = process.argv[2];
+
+if (firstArg === '--help') {
+  printHelp();
+  process.exit(0);
+}
+
+const targetArg = firstArg;
 const cwd = targetArg ? path.resolve(process.cwd(), targetArg) : process.cwd();
 const repoName = path.basename(cwd);
 const noise = new Map();
@@ -28,6 +35,27 @@ const lockfiles = new Set([
   'pnpm-lock.yaml',
   'yarn.lock'
 ]);
+
+function printHelp() {
+  console.log('AI Context Doctor');
+  console.log('');
+  console.log('Find what your AI coding agent should not read.');
+  console.log('');
+  console.log('Usage:');
+  console.log('  node bin/ai-context-doctor.js [directory]');
+  console.log('');
+  console.log('Examples:');
+  console.log('  node bin/ai-context-doctor.js');
+  console.log('  node bin/ai-context-doctor.js ../some-repo');
+  console.log('');
+  console.log('What it does:');
+  console.log('  Scans a local directory for obvious context noise.');
+  console.log('  Prints a heuristic, screenshot-friendly report.');
+  console.log('');
+  console.log('Notes:');
+  console.log('  No login. No API key. No files uploaded.');
+  console.log('  Results are heuristic, not a precise token or security analysis.');
+}
 
 function exitWithDirectoryError() {
   const target = targetArg || cwd;
