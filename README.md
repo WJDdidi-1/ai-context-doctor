@@ -37,6 +37,13 @@ node bin/ai-context-doctor.js
 node bin/ai-context-doctor.js ../some-repo
 ```
 
+## CLI Help
+
+```bash
+node bin/ai-context-doctor.js --help
+node bin/ai-context-doctor.js --version
+```
+
 ## Example Output
 
 ```text
@@ -111,16 +118,9 @@ Current noise rules are intentionally simple:
 
 The health score and noise percentage are rough estimates based on matched file sizes. They should be treated as a quick signal, not an exact measurement.
 
-## Release Checks
+## Maintainer Notes
 
-Before preparing an npm release, run:
-
-```bash
-npm run smoke
-npm run pack:check
-```
-
-These checks do not publish the package.
+Maintainers can use the short [release checklist](./docs/release-checklist.md) before publishing. These checks are for repository maintenance and do not publish the package.
 
 ## Future npm usage
 
