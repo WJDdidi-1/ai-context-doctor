@@ -16,7 +16,6 @@
   },
   "files": [
     "bin/",
-    "scripts/",
     "README.md",
     "README.zh-CN.md",
     "LICENSE"
