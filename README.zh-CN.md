@@ -43,6 +43,12 @@ cd ai-context-doctor
 node bin/ai-context-doctor.js
 ```
 
+想快速看效果，可以运行内置 demo：
+
+```bash
+node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
+```
+
 ## 扫描当前目录
 
 ```bash
