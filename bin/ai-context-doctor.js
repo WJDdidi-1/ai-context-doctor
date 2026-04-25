@@ -3,11 +3,17 @@
 
 const fs = require('fs');
 const path = require('path');
+const packageInfo = require('../package.json');
 
 const firstArg = process.argv[2];
 
 if (firstArg === '--help') {
   printHelp();
+  process.exit(0);
+}
+
+if (firstArg === '--version') {
+  console.log(packageInfo.version);
   process.exit(0);
 }
 
@@ -45,6 +51,10 @@ function printHelp() {
   console.log('');
   console.log('Usage:');
   console.log('  node bin/ai-context-doctor.js [directory]');
+  console.log('');
+  console.log('Options:');
+  console.log('  --help      Show this help.');
+  console.log('  --version   Print the package version.');
   console.log('');
   console.log('Examples:');
   console.log('  node bin/ai-context-doctor.js');
