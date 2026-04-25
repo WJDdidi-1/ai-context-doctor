@@ -25,6 +25,12 @@ cd ai-context-doctor
 node bin/ai-context-doctor.js
 ```
 
+Want a quick demo output for screenshots?
+
+```bash
+node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
+```
+
 ## Scan Current Directory
 
 ```bash
