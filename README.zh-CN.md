@@ -55,6 +55,13 @@ node bin/ai-context-doctor.js
 node bin/ai-context-doctor.js ../some-repo
 ```
 
+## CLI 帮助
+
+```bash
+node bin/ai-context-doctor.js --help
+node bin/ai-context-doctor.js --version
+```
+
 ## 示例输出
 
 ```text
@@ -108,16 +115,9 @@ AI Context Doctor 的目标是在几秒内把这些噪音暴露出来。
 
 健康分和噪音比例是基于命中文件大小的粗略估算，只能作为快速信号，不是精确分析。
 
-## 发布前检查
+## 维护者说明
 
-准备 npm 发布前，先运行：
-
-```bash
-npm run smoke
-npm run pack:check
-```
-
-这些检查不会发布 npm 包。
+维护者在准备发布前，可以参考简短的 [发布前 checklist](./docs/release-checklist.md)。这些检查只用于仓库维护，不会发布 npm 包。
 
 ## 未来 npm 用法
 
