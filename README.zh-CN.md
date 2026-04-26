@@ -6,6 +6,10 @@
 
 AI Context Doctor 是一个早期可用的本地 CLI 原型。它会扫描一个仓库，提示哪些文件或目录可能浪费 Claude Code、Codex、Cursor、Cline 等 AI 编程工具的上下文。
 
+下面是运行 `node bin/ai-context-doctor.js ./demo-ai-context-noise-repo` 的示例输出：
+
+![AI Context Doctor 示例输出，展示上下文健康分、主要上下文噪音、复查提示和 .aiignore 建议](./assets/ai-context-doctor-demo-output.png)
+
 ## 当前状态
 
 这个项目目前是一个本地 Node.js CLI 原型。
