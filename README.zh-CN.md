@@ -39,19 +39,15 @@ AI Context Doctor 是一个早期可用的本地 CLI 原型。它会扫描一个
 
 ## 快速开始
 
-当前真实可用方式是先克隆仓库，再用 Node.js 运行：
+当前真实可用方式是先克隆仓库，再运行内置 demo：
 
 ```bash
 git clone https://github.com/WJDdidi-1/ai-context-doctor.git
 cd ai-context-doctor
-node bin/ai-context-doctor.js
-```
-
-想快速看效果，可以运行内置 demo：
-
-```bash
 node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
 ```
+
+然后再扫描当前目录或其他本地仓库。
 
 ## 扫描当前目录
 
