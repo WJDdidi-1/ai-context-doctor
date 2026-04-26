@@ -6,6 +6,10 @@ Find what your AI coding agent should not read.
 
 AI Context Doctor is an early usable local CLI prototype that scans a repository and shows files that are likely wasting context before you use Claude Code, Codex, Cursor, Cline, or another repo-aware coding agent.
 
+Demo output from `node bin/ai-context-doctor.js ./demo-ai-context-noise-repo`:
+
+![AI Context Doctor demo output showing context health, top context waste, review hints, and .aiignore suggestions](./assets/ai-context-doctor-demo-output.png)
+
 ## Current status
 
 AI Context Doctor currently runs as a local Node.js CLI from this repository.
