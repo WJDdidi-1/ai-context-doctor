@@ -21,19 +21,15 @@ AI Context Doctor currently runs as a local Node.js CLI from this repository.
 
 ## Quick start
 
-Clone the repository and run the local CLI:
+Clone the repository and run the built-in demo first:
 
 ```bash
 git clone https://github.com/WJDdidi-1/ai-context-doctor.git
 cd ai-context-doctor
-node bin/ai-context-doctor.js
-```
-
-Want a quick demo output for screenshots?
-
-```bash
 node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
 ```
+
+Then scan the current directory or another local repository.
 
 ## Scan Current Directory
 
