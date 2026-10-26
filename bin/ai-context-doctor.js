@@ -26,7 +26,14 @@ const suggestions = new Set();
 let totalFiles = 0;
 let totalBytes = 0;
 
-const ignoredDirs = new Set(['.git', 'node_modules']);
+const ignoredDirs = new Set([
+  '.git',
+  'node_modules',
+  '.venv',
+  'venv',
+  '__pycache__',
+  'vendor'
+]);
 
 const noiseDirs = new Map([
   ['dist', 'generated build output'],
@@ -142,7 +149,8 @@ function classify(relativePath, size) {
 
   if (lockfiles.has(basename)) {
     addNoise(normalized, size, 'lockfile');
-    suggestions.add('*.lock');
+    // Suggest the exact filename: `*.lock` would miss package-lock.json.
+    suggestions.add(basename);
     return;
   }
 

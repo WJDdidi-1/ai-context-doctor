@@ -120,7 +120,7 @@ Current noise rules are intentionally simple:
 - Logs: `*.log`
 - Large files: individual files over 1 MB, unless a more specific rule already matched
 - Review hints: `.env*` files and paths containing `deploy`
-- Skipped traversal: `.git/` and `node_modules/`
+- Skipped traversal: `.git/`, `node_modules/`, `.venv/`, `venv/`, `__pycache__/`, and `vendor/`
 
 The health score and noise percentage are rough estimates based on matched file sizes. They should be treated as a quick signal, not an exact measurement.
 
