@@ -169,9 +169,12 @@ function classify(relativePath, size) {
     return;
   }
 
-  if (basename.startsWith('.env')) {
+  if (isTemplateFile(basename)) {
+    // Templates like .env.example are meant to be shared; note them, don't alarm.
+    addReview(normalized, 'environment template (usually safe to share)');
+  } else if (isSecretLikeFile(basename)) {
     addReview(normalized, 'environment-like file');
-    suggestions.add('.env*');
+    suggestions.add(basename.startsWith('.env') ? '.env*' : basename);
   }
 
   if (/deploy/i.test(normalized)) {
@@ -183,6 +186,18 @@ function addNoise(label, size, reason) {
   const item = noise.get(label) || { size: 0, reason };
   item.size += size;
   noise.set(label, item);
+}
+
+// Matches names like `.env`, `.env.production`, `secrets.env`, `credentials.json`.
+const secretLikePattern = /(^\.env(\..+)?$)|(\.env$)|(^credentials(\..+)?$)|(^secrets?(\..+)?$)|(\.pem$)|(\.key$)/i;
+const templatePattern = /\.(example|sample|template|dist)$/i;
+
+function isSecretLikeFile(basename) {
+  return secretLikePattern.test(basename);
+}
+
+function isTemplateFile(basename) {
+  return templatePattern.test(basename);
 }
 
 function addReview(label, reason) {
