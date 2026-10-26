@@ -67,6 +67,24 @@ assert(largeFileScan.status === 0, 'large file fixture scan should exit with 0')
 assertIncludes(largeFileScan, 'export.json', 'large file fixture output');
 assertIncludes(largeFileScan, 'large file', 'large file fixture output');
 
+// Review rules: credential-style names must be flagged; templates and
+// unrelated names containing "env"/"key" must not be flagged as secrets.
+const reviewDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-context-doctor-review-'));
+for (const name of ['secrets.env', 'credentials.json', '.env.production', 'server.pem', '.env.example', 'keyboard.js', 'environment.md']) {
+  fs.writeFileSync(path.join(reviewDir, name), 'x\n');
+}
+const reviewScan = run(['--json', reviewDir]);
+assert(reviewScan.status === 0, 'review fixture scan should exit with 0');
+const reviewed = JSON.parse(reviewScan.stdout).review;
+const flagged = (name) => reviewed.find((item) => item.path === name);
+assert(flagged('secrets.env') && flagged('secrets.env').reason === 'environment-like file', 'secrets.env should be flagged');
+assert(flagged('credentials.json') && flagged('credentials.json').reason === 'environment-like file', 'credentials.json should be flagged');
+assert(flagged('server.pem') && flagged('server.pem').reason === 'environment-like file', 'server.pem should be flagged');
+assert(flagged('.env.example') && flagged('.env.example').reason.startsWith('environment template'), '.env.example should be a template, not a secret');
+assert(!flagged('keyboard.js'), 'keyboard.js must not be flagged');
+assert(!flagged('environment.md'), 'environment.md must not be flagged');
+fs.rmSync(reviewDir, { recursive: true, force: true });
+
 fs.rmSync(fixtureDir, { recursive: true, force: true });
 
 console.log('Smoke tests passed.');

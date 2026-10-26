@@ -129,7 +129,8 @@ Current noise rules are intentionally simple:
 - Lockfiles: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`
 - Logs: `*.log`
 - Large files: individual files over 1 MB, unless a more specific rule already matched
-- Review hints: `.env*` files and paths containing `deploy`
+- Review hints: credential-style file names such as `.env*`, `secrets.env`, `credentials.json`, `*.pem`, and `*.key`; template files like `.env.example` are noted as usually safe; paths containing `deploy`
+- Not detected: extensionless private keys (for example `id_rsa`) and secrets inside ordinary files. The review list is a naming heuristic, not a secret scanner.
 - Skipped traversal: `.git/`, `node_modules/`, `.venv/`, `venv/`, `__pycache__/`, and `vendor/`
 
 The health score and noise percentage are rough estimates based on matched file sizes. They should be treated as a quick signal, not an exact measurement.
