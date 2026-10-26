@@ -50,6 +50,16 @@ node bin/ai-context-doctor.js --help
 node bin/ai-context-doctor.js --version
 ```
 
+## JSON Output
+
+Use `--json` to get the report as machine-readable JSON, for scripts or CI:
+
+```bash
+node bin/ai-context-doctor.js ./some-repo --json
+```
+
+The JSON includes `healthScore`, `noisePercent`, `topNoise`, `review`, and `suggestedAiignore`.
+
 ## Example Output
 
 ```text
