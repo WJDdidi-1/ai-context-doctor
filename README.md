@@ -83,19 +83,31 @@ Top context waste:
 5. logs/dev.log            420 KB   local log file
 
 Review before sharing:
-- .env.example             environment-like file
+- .env.example             environment template (usually safe to share)
 - scripts/deploy.sh        deployment script
 
 Suggested .aiignore:
 dist/
 coverage/
 *.log
-*.lock
+package-lock.json
 .env*
 
 Next step:
 Run this before asking your coding agent to inspect a larger repo.
 ```
+
+The score in this example is illustrative. Run the tool on your own repository to get your real numbers.
+
+## From Report To Action
+
+The tool only reports. It does not write files, and it does not know how your coding agent reads ignore rules. To act on the suggestions:
+
+1. Review the "Review before sharing" list yourself. Check those files before you share the repository.
+2. If you want to keep the suggested paths out of your agent's context, add them to the ignore file that your tool supports (for example `.gitignore` or your agent's own ignore setting). Check that tool's documentation to confirm which file it reads.
+3. Re-run the report to confirm the noise estimate went down.
+
+Treat the suggested `.aiignore` entries as a starting point, not a verified configuration.
 
 ## What It Does Now
 
