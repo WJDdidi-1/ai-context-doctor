@@ -5,7 +5,10 @@ const fs = require('fs');
 const path = require('path');
 const packageInfo = require('../package.json');
 
-const firstArg = process.argv[2];
+const args = process.argv.slice(2);
+const jsonOutput = args.includes('--json');
+const positional = args.filter((arg) => arg !== '--json');
+const firstArg = positional[0];
 
 if (firstArg === '--help') {
   printHelp();
@@ -62,6 +65,7 @@ function printHelp() {
   console.log('Options:');
   console.log('  --help      Show this help.');
   console.log('  --version   Print the package version.');
+  console.log('  --json      Print the report as JSON for scripts and CI.');
   console.log('');
   console.log('Examples:');
   console.log('  node bin/ai-context-doctor.js');
@@ -228,6 +232,27 @@ const noisePercent = totalBytes === 0 ? 0 : Math.round((noiseBytes / totalBytes)
 const usefulPercent = Math.max(0, 100 - noisePercent);
 const healthScore = Math.max(0, Math.min(100, 100 - noisePercent));
 const topNoise = [...noise.entries()].sort((a, b) => b[1].size - a[1].size).slice(0, 5);
+
+if (jsonOutput) {
+  const report = {
+    repo: repoName,
+    scannedFiles: totalFiles,
+    scannedBytes: totalBytes,
+    healthScore,
+    status: statusFor(healthScore),
+    noisePercent,
+    usefulPercent,
+    topNoise: topNoise.map(([label, item]) => ({
+      path: label,
+      bytes: item.size,
+      reason: item.reason
+    })),
+    review: [...review.entries()].map(([label, reason]) => ({ path: label, reason })),
+    suggestedAiignore: [...suggestions]
+  };
+  console.log(JSON.stringify(report, null, 2));
+  process.exit(0);
+}
 
 console.log('AI Context Doctor');
 console.log('');

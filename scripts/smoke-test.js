@@ -42,6 +42,17 @@ assert(currentDir.status === 0, 'current directory scan should exit with 0');
 assertIncludes(currentDir, 'AI Context Health', 'current directory output');
 assertIncludes(currentDir, 'Top context waste', 'current directory output');
 
+const jsonScan = run(['--json', './demo-ai-context-noise-repo']);
+assert(jsonScan.status === 0, '--json scan should exit with 0');
+let parsedJson;
+try {
+  parsedJson = JSON.parse(jsonScan.stdout);
+} catch {
+  assert(false, '--json output should be valid JSON');
+}
+assert(typeof parsedJson.healthScore === 'number', '--json output should include healthScore');
+assert(Array.isArray(parsedJson.topNoise), '--json output should include topNoise array');
+
 const missingDir = run(['./missing-smoke-test-directory']);
 assert(missingDir.status !== 0, 'missing directory scan should fail');
 assertIncludes(missingDir, 'not a readable directory', 'missing directory output');
