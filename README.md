@@ -124,6 +124,8 @@ Current noise rules are intentionally simple:
 
 The health score and noise percentage are rough estimates based on matched file sizes. They should be treated as a quick signal, not an exact measurement.
 
+Found a repo noise pattern AI Context Doctor should understand? Open a [context noise example issue](https://github.com/WJDdidi-1/ai-context-doctor/issues/new?template=context-noise-example.md).
+
 ## Maintainer Notes
 
 Maintainers can use the short [release checklist](./docs/release-checklist.md) before publishing. These checks are for repository maintenance and do not publish the package.

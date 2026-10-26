@@ -121,6 +121,8 @@ AI Context Doctor 的目标是在几秒内把这些噪音暴露出来。
 
 健康分和噪音比例是基于命中文件大小的粗略估算，只能作为快速信号，不是精确分析。
 
+如果你发现 AI Context Doctor 应该理解的仓库噪音模式，可以提交一个 [context noise example issue](https://github.com/WJDdidi-1/ai-context-doctor/issues/new?template=context-noise-example.md)。
+
 ## 维护者说明
 
 维护者在准备发布前，可以参考简短的 [发布前 checklist](./docs/release-checklist.md)。这些检查只用于仓库维护，不会发布 npm 包。
