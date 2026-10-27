@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node bin/ai-context-doctor.js",
     "smoke": "node scripts/smoke-test.js",
-    "pack:check": "npm pack --dry-run"
+    "pack:check": "npm pack --dry-run",
+    "prepublishOnly": "npm run smoke"
   },
   "engines": {
     "node": ">=18"

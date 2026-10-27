@@ -1,27 +1,47 @@
 # AI Context Doctor
 
-[中文说明](./README.zh-CN.md)
+[中文说明](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/README.zh-CN.md)
 
 Find what your AI coding agent should not read.
 
-AI Context Doctor is an early usable local CLI prototype that scans a repository and shows files that are likely wasting context before you use Claude Code, Codex, Cursor, Cline, or another repo-aware coding agent.
+AI Context Doctor is an early preview of a local CLI that scans a repository and shows files that are likely wasting context before you use Claude Code, Codex, Cursor, Cline, or another repo-aware coding agent.
 
-Demo output from `node bin/ai-context-doctor.js ./demo-ai-context-noise-repo`:
+Demo output from `ai-context-doctor ./demo-ai-context-noise-repo` inside a clone of this repository:
 
-![AI Context Doctor demo output showing context health, top context waste, review hints, and .aiignore suggestions](./assets/ai-context-doctor-demo-output.png)
+![AI Context Doctor demo output showing context health, top context waste, review hints, and .aiignore suggestions](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/assets/ai-context-doctor-demo-output.png)
 
 ## Current status
 
-AI Context Doctor currently runs as a local Node.js CLI from this repository.
+AI Context Doctor is published on npm as an early preview (`0.1.x`).
 
-- Usable today: clone the repo and run it with `node`.
-- Not published yet: `npx ai-context-doctor` is a future npm goal, not the current install path.
+- Run it without cloning: `npx ai-context-doctor`.
 - No login, API key, or file upload is required.
 - Results are heuristic, not precise token accounting or security analysis.
+- The rule set is intentionally small; treat the score as a quick signal, not a measurement.
 
 ## Quick start
 
-Clone the repository and run the built-in demo first:
+Scan the repository you are standing in:
+
+```bash
+npx ai-context-doctor
+```
+
+Scan another local repository:
+
+```bash
+npx ai-context-doctor ../some-repo
+```
+
+If you would rather install it once than download it per run:
+
+```bash
+npm install -g ai-context-doctor
+```
+
+### Try the bundled demo
+
+The demo repository ships with the source, not with the npm package. Clone it if you want to see the tool run on a repository built to be noisy:
 
 ```bash
 git clone https://github.com/WJDdidi-1/ai-context-doctor.git
@@ -29,25 +49,23 @@ cd ai-context-doctor
 node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
 ```
 
-Then scan the current directory or another local repository.
-
 ## Scan Current Directory
 
 ```bash
-node bin/ai-context-doctor.js
+npx ai-context-doctor
 ```
 
 ## Scan Another Directory
 
 ```bash
-node bin/ai-context-doctor.js ../some-repo
+npx ai-context-doctor ../some-repo
 ```
 
 ## CLI Help
 
 ```bash
-node bin/ai-context-doctor.js --help
-node bin/ai-context-doctor.js --version
+npx ai-context-doctor --help
+npx ai-context-doctor --version
 ```
 
 ## JSON Output
@@ -55,7 +73,7 @@ node bin/ai-context-doctor.js --version
 Use `--json` to get the report as machine-readable JSON, for scripts or CI:
 
 ```bash
-node bin/ai-context-doctor.js ./some-repo --json
+npx ai-context-doctor ./some-repo --json
 ```
 
 The JSON includes `healthScore`, `noisePercent`, `topNoise`, `review`, and `suggestedAiignore`.
@@ -159,25 +177,15 @@ The health score and noise percentage are rough estimates based on matched file 
 
 ## Maintainer Notes
 
-Maintainers can use the short [release checklist](./docs/release-checklist.md) before publishing. These checks are for repository maintenance and do not publish the package.
-
-## Future npm usage
-
-The package is not published to npm yet. The intended future usage is:
-
-```bash
-npx ai-context-doctor
-```
-
-Until then, use the local `node bin/ai-context-doctor.js` workflow shown above.
+Maintainers can use the short [release checklist](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/docs/release-checklist.md) before publishing. `npm publish` runs the smoke check first through `prepublishOnly`, so a broken package cannot be published by accident.
 
 ## Roadmap
 
 Near-term next steps:
 
 - Keep scanning rules small and explainable.
-- Keep release checks fast and dependency-free.
-- Prepare the first npm publish once package contents and ownership are confirmed.
+- Add unit tests for the rule helpers and run them in CI.
+- Improve how accurately the noise estimate reflects real repositories, based on user feedback.
 
 ## Privacy
 
