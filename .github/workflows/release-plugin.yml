@@ -3,7 +3,6 @@ name: Release plugin
 on:
   push:
     tags: ["plugin-v*"]
-    branches: [diag/exchange]
 
 permissions:
   contents: read
