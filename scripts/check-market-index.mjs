@@ -51,16 +51,14 @@ if (!entry) {
   process.exit(0);
 }
 
+// Same reasoning one step further in: a version cannot enter the index before
+// it is on the registry, and its publish timestamp only exists after the
+// publish. Bumping the manifest therefore runs ahead of the index on purpose.
+// A listed version must still agree with the manifest; a missing one warns.
 const version = entry.versions.find((v) => v.version === pluginPkg.version);
-if (!version) {
-  console.error(
-    `market/index.json is missing version ${pluginPkg.version} of ${pluginPkg.name}.`,
-  );
-  process.exit(1);
-}
 
 const expectedDsh = pluginPkg.engines?.dsh;
-if (expectedDsh && version.engines?.dsh !== expectedDsh) {
+if (version && expectedDsh && version.engines?.dsh !== expectedDsh) {
   console.error(
     `Engines mismatch: plugin declares dsh ${expectedDsh}, index says ${version.engines?.dsh}.`,
   );
@@ -69,5 +67,12 @@ if (expectedDsh && version.engines?.dsh !== expectedDsh) {
 
 console.log(`market/index.json is valid (${index.plugins.length} plugin(s)).`);
 console.log(`  index url: ${indexUrl}`);
-console.log(`  entry: ${entry.name}@${version.version}`);
-console.log(`  dsh range: ${version.engines?.dsh ?? 'unspecified'}`);
+if (version) {
+  console.log(`  entry: ${entry.name}@${version.version}`);
+  console.log(`  dsh range: ${version.engines?.dsh ?? 'unspecified'}`);
+} else {
+  console.warn(
+    `  ${pluginPkg.name}@${pluginPkg.version} is not in the index yet — it lists `
+    + `${entry.versions.map((v) => v.version).join(', ')}. Add it after publishing.`,
+  );
+}

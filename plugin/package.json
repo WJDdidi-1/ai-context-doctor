@@ -1,6 +1,6 @@
 {
   "name": "dsh-aiignore",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Tells the agent which workspace files waste context, right when a session opens the repo.",
   "license": "MIT",
   "type": "module",
