@@ -99,4 +99,17 @@ fs.rmSync(reviewDir, { recursive: true, force: true });
 
 fs.rmSync(fixtureDir, { recursive: true, force: true });
 
+// npm 11 silently drops `bin` entries whose target starts with "./" when
+// publishing. The result is a package with no executable at all, so
+// `npx ai-context-doctor` fails with "could not determine executable to
+// run" -- and neither `npm pack` nor a local install applies that
+// correction, so nothing else here would notice before the registry does.
+const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
+const binEntries = Object.entries(manifest.bin || {});
+assert(binEntries.length > 0, 'package.json should declare a bin entry');
+for (const [name, target] of binEntries) {
+  assert(!target.startsWith('./'), `bin "${name}" must not start with "./" (npm strips it on publish)`);
+  assert(fs.existsSync(path.join(repoRoot, target)), `bin "${name}" points at a missing file: ${target}`);
+}
+
 console.log('Smoke tests passed.');

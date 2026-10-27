@@ -4,7 +4,7 @@
   "description": "Find the files your AI coding agent should not read before sending it your repo.",
   "license": "MIT",
   "bin": {
-    "ai-context-doctor": "./bin/ai-context-doctor.js"
+    "ai-context-doctor": "bin/ai-context-doctor.js"
   },
   "scripts": {
     "start": "node bin/ai-context-doctor.js",
