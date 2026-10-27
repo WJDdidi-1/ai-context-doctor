@@ -2,32 +2,32 @@
   "format": 1,
   "title": {
     "en": "AI Context Doctor",
-    "zh-cn": "AI \u4e0a\u4e0b\u6587\u533b\u751f"
+    "zh-cn": "AI 上下文医生"
   },
   "description": {
     "en": "A plugin index for AI Context Doctor, which warns you when a repository would flood your agent's context.",
-    "zh-cn": "AI Context Doctor \u7684\u63d2\u4ef6\u7d22\u5f15\uff1a\u5f53\u4ed3\u5e93\u4f1a\u6df9\u6ca1\u667a\u80fd\u4f53\u4e0a\u4e0b\u6587\u65f6\u7ed9\u51fa\u63d0\u9192\u3002"
+    "zh-cn": "AI Context Doctor 的插件索引：当仓库会淹没智能体上下文时给出提醒。"
   },
   "metadata": {
     "categories": {
       "context": {
         "title": {
           "en": "Context quality",
-          "zh-cn": "\u4e0a\u4e0b\u6587\u8d28\u91cf"
+          "zh-cn": "上下文质量"
         }
       }
     }
   },
   "plugins": [
     {
-      "name": "dsh-plugin-ai-context-doctor",
+      "name": "dsh-aiignore",
       "title": {
-        "en": "AI Context Doctor",
-        "zh-cn": "AI \u4e0a\u4e0b\u6587\u533b\u751f"
+        "en": "dsh-aiignore",
+        "zh-cn": "dsh-aiignore"
       },
       "description": {
-        "en": "Scans a repository when a session starts and warns you when build output, lockfiles or logs would eat your agent's context.",
-        "zh-cn": "\u4f1a\u8bdd\u5f00\u59cb\u65f6\u626b\u63cf\u4ed3\u5e93\uff0c\u5f53\u6784\u5efa\u4ea7\u7269\u3001\u9501\u6587\u4ef6\u6216\u65e5\u5fd7\u4f1a\u5403\u6389\u667a\u80fd\u4f53\u4e0a\u4e0b\u6587\u65f6\u63d0\u9192\u4f60\u3002"
+        "en": "Warns the agent, when a session opens a repository, that build output, lockfiles and logs will eat its context — and hands it an .aiignore that cuts them.",
+        "zh-cn": "会话打开仓库时提醒智能体：构建产物、锁文件和日志会吃掉上下文，并给出可直接使用的 .aiignore。"
       },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
@@ -41,24 +41,14 @@
         "keywords": [
           "context",
           "repository",
-          "tokens",
+          "aiignore",
           "noise"
         ]
       },
       "versions": [
         {
-          "version": "0.1.1",
-          "publishTimestamp": 1793084787,
-          "source": {
-            "type": "npm"
-          },
-          "engines": {
-            "dsh": ">=0.2.0"
-          }
-        },
-        {
-          "version": "0.1.0",
-          "publishTimestamp": 1793084348,
+          "version": "0.2.0",
+          "publishTimestamp": 1793088640,
           "source": {
             "type": "npm"
           },
