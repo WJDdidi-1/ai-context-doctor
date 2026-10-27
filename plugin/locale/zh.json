@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "AI Context Doctor",
+    "description": "会话打开仓库时，检查构建产物、锁文件、日志等是否会浪费上下文，并提示 Agent 跳过它们。"
+  }
+}

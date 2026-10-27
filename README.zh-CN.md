@@ -132,6 +132,11 @@ console.log(report.healthScore, report.topNoise);
 `scanRepository(root, { maxFiles, maxBytes })` 是同步、无依赖的。传入上限即可
 低成本扫描超大目录，此时报告会带 `truncated: true`。
 
+## DeepSeek Harness 插件
+
+`plugin/` 把同一套扫描封装成 Host 插件：会话打开工作区时，直接告诉 Agent 哪些文件
+会浪费上下文，而不是让它自己去踩。见 [`plugin/README.md`](plugin/README.md)。
+
 ## 示例输出
 
 ```text

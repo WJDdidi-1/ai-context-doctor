@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "AI Context Doctor",
+    "description": "When a session opens a repository, checks whether build output, lockfiles, or logs would waste the agent's context, and tells it what to skip."
+  }
+}

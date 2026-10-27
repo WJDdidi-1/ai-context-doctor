@@ -1,0 +1,39 @@
+{
+  "name": "dsh-plugin-ai-context-doctor",
+  "version": "0.1.0",
+  "description": "Tells the agent which workspace files waste context, right when a session opens the repo.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "ai-context-doctor": "^0.2.0"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node scripts/check-bundle.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "ai-context-doctor",
+    "context"
+  ]
+}
