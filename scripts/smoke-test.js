@@ -57,6 +57,18 @@ const missingDir = run(['./missing-smoke-test-directory']);
 assert(missingDir.status !== 0, 'missing directory scan should fail');
 assertIncludes(missingDir, 'not a readable directory', 'missing directory output');
 
+// --json is for scripts and CI, so its failure path must stay parseable too.
+const missingDirJson = run(['--json', './missing-smoke-test-directory']);
+assert(missingDirJson.status !== 0, '--json missing directory scan should fail');
+let jsonError;
+try {
+  jsonError = JSON.parse(missingDirJson.stdout);
+} catch {
+  assert(false, '--json output on failure should be valid JSON');
+}
+assert(jsonError.error === 'not-a-readable-directory', '--json failure should carry an error code');
+assert(typeof jsonError.message === 'string', '--json failure should carry a message');
+
 const fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-context-doctor-smoke-'));
 const largeFile = path.join(fixtureDir, 'export.json');
 fs.writeFileSync(path.join(fixtureDir, 'index.js'), 'console.log("small source");\n');

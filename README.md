@@ -60,6 +60,16 @@ node bin/ai-context-doctor.js ./some-repo --json
 
 The JSON includes `healthScore`, `noisePercent`, `topNoise`, `review`, and `suggestedAiignore`.
 
+If the target is not a readable directory, `--json` still writes a single JSON object to stdout and exits with code 1, so a CI step can parse the failure:
+
+```json
+{
+  "error": "not-a-readable-directory",
+  "message": "/path/you/passed is not a readable directory.",
+  "target": "/path/you/passed"
+}
+```
+
 ## Example Output
 
 ```text
@@ -123,7 +133,7 @@ Treat the suggested `.aiignore` entries as a starting point, not a verified conf
 - It does not upload files.
 - It does not modify your repository.
 - It does not generate `.aiignore` automatically.
-- It does not provide JSON output or a configuration system.
+- It does not provide a configuration system.
 - It is not a security scanner or vulnerability detector.
 - It does not perform precise token counting or AST analysis.
 
