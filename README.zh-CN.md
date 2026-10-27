@@ -1,23 +1,53 @@
 # AI Context Doctor
 
-[English README](./README.md)
+[English README](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/README.md)
 
 找出你的 AI 编程助手不应该优先读取的仓库内容。
 
-AI Context Doctor 是一个早期可用的本地 CLI 原型。它会扫描一个仓库，提示哪些文件或目录可能浪费 Claude Code、Codex、Cursor、Cline 等 AI 编程工具的上下文。
+AI Context Doctor 是一个早期预览版的本地 CLI。它会扫描一个仓库，提示哪些文件或目录可能浪费 Claude Code、Codex、Cursor、Cline 等 AI 编程工具的上下文。
 
-下面是运行 `node bin/ai-context-doctor.js ./demo-ai-context-noise-repo` 的示例输出：
+下面是运行 `ai-context-doctor ./demo-ai-context-noise-repo` 的示例输出（需先克隆本仓库）：
 
-![AI Context Doctor 示例输出，展示上下文健康分、主要上下文噪音、复查提示和 .aiignore 建议](./assets/ai-context-doctor-demo-output.png)
+![AI Context Doctor 示例输出，展示上下文健康分、主要上下文噪音、复查提示和 .aiignore 建议](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/assets/ai-context-doctor-demo-output.png)
 
 ## 当前状态
 
-这个项目目前是一个本地 Node.js CLI 原型。
+项目已发布到 npm，当前是早期预览版（`0.1.x`）。
 
-- 现在可用：克隆仓库后用 `node` 直接运行。
-- 尚未发布到 npm：`npx ai-context-doctor` 是未来目标，不是当前可用安装方式。
+- 无需克隆即可运行：`npx ai-context-doctor`。
 - 不需要登录，不需要 API key，不上传文件。
 - 输出结果是启发式估算，不是精确 token 计算，也不是安全扫描。
+- 规则集刻意保持精简，健康分只作快速信号，不是测量结果。
+
+## 快速开始
+
+扫描你当前所在目录：
+
+```bash
+npx ai-context-doctor
+```
+
+扫描其他本地仓库：
+
+```bash
+npx ai-context-doctor ../some-repo
+```
+
+如果不想每次都下载，也可以全局安装一次：
+
+```bash
+npm install -g ai-context-doctor
+```
+
+### 运行内置 demo
+
+demo 仓库随源码分发，不包含在 npm 包里。想看在「故意做得很吵」的仓库上的效果，可以克隆后再跑：
+
+```bash
+git clone https://github.com/WJDdidi-1/ai-context-doctor.git
+cd ai-context-doctor
+node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
+```
 
 ## 现在能做什么
 
@@ -52,20 +82,40 @@ node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
 ## 扫描当前目录
 
 ```bash
-node bin/ai-context-doctor.js
+npx ai-context-doctor
 ```
 
 ## 扫描指定目录
 
 ```bash
-node bin/ai-context-doctor.js ../some-repo
+npx ai-context-doctor ../some-repo
 ```
 
 ## CLI 帮助
 
 ```bash
-node bin/ai-context-doctor.js --help
-node bin/ai-context-doctor.js --version
+npx ai-context-doctor --help
+npx ai-context-doctor --version
+```
+
+## JSON 输出
+
+加 `--json` 可以得到供脚本或 CI 使用的机器可读结果：
+
+```bash
+npx ai-context-doctor ./some-repo --json
+```
+
+JSON 包含 `healthScore`、`noisePercent`、`topNoise`、`review` 和 `suggestedAiignore`。
+
+如果传入的目录不可读，`--json` 仍会向 stdout 输出单个 JSON 对象并以退出码 1 结束，CI 可以直接解析失败原因：
+
+```json
+{
+  "error": "not-a-readable-directory",
+  "message": "/path/you/passed is not a readable directory.",
+  "target": "/path/you/passed"
+}
 ```
 
 ## 示例输出
@@ -123,17 +173,7 @@ AI Context Doctor 的目标是在几秒内把这些噪音暴露出来。
 
 ## 维护者说明
 
-维护者在准备发布前，可以参考简短的 [发布前 checklist](./docs/release-checklist.md)。这些检查只用于仓库维护，不会发布 npm 包。
-
-## 未来 npm 用法
-
-项目尚未发布到 npm。未来目标是：
-
-```bash
-npx ai-context-doctor
-```
-
-在发布前，请使用上面的本地 `node bin/ai-context-doctor.js` 方式。
+维护者在准备发布前，可以参考简短的 [发布前 checklist](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/docs/release-checklist.md)。`npm publish` 会通过 `prepublishOnly` 先跑 smoke 检查，避免误发有问题的包。
 
 ## 隐私与本地运行
 
@@ -141,4 +181,4 @@ AI Context Doctor 只在本地运行。它不需要登录，不需要 API key，
 
 ## 下一步
 
-近期目标是继续保持规则小而清楚，保持发布前检查快速且零依赖，并在确认包内容和发布权限后准备第一次 npm 发布。
+近期目标是继续保持规则小而清楚，为规则函数补充单元测试并纳入 CI，并根据真实用户反馈改进噪音估算的准确性。
