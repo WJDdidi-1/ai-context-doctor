@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [18, 20, 22]
+        node: [18, 20, 22, 24]
     steps:
       - uses: actions/checkout@v4
 
@@ -30,3 +30,26 @@ jobs:
 
       - name: Check package contents
         run: npm run pack:check
+
+  packaged:
+    name: Packaged install (ubuntu, Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # installs the tarball the way a user would, which is the only check that
+      # notices a file missing from "files" (the CLI requires ../lib/rules.js)
+      - name: Install the packed tarball and run the CLI
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          mkdir -p "$RUNNER_TEMP/try" && cd "$RUNNER_TEMP/try"
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund "$RUNNER_TEMP"/ai-context-doctor-*.tgz
+          ./node_modules/.bin/ai-context-doctor --version
+          ./node_modules/.bin/ai-context-doctor --json . > out.json
+          node -e "const j=require('./out.json'); if (typeof j.healthScore !== 'number') { console.error('unexpected JSON payload'); process.exit(1); }"
