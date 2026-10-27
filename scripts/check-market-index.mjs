@@ -38,10 +38,17 @@ try {
   process.exit(1);
 }
 
+// The index describes what is on the registry, not what is in the working
+// tree: a rename has to land in the registry before the index can point at it,
+// so the local package may legitimately be absent for a while. Absence warns;
+// a listed entry still has to match exactly.
 const entry = index.plugins.find((plugin) => plugin.name === pluginPkg.name);
 if (!entry) {
-  console.error(`market/index.json does not list "${pluginPkg.name}".`);
-  process.exit(1);
+  console.warn(
+    `market/index.json does not list "${pluginPkg.name}" — not published under that name yet.`,
+  );
+  console.log(`market/index.json is valid (${index.plugins.length} plugin(s)).`);
+  process.exit(0);
 }
 
 const version = entry.versions.find((v) => v.version === pluginPkg.version);

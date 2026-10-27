@@ -1,4 +1,4 @@
 - insert:
     - id: ai-context-doctor
-      name: 'dsh-plugin-ai-context-doctor'
+      name: 'dsh-aiignore'
       config: {}

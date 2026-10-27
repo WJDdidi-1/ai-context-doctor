@@ -1,4 +1,4 @@
-# AI Context Doctor for DeepSeek Harness
+# dsh-aiignore — context noise guard for DeepSeek Harness
 
 A Host plugin that checks a workspace **when a session opens it** and tells the
 agent which files would waste its context — build output, lockfiles, logs,
@@ -27,13 +27,19 @@ becomes noise itself.
 
 Through the Plugin Manager:
 
-- **From npm** — install `dsh-plugin-ai-context-doctor`.
+- **From npm** — install `dsh-aiignore` (this name lands on the registry with
+  the rename; until then install the `plugin/` directory below).
 - **From a checkout** — install the `plugin/` directory of this repository.
 
 Installing a local directory links it, so re-check the files directly: `files`
 does not filter a linked directory.
 
 ### From the plugin market
+
+> **Paused during the rename.** The published index still lists the previous
+> package name, `dsh-plugin-ai-context-doctor@0.1.1`, because that is what is
+> actually on the registry. It keeps working; the index is repointed when
+> `dsh-aiignore` is published.
 
 Harness has no central store: the **Discover** tab lists whatever indexes the
 user adds. This repository publishes one at
@@ -60,7 +66,7 @@ Values go in the plugin's `config` row in `cordis.patch.yml`:
 ```yaml
 - insert:
     - id: ai-context-doctor
-      name: 'dsh-plugin-ai-context-doctor'
+      name: 'dsh-aiignore'
       config:
         healthThreshold: 80
         maxFiles: 20000
