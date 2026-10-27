@@ -27,19 +27,13 @@ becomes noise itself.
 
 Through the Plugin Manager:
 
-- **From npm** — install `dsh-aiignore` (this name lands on the registry with
-  the rename; until then install the `plugin/` directory below).
+- **From npm** — install `dsh-aiignore`.
 - **From a checkout** — install the `plugin/` directory of this repository.
 
 Installing a local directory links it, so re-check the files directly: `files`
 does not filter a linked directory.
 
 ### From the plugin market
-
-> **Paused during the rename.** The published index still lists the previous
-> package name, `dsh-plugin-ai-context-doctor@0.1.1`, because that is what is
-> actually on the registry. It keeps working; the index is repointed when
-> `dsh-aiignore` is published.
 
 Harness has no central store: the **Discover** tab lists whatever indexes the
 user adds. This repository publishes one at
@@ -54,7 +48,7 @@ To use it:
 2. Beside **Experimental plugins**, open **More** and switch on **Custom plugin
    markets**. The Plugins page then gains an **Installed** / **Discover** split.
 3. In **Discover**, add the index URL above.
-4. Install **AI Context Doctor** from the result.
+4. Install **dsh-aiignore** from the result.
 
 The Harness checks the declared `engines.dsh` range before installing and
 refuses the plugin if the running version falls outside it.
