@@ -2,6 +2,27 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.2.0 — 2026-10-27
+
+The scanner is now a library, and the CLI is a thin printer on top of it.
+
+### Added
+
+- `require('ai-context-doctor')` exposes `scanRepository(root, options)` plus the
+  helpers the report is built from. Callers can cap a scan with `maxFiles` /
+  `maxBytes`; a capped report carries `truncated: true`.
+- `npm test` runs a real unit suite (`node --test`) covering the heuristics, the
+  scan totals, the truncation cap, and the CLI's text/JSON/error contracts.
+- The CI `packaged` job now also imports the installed package and asserts the
+  library API works from the tarball.
+
+### Changed
+
+- The scan moved from `bin/ai-context-doctor.js` into `lib/scan.js`; `lib/` is
+  published, so the package no longer ships a CLI that requires a missing file.
+- Text and JSON output are byte-for-byte identical to 0.1.1 — this release adds
+  an API, it does not change the report.
+
 ## 0.1.1 — 2026-10-27
 
 No runtime changes. This release exists so the npm page matches the repository.

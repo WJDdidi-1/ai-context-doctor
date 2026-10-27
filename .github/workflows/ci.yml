@@ -25,6 +25,9 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Run unit tests
+        run: npm test
+
       - name: Run smoke tests
         run: npm run smoke
 
@@ -53,3 +56,4 @@ jobs:
           ./node_modules/.bin/ai-context-doctor --version
           ./node_modules/.bin/ai-context-doctor --json . > out.json
           node -e "const j=require('./out.json'); if (typeof j.healthScore !== 'number') { console.error('unexpected JSON payload'); process.exit(1); }"
+          node -e "const { scanRepository } = require('ai-context-doctor'); const r = scanRepository(process.cwd()); if (typeof r.healthScore !== 'number') { console.error('library API broken'); process.exit(1); }"

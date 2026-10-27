@@ -92,6 +92,21 @@ If the target is not a readable directory, `--json` still writes a single JSON o
 }
 ```
 
+## Use It From Code
+
+The same scan is available as a function, so other tools can reuse it without
+shelling out:
+
+```js
+const { scanRepository } = require('ai-context-doctor');
+
+const report = scanRepository(process.cwd());
+console.log(report.healthScore, report.topNoise);
+```
+
+`scanRepository(root, { maxFiles, maxBytes })` is synchronous and dependency-free.
+Pass a cap to scan a huge tree cheaply; the report then carries `truncated: true`.
+
 ## Example Output
 
 ```text
