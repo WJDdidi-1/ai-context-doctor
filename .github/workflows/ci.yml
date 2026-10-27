@@ -57,3 +57,24 @@ jobs:
           ./node_modules/.bin/ai-context-doctor --json . > out.json
           node -e "const j=require('./out.json'); if (typeof j.healthScore !== 'number') { console.error('unexpected JSON payload'); process.exit(1); }"
           node -e "const { scanRepository } = require('ai-context-doctor'); const r = scanRepository(process.cwd()); if (typeof r.healthScore !== 'number') { console.error('library API broken'); process.exit(1); }"
+
+  plugin:
+    name: Plugin bundle (ubuntu, Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pack the library the plugin depends on
+        run: npm pack --pack-destination "$RUNNER_TEMP"
+
+      - name: Install the bundle against the packed library and test it
+        working-directory: plugin
+        run: |
+          npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/ai-context-doctor-*.tgz
+          npm run check
+          npm test

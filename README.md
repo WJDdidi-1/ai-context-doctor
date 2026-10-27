@@ -107,6 +107,12 @@ console.log(report.healthScore, report.topNoise);
 `scanRepository(root, { maxFiles, maxBytes })` is synchronous and dependency-free.
 Pass a cap to scan a huge tree cheaply; the report then carries `truncated: true`.
 
+## DeepSeek Harness plugin
+
+`plugin/` packages the same scan as a Host plugin: when a session opens a
+workspace, the agent is told which files would waste its context instead of
+discovering it the expensive way. See [`plugin/README.md`](plugin/README.md).
+
 ## Example Output
 
 ```text
