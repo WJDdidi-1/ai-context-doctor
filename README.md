@@ -4,7 +4,7 @@
 [![CI](https://github.com/WJDdidi-1/ai-context-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/WJDdidi-1/ai-context-doctor/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/ai-context-doctor)](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/LICENSE)
 
-[中文说明](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/README.zh-CN.md)
+[中文说明](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/docs/README.zh-CN.md)
 
 **AI coding agents read your repository file by file. Some of those files are garbage — build output, logs, lockfiles, a 40 MB data dump. This tool finds them in a few seconds and tells you what to keep away from the agent.**
 

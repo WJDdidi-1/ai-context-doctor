@@ -2,6 +2,19 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.2.2 — 2026-10-27
+
+No runtime changes. This release exists so the npm page renders the English
+README.
+
+### Fixed
+
+- The npm page showed the Chinese README. npm picks the readme with the glob
+  `{README,README.*}` and takes the first `*.md` it sees — the filesystem order,
+  not alphabetical, so `README.zh-CN.md` won. The Chinese README now lives at
+  `docs/README.zh-CN.md` and is no longer shipped in the package; the English
+  README is the one npm renders.
+
 ## 0.2.1 — 2026-10-27
 
 No runtime changes. This release exists so the npm page shows the new README.
