@@ -71,7 +71,7 @@ Run this before asking your coding agent to inspect a larger repo.
 - **刚 clone 下一个项目时**：先看看里面有多少是自动生成的产物，免得 AI 一上来就读这些。
 - **CI 里**：用 `--json` 拿到稳定的结构化结果，上下文健康度掉下去就让构建失败。
 - **自己的工具里**：`require('ai-context-doctor')` 可以直接调用同一套扫描。
-- **在 DeepSeek Harness 里**：附带的插件会在会话打开工作区时自动提醒 AI 哪些文件会浪费上下文，你不用记着去跑。
+- **在 DeepSeek Harness 里**：装上 [`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore)，会话打开工作区时会自动提醒 AI 哪些文件会浪费上下文，你不用记着去跑任何东西。
 
 ## 安装
 
@@ -130,7 +130,13 @@ console.log(report.healthScore, report.topNoise);
 
 ## DeepSeek Harness 插件
 
-`plugin/` 把同一套扫描封装成 Host 插件：会话打开工作区时，AI 会收到一条简短提示，说明哪些文件会浪费它的上下文；工作区干净时它什么都不说。见 [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md)。
+[`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore) 把同一套扫描封装成 Host 插件：会话打开工作区时，AI 会收到一条简短提示，说明哪些文件会浪费它的上下文；工作区干净时它什么都不说。
+
+```bash
+dsh plugin --profile web add dsh-aiignore
+```
+
+它声明了 `engines.dsh: ">=0.2.0"`，Harness 会在安装前检查这个范围。源码、配置项与限制见 [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md)。
 
 ## 什么算噪音
 
