@@ -69,7 +69,7 @@ Run this before asking your coding agent to inspect a larger repo.
 - **On a repo you just cloned** — see how much of it is generated output before the agent drowns in it.
 - **In CI** — `--json` gives a stable object, so you can fail a build when context health drops.
 - **In your own tool** — `require('ai-context-doctor')` exposes the same scan as a function.
-- **Inside DeepSeek Harness** — the bundled plugin tells the agent automatically when a session opens a noisy workspace, so you do not have to remember to run it.
+- **Inside DeepSeek Harness** — install [`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore) and the agent is told automatically when a session opens a noisy workspace, so you do not have to remember to run anything.
 
 ## Install
 
@@ -128,7 +128,13 @@ console.log(report.healthScore, report.topNoise);
 
 ## DeepSeek Harness plugin
 
-`plugin/` packages the same scan as a Host plugin: when a session opens a workspace, the agent gets one short note about the files that would waste its context — and nothing at all when the workspace is clean. See [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
+[`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore) packages the same scan as a Host plugin. When a session opens a workspace, the agent gets one short note naming the files that would waste its context — and nothing at all when the workspace is clean.
+
+```bash
+dsh plugin --profile web add dsh-aiignore
+```
+
+It declares `engines.dsh: ">=0.2.0"`, and the Harness checks that range before installing. The source, its configuration and its limits are in [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
 
 ## What counts as noise
 
