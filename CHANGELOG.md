@@ -2,6 +2,19 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.1.1 — 2026-10-27
+
+No runtime changes. This release exists so the npm page matches the repository.
+
+### Changed
+
+- README badges (npm version, CI, license) in both languages.
+- `CHANGELOG.md` is now part of the published package.
+
+### Infrastructure
+
+- Releases are published by GitHub Actions through npm trusted publishing: pushing a `v*` tag runs `release.yml`, which checks the tag against `package.json`, installs the packed tarball the way a user would, publishes with a provenance attestation, and creates the GitHub release. No long-lived npm token lives in a GitHub secret.
+
 ## 0.1.0 — 2026-10-27
 
 First public release on npm: <https://www.npmjs.com/package/ai-context-doctor>
