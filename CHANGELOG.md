@@ -2,6 +2,19 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.2.1 — 2026-10-27
+
+No runtime changes. This release exists so the npm page shows the new README.
+
+### Changed
+
+- Both READMEs were rewritten to explain the tool in plain language: what the
+  report means, line by line, and the five things a user can do with it.
+  Stale facts are gone (the `0.1.x` preview label, a roadmap item asking for
+  tests that already exist, an example `.aiignore` listing `*.lock` instead of
+  `package-lock.json`).
+- The README screenshot is removed, along with the unused image in `assets/`.
+
 ## 0.2.0 — 2026-10-27
 
 The scanner is now a library, and the CLI is a thin printer on top of it.
