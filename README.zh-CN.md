@@ -1,114 +1,113 @@
 # AI Context Doctor
 
+[![npm](https://img.shields.io/npm/v/ai-context-doctor)](https://www.npmjs.com/package/ai-context-doctor)
+[![CI](https://github.com/WJDdidi-1/ai-context-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/WJDdidi-1/ai-context-doctor/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/ai-context-doctor)](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/LICENSE)
+
 [English README](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/README.md)
 
-找出你的 AI 编程助手不应该优先读取的仓库内容。
-
-AI Context Doctor 是一个早期预览版的本地 CLI。它会扫描一个仓库，提示哪些文件或目录可能浪费 Claude Code、Codex、Cursor、Cline 等 AI 编程工具的上下文。
-
-下面是运行 `ai-context-doctor ./demo-ai-context-noise-repo` 的示例输出（需先克隆本仓库）：
-
-![AI Context Doctor 示例输出，展示上下文健康分、主要上下文噪音、复查提示和 .aiignore 建议](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/assets/ai-context-doctor-demo-output.png)
-
-## 当前状态
-
-项目已发布到 npm，当前是早期预览版（`0.1.x`）。
-
-- 无需克隆即可运行：`npx ai-context-doctor`。
-- 不需要登录，不需要 API key，不上传文件。
-- 输出结果是启发式估算，不是精确 token 计算，也不是安全扫描。
-- 规则集刻意保持精简，健康分只作快速信号，不是测量结果。
-
-## 快速开始
-
-扫描你当前所在目录：
+**AI 编程助手会一个文件一个文件地读你的仓库。其中有些文件其实没用——构建产物、日志、lockfile、一个 40 MB 的数据文件。这个工具几秒钟就能把它们找出来，告诉你哪些该挡在 AI 之外。**
 
 ```bash
 npx ai-context-doctor
 ```
 
-扫描其他本地仓库：
+不用安装、不用登录、不需要 API key、不上传任何东西。它只看文件名和大小。
 
-```bash
-npx ai-context-doctor ../some-repo
+## 跑起来是什么样
+
+下面是本项目自带的 demo 仓库的真实输出：
+
+```text
+AI Context Doctor
+
+Repo: demo-ai-context-noise-repo
+Scanned: 8 files, 1.50 MB
+
+AI Context Health: 22/100
+Status: Too much noise for an AI coding agent
+
+Context noise estimate:
+78% likely noise
+22% likely useful source context
+
+Top context waste:
+1. data/export.json            1.00 MB   large file
+2. dist/                      106.9 KB   generated build output
+3. package-lock.json           35.2 KB   lockfile
+4. logs/dev.log                18.4 KB   local log file
+5. coverage/                   16.7 KB   test coverage output
+
+Review before sharing:
+- .env.example             environment template (usually safe to share)
+- scripts/deploy.sh        deployment script
+
+Suggested .aiignore:
+coverage/
+dist/
+*.log
+package-lock.json
+
+Next step:
+Run this before asking your coding agent to inspect a larger repo.
 ```
 
-如果不想每次都下载，也可以全局安装一次：
+输出正文目前是英文，命令行参数也一样；本文件解释每一行是什么意思。
+
+## 这份报告怎么读
+
+| 这一行 | 意思 |
+| --- | --- |
+| `Scanned: 8 files, 1.50 MB` | 实际扫了多少内容。`.git/` 和 `node_modules/` 不扫。 |
+| `AI Context Health: 22/100` | 100 减去「命中了噪音规则的文件」占的体积比例。22 分表示 AI 要读的东西里大部分是噪音。 |
+| `Status:` | 把分数翻译成一句话：85 分以上干净，60–84 有噪音，60 分以下噪音太多。 |
+| `Top context waste` | 体积最大的五个噪音来源，以及各自被标出来的原因。 |
+| `Review before sharing` | 看起来像凭证或部署脚本的文件。**工具没有说它们一定是密钥**，只是提醒你：把这个仓库贴进聊天窗口之前先看一眼。 |
+| `Suggested .aiignore` | 可以直接复制进忽略文件的行。工具不会替你写。 |
+
+## 拿它能干什么
+
+- **在让 AI 读一个大仓库之前**：先跑一遍，把建议的行贴进 `.aiignore`（或你所用助手的忽略配置），再跑一遍，看分数有没有变高。
+- **刚 clone 下一个项目时**：先看看里面有多少是自动生成的产物，免得 AI 一上来就读这些。
+- **CI 里**：用 `--json` 拿到稳定的结构化结果，上下文健康度掉下去就让构建失败。
+- **自己的工具里**：`require('ai-context-doctor')` 可以直接调用同一套扫描。
+- **在 DeepSeek Harness 里**：附带的插件会在会话打开工作区时自动提醒 AI 哪些文件会浪费上下文，你不用记着去跑。
+
+## 安装
+
+零安装直接跑：
+
+```bash
+npx ai-context-doctor
+```
+
+或者装一次：
 
 ```bash
 npm install -g ai-context-doctor
 ```
 
-### 运行内置 demo
+需要 Node.js 18 或更新版本。
 
-demo 仓库随源码分发，不包含在 npm 包里。想看在「故意做得很吵」的仓库上的效果，可以克隆后再跑：
-
-```bash
-git clone https://github.com/WJDdidi-1/ai-context-doctor.git
-cd ai-context-doctor
-node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
-```
-
-## 现在能做什么
-
-- 扫描当前目录，或扫描你传入的一个本地目录。
-- 识别常见上下文噪音，例如构建产物、框架缓存、覆盖率输出、lockfile、日志文件，以及超过 1 MB 的单文件。
-- 提醒你在分享给 AI 前检查 `.env*` 文件和部署脚本。
-- 输出适合截图展示的终端报告。
-- 基于简单规则给出 `.aiignore` 建议。
-
-## 现在不能做什么
-
-- 不调用 AI API。
-- 不上传文件。
-- 不修改你的仓库。
-- 不自动生成或写入 `.aiignore`。
-- 不提供配置系统。
-- 不是安全扫描器，也不是漏洞检测工具。
-- 不做精确 token 统计或 AST 分析。
-
-## 快速开始
-
-当前真实可用方式是先克隆仓库，再运行内置 demo：
+## 用法
 
 ```bash
-git clone https://github.com/WJDdidi-1/ai-context-doctor.git
-cd ai-context-doctor
-node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
+ai-context-doctor              # 扫描当前目录
+ai-context-doctor ../some-repo # 扫描另一个仓库
+ai-context-doctor --json       # 机器可读输出
+ai-context-doctor --help
+ai-context-doctor --version
 ```
 
-然后再扫描当前目录或其他本地仓库。
-
-## 扫描当前目录
-
-```bash
-npx ai-context-doctor
-```
-
-## 扫描指定目录
-
-```bash
-npx ai-context-doctor ../some-repo
-```
-
-## CLI 帮助
-
-```bash
-npx ai-context-doctor --help
-npx ai-context-doctor --version
-```
-
-## JSON 输出
-
-加 `--json` 可以得到供脚本或 CI 使用的机器可读结果：
+### JSON 输出
 
 ```bash
 npx ai-context-doctor ./some-repo --json
 ```
 
-JSON 包含 `healthScore`、`noisePercent`、`topNoise`、`review` 和 `suggestedAiignore`。
+返回 `repo`、`healthScore`、`status`、`noisePercent`、`usefulPercent`、`scannedBytes`、`scannedFiles`、`topNoise`、`review`、`suggestedAiignore`；触发扫描上限时还会带 `truncated: true`。
 
-如果传入的目录不可读，`--json` 仍会向 stdout 输出单个 JSON 对象并以退出码 1 结束，CI 可以直接解析失败原因：
+如果传入的路径不是可读目录，`--json` 只会输出一个 JSON 对象（不会先打印横幅），并以退出码 1 结束，CI 可以直接解析失败原因：
 
 ```json
 {
@@ -118,9 +117,7 @@ JSON 包含 `healthScore`、`noisePercent`、`topNoise`、`review` 和 `suggeste
 }
 ```
 
-## 在代码中调用
-
-同一个扫描逻辑也可以直接当函数用，其他工具不必再 shell 调用 CLI：
+## 在代码里调用
 
 ```js
 const { scanRepository } = require('ai-context-doctor');
@@ -129,75 +126,57 @@ const report = scanRepository(process.cwd());
 console.log(report.healthScore, report.topNoise);
 ```
 
-`scanRepository(root, { maxFiles, maxBytes })` 是同步、无依赖的。传入上限即可
-低成本扫描超大目录，此时报告会带 `truncated: true`。
+`scanRepository(root, { maxFiles, maxBytes })` 是同步的，没有任何依赖。传上限可以低成本扫超大目录，此时报告会带 `truncated: true`。
 
 ## DeepSeek Harness 插件
 
-`plugin/` 把同一套扫描封装成 Host 插件：会话打开工作区时，直接告诉 Agent 哪些文件
-会浪费上下文，而不是让它自己去踩。见 [`plugin/README.md`](plugin/README.md)。
+`plugin/` 把同一套扫描封装成 Host 插件：会话打开工作区时，AI 会收到一条简短提示，说明哪些文件会浪费它的上下文；工作区干净时它什么都不说。见 [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md)。
 
-## 示例输出
+## 什么算噪音
 
-```text
-AI Context Doctor
+- **目录**：`dist/`、`build/`、`coverage/`、`.next/`、`.turbo/`
+- **Lockfile**：`package-lock.json`、`pnpm-lock.yaml`、`yarn.lock`
+- **日志**：`*.log`
+- **大文件**：超过 1 MB、且没有被更具体的规则命中的单个文件
+- **需要检查**：看起来像凭证的文件名（`.env*`、`secrets.env`、`credentials.json`、`*.pem`、`*.key`）以及路径里带 `deploy` 的文件。`.env.example` 会被识别成模板，标记为通常可以分享。
+- **不遍历**：`.git/`、`node_modules/`、`.venv/`、`venv/`、`__pycache__/`、`vendor/`
 
-Repo: my-project
-Scanned: 428 files, 31.6 MB
+## 它不做什么
 
-AI Context Health: 62/100
-Status: Too much noise for an AI coding agent
+- 不调用任何 AI 服务，不需要 API key，不上传文件。
+- 不修改你的仓库——不会写 `.aiignore`，也不会写别的文件。
+- 不是 `gitignore` 检查器：它看的是「AI 会读到什么」，不是「git 跟踪什么」，所以被 git 忽略的文件照样会出现。
+- 不是密钥扫描器。`Review` 列表基于文件名，没有扩展名的 `id_rsa`、粘在 `config.js` 里的密钥都会漏掉。
+- 不统计 token，也不解析代码。分数是体积启发式：可以当真信号，不能当测量结果。
+- 没有配置文件。上限只能通过 API 和 Harness 插件设置。
 
-Context noise estimate:
-73% likely noise
-27% likely useful source context
+## 为什么建议 `.aiignore` 而不是 `.gitignore`
 
-Top context waste:
-1. dist/                  18.4 MB   generated build output
-2. data/export.json        2.4 MB   large file
-3. package-lock.json       1.9 MB   lockfile
-4. coverage/               1.2 MB   test coverage output
-5. logs/dev.log            420 KB   local log file
+因为这是两个不同的问题。`dist/` 在大多数项目里都被 git 忽略了，但一个不看 git 规则的助手照样会去读它。这个工具报告的是「AI 会读进去多少字节」，跟 git 怎么想无关。
 
-Review before sharing:
-- .env.example             environment-like file
-- scripts/deploy.sh        deployment script
+## 隐私
 
-Suggested .aiignore:
-dist/
-coverage/
-*.log
-*.lock
-.env*
+全部在本地运行。工具只读取目录项和文件大小，不读文件内容，不建立网络连接，不存储任何东西。唯一会发到外面的数据，是你用 npm 安装它时 npm 自己发的。
+
+## 开发
+
+```bash
+git clone https://github.com/WJDdidi-1/ai-context-doctor.git
+cd ai-context-doctor
+npm test                       # 单元测试与 CLI 测试
+node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
 ```
 
-## 为什么需要它
+`demo-ai-context-noise-repo/` 是一个故意做得很乱的仓库，随源码分发（不在 npm 包里），方便你直接试输出效果。
 
-AI 编程工具读到的上下文越干净，越容易给出有用答案。真实仓库里经常混着构建产物、缓存、日志、覆盖率报告、lockfile 等内容，这些文件可能会让 AI 在真正重要的源码之前先读到大量噪音。
+维护者：发布前看[发布 checklist](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/docs/release-checklist.md)。发布在 CI 里通过 npm trusted publishing 完成，推 `v*` tag 即触发，`prepublishOnly` 会先跑测试，坏包发不出去。
 
-AI Context Doctor 的目标是在几秒内把这些噪音暴露出来。
+## 后续计划
 
-## 当前启发式规则与限制
+- 未知参数给出明确报错，而不是当成目录名。
+- 根据真实用户反馈改进噪音规则。
+- 可选的 `--fix`：写出建议的忽略条目，但要你先看过 diff 再决定。
 
-当前规则保持简单：
+## 许可证
 
-- 目录：`dist/`、`build/`、`coverage/`、`.next/`、`.turbo/`
-- Lockfile：`package-lock.json`、`pnpm-lock.yaml`、`yarn.lock`
-- 日志：`*.log`
-- 大文件：超过 1 MB 的单文件，除非它已经命中更具体的规则
-- 需要检查：`.env*` 文件，以及路径中包含 `deploy` 的文件
-- 跳过遍历：`.git/`、`node_modules/`
-
-健康分和噪音比例是基于命中文件大小的粗略估算，只能作为快速信号，不是精确分析。
-
-## 维护者说明
-
-维护者在准备发布前，可以参考简短的 [发布前 checklist](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/docs/release-checklist.md)。`npm publish` 会通过 `prepublishOnly` 先跑 smoke 检查，避免误发有问题的包。
-
-## 隐私与本地运行
-
-AI Context Doctor 只在本地运行。它不需要登录，不需要 API key，不调用 AI 服务，也不会上传文件。
-
-## 下一步
-
-近期目标是继续保持规则小而清楚，为规则函数补充单元测试并纳入 CI，并根据真实用户反馈改进噪音估算的准确性。
+MIT

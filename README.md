@@ -6,83 +6,106 @@
 
 [中文说明](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/README.zh-CN.md)
 
-Find what your AI coding agent should not read.
-
-AI Context Doctor is an early preview of a local CLI that scans a repository and shows files that are likely wasting context before you use Claude Code, Codex, Cursor, Cline, or another repo-aware coding agent.
-
-Demo output from `ai-context-doctor ./demo-ai-context-noise-repo` inside a clone of this repository:
-
-![AI Context Doctor demo output showing context health, top context waste, review hints, and .aiignore suggestions](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/assets/ai-context-doctor-demo-output.png)
-
-## Current status
-
-AI Context Doctor is published on npm as an early preview (`0.1.x`).
-
-- Run it without cloning: `npx ai-context-doctor`.
-- No login, API key, or file upload is required.
-- Results are heuristic, not precise token accounting or security analysis.
-- The rule set is intentionally small; treat the score as a quick signal, not a measurement.
-
-## Quick start
-
-Scan the repository you are standing in:
+**AI coding agents read your repository file by file. Some of those files are garbage — build output, logs, lockfiles, a 40 MB data dump. This tool finds them in a few seconds and tells you what to keep away from the agent.**
 
 ```bash
 npx ai-context-doctor
 ```
 
-Scan another local repository:
+No install, no login, no API key, nothing uploaded. It only reads file names and sizes.
 
-```bash
-npx ai-context-doctor ../some-repo
+## What it looks like
+
+Real output from the demo repository in this project:
+
+```text
+AI Context Doctor
+
+Repo: demo-ai-context-noise-repo
+Scanned: 8 files, 1.50 MB
+
+AI Context Health: 22/100
+Status: Too much noise for an AI coding agent
+
+Context noise estimate:
+78% likely noise
+22% likely useful source context
+
+Top context waste:
+1. data/export.json            1.00 MB   large file
+2. dist/                      106.9 KB   generated build output
+3. package-lock.json           35.2 KB   lockfile
+4. logs/dev.log                18.4 KB   local log file
+5. coverage/                   16.7 KB   test coverage output
+
+Review before sharing:
+- .env.example             environment template (usually safe to share)
+- scripts/deploy.sh        deployment script
+
+Suggested .aiignore:
+coverage/
+dist/
+*.log
+package-lock.json
+
+Next step:
+Run this before asking your coding agent to inspect a larger repo.
 ```
 
-If you would rather install it once than download it per run:
+## How to read it
+
+| Line | What it means |
+| --- | --- |
+| `Scanned: 8 files, 1.50 MB` | What was actually walked. `.git/` and `node_modules/` are skipped. |
+| `AI Context Health: 22/100` | 100 minus the share of those bytes that matched a noise rule. 22 means most of what the agent would read is noise. |
+| `Status:` | Just the score in words: 85+ clean, 60–84 some noise, below 60 too much. |
+| `Top context waste` | The five biggest offenders with the reason each was flagged. |
+| `Review before sharing` | Files that look like credentials or deploy scripts. **The tool does not claim they are secret** — it says look before you paste the repo into a chat. |
+| `Suggested .aiignore` | Lines you can paste into an ignore file. Nothing is written for you. |
+
+## What you can do with it
+
+- **Before you hand a repo to an agent** — run it, paste the suggested lines into `.aiignore` (or your agent's ignore setting), re-run, watch the score go up.
+- **On a repo you just cloned** — see how much of it is generated output before the agent drowns in it.
+- **In CI** — `--json` gives a stable object, so you can fail a build when context health drops.
+- **In your own tool** — `require('ai-context-doctor')` exposes the same scan as a function.
+- **Inside DeepSeek Harness** — the bundled plugin tells the agent automatically when a session opens a noisy workspace, so you do not have to remember to run it.
+
+## Install
+
+Run it without installing anything:
+
+```bash
+npx ai-context-doctor
+```
+
+Or install it once:
 
 ```bash
 npm install -g ai-context-doctor
 ```
 
-### Try the bundled demo
+Requires Node.js 18 or newer.
 
-The demo repository ships with the source, not with the npm package. Clone it if you want to see the tool run on a repository built to be noisy:
-
-```bash
-git clone https://github.com/WJDdidi-1/ai-context-doctor.git
-cd ai-context-doctor
-node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
-```
-
-## Scan Current Directory
+## Usage
 
 ```bash
-npx ai-context-doctor
+ai-context-doctor              # scan the current directory
+ai-context-doctor ../some-repo # scan another repository
+ai-context-doctor --json       # machine-readable output
+ai-context-doctor --help
+ai-context-doctor --version
 ```
 
-## Scan Another Directory
-
-```bash
-npx ai-context-doctor ../some-repo
-```
-
-## CLI Help
-
-```bash
-npx ai-context-doctor --help
-npx ai-context-doctor --version
-```
-
-## JSON Output
-
-Use `--json` to get the report as machine-readable JSON, for scripts or CI:
+### JSON output
 
 ```bash
 npx ai-context-doctor ./some-repo --json
 ```
 
-The JSON includes `healthScore`, `noisePercent`, `topNoise`, `review`, and `suggestedAiignore`.
+Returns `repo`, `healthScore`, `status`, `noisePercent`, `usefulPercent`, `scannedBytes`, `scannedFiles`, `topNoise`, `review`, and `suggestedAiignore` — plus `truncated: true` when a scan cap was hit.
 
-If the target is not a readable directory, `--json` still writes a single JSON object to stdout and exits with code 1, so a CI step can parse the failure:
+If the path is not a readable directory, `--json` still prints a single JSON object — never a banner — and exits with code 1, so a CI step can parse the failure:
 
 ```json
 {
@@ -92,10 +115,7 @@ If the target is not a readable directory, `--json` still writes a single JSON o
 }
 ```
 
-## Use It From Code
-
-The same scan is available as a function, so other tools can reuse it without
-shelling out:
+## Use it from code
 
 ```js
 const { scanRepository } = require('ai-context-doctor');
@@ -104,114 +124,57 @@ const report = scanRepository(process.cwd());
 console.log(report.healthScore, report.topNoise);
 ```
 
-`scanRepository(root, { maxFiles, maxBytes })` is synchronous and dependency-free.
-Pass a cap to scan a huge tree cheaply; the report then carries `truncated: true`.
+`scanRepository(root, { maxFiles, maxBytes })` is synchronous and has no dependencies. Pass a cap for huge trees; the report then carries `truncated: true`.
 
 ## DeepSeek Harness plugin
 
-`plugin/` packages the same scan as a Host plugin: when a session opens a
-workspace, the agent is told which files would waste its context instead of
-discovering it the expensive way. See [`plugin/README.md`](plugin/README.md).
+`plugin/` packages the same scan as a Host plugin: when a session opens a workspace, the agent gets one short note about the files that would waste its context — and nothing at all when the workspace is clean. See [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
 
-## Example Output
+## What counts as noise
 
-```text
-AI Context Doctor
+- **Directories:** `dist/`, `build/`, `coverage/`, `.next/`, `.turbo/`
+- **Lockfiles:** `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`
+- **Logs:** `*.log`
+- **Large files:** any single file over 1 MB that no more specific rule already matched
+- **Review hints:** credential-shaped names (`.env*`, `secrets.env`, `credentials.json`, `*.pem`, `*.key`) and paths containing `deploy`. `.env.example` is recognised as a template and marked usually safe.
+- **Never walked:** `.git/`, `node_modules/`, `.venv/`, `venv/`, `__pycache__/`, `vendor/`
 
-Repo: my-project
-Scanned: 428 files, 31.6 MB
+## What it does not do
 
-AI Context Health: 62/100
-Status: Too much noise for an AI coding agent
+- It does not call an AI service, need an API key, or upload anything.
+- It does not modify your repository — it never writes `.aiignore` or any other file.
+- It is not a `gitignore` linter: it looks at what an agent *would read*, not what git tracks, so ignored files still show up.
+- It is not a secret scanner. The review list is a name heuristic; an `id_rsa` without an extension and a key pasted into `config.js` both slip through.
+- It does not count tokens or parse code. The score is a size heuristic — useful as a signal, not as a measurement.
+- It does not have a config file. Caps are available through the API and the Harness plugin only.
 
-Context noise estimate:
-73% likely noise
-27% likely useful source context
+## Why `.aiignore` and not `.gitignore`
 
-Top context waste:
-1. dist/                  18.4 MB   generated build output
-2. data/export.json        2.4 MB   large file
-3. package-lock.json       1.9 MB   lockfile
-4. coverage/               1.2 MB   test coverage output
-5. logs/dev.log            420 KB   local log file
-
-Review before sharing:
-- .env.example             environment template (usually safe to share)
-- scripts/deploy.sh        deployment script
-
-Suggested .aiignore:
-dist/
-coverage/
-*.log
-package-lock.json
-.env*
-
-Next step:
-Run this before asking your coding agent to inspect a larger repo.
-```
-
-The score in this example is illustrative. Run the tool on your own repository to get your real numbers.
-
-## From Report To Action
-
-The tool only reports. It does not write files, and it does not know how your coding agent reads ignore rules. To act on the suggestions:
-
-1. Review the "Review before sharing" list yourself. Check those files before you share the repository.
-2. If you want to keep the suggested paths out of your agent's context, add them to the ignore file that your tool supports (for example `.gitignore` or your agent's own ignore setting). Check that tool's documentation to confirm which file it reads.
-3. Re-run the report to confirm the noise estimate went down.
-
-Treat the suggested `.aiignore` entries as a starting point, not a verified configuration.
-
-## What It Does Now
-
-- Scans the current working directory or one directory path you pass in.
-- Detects common context noise such as build output, framework caches, coverage output, lockfiles, log files, and individual files over 1 MB.
-- Highlights environment-like files and deployment scripts for review before sharing.
-- Prints a screenshot-friendly terminal report.
-- Suggests starter `.aiignore` entries based on simple heuristics.
-
-## What It Does Not Do
-
-- It does not call an AI API.
-- It does not upload files.
-- It does not modify your repository.
-- It does not generate `.aiignore` automatically.
-- It does not provide a configuration system.
-- It is not a security scanner or vulnerability detector.
-- It does not perform precise token counting or AST analysis.
-
-## Why It Exists
-
-AI coding tools work better when they read the right files. Real repositories often include generated output, caches, logs, lockfiles, coverage reports, and other files that add noise before the agent reaches the source code that matters.
-
-AI Context Doctor is meant to make that noise visible in a few seconds, before you send a repository to an AI coding agent.
-
-## Current Heuristics And Limits
-
-Current noise rules are intentionally simple:
-
-- Directories: `dist/`, `build/`, `coverage/`, `.next/`, `.turbo/`
-- Lockfiles: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`
-- Logs: `*.log`
-- Large files: individual files over 1 MB, unless a more specific rule already matched
-- Review hints: credential-style file names such as `.env*`, `secrets.env`, `credentials.json`, `*.pem`, and `*.key`; template files like `.env.example` are noted as usually safe; paths containing `deploy`
-- Not detected: extensionless private keys (for example `id_rsa`) and secrets inside ordinary files. The review list is a naming heuristic, not a secret scanner.
-- Skipped traversal: `.git/`, `node_modules/`, `.venv/`, `venv/`, `__pycache__/`, and `vendor/`
-
-The health score and noise percentage are rough estimates based on matched file sizes. They should be treated as a quick signal, not an exact measurement.
-
-## Maintainer Notes
-
-Maintainers can use the short [release checklist](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/docs/release-checklist.md) before publishing. `npm publish` runs the smoke check first through `prepublishOnly`, so a broken package cannot be published by accident.
-
-## Roadmap
-
-Near-term next steps:
-
-- Keep scanning rules small and explainable.
-- Add unit tests for the rule helpers and run them in CI.
-- Improve how accurately the noise estimate reflects real repositories, based on user feedback.
+Because the two questions are different. `dist/` is gitignored in most projects and still gets read by an agent that ignores git. The tool reports on bytes the agent would ingest, whatever git thinks of them.
 
 ## Privacy
 
-AI Context Doctor runs locally. It does not require login, does not need an API key, does not call an AI service, and does not upload files.
+Everything runs locally. The tool reads directory entries and file sizes; it does not read file contents, does not open a network connection, and stores nothing. The only thing it sends anywhere is what `npm` sends when you install it.
+
+## Development
+
+```bash
+git clone https://github.com/WJDdidi-1/ai-context-doctor.git
+cd ai-context-doctor
+npm test                       # unit and CLI tests
+node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
+```
+
+The `demo-ai-context-noise-repo/` directory is a deliberately messy repository, shipped with the source (not with the npm package) to make the output easy to try.
+
+Maintainers: see the [release checklist](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/docs/release-checklist.md). Publishing happens in CI on a `v*` tag via npm trusted publishing, and `prepublishOnly` runs the tests first, so a broken package cannot go out.
+
+## Roadmap
+
+- Clear errors for unknown flags instead of treating them as directory names.
+- Better noise rules based on real reports from users.
+- Optional `--fix` that writes the suggested ignore entries, with a diff you approve first.
+
+## License
+
+MIT
