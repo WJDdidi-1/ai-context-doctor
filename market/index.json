@@ -1,0 +1,62 @@
+{
+  "format": 1,
+  "title": {
+    "en": "AI Context Doctor",
+    "zh-cn": "AI \u4e0a\u4e0b\u6587\u533b\u751f"
+  },
+  "description": {
+    "en": "A plugin index for AI Context Doctor, which warns you when a repository would flood your agent's context.",
+    "zh-cn": "AI Context Doctor \u7684\u63d2\u4ef6\u7d22\u5f15\uff1a\u5f53\u4ed3\u5e93\u4f1a\u6df9\u6ca1\u667a\u80fd\u4f53\u4e0a\u4e0b\u6587\u65f6\u7ed9\u51fa\u63d0\u9192\u3002"
+  },
+  "metadata": {
+    "categories": {
+      "context": {
+        "title": {
+          "en": "Context quality",
+          "zh-cn": "\u4e0a\u4e0b\u6587\u8d28\u91cf"
+        }
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "dsh-plugin-ai-context-doctor",
+      "title": {
+        "en": "AI Context Doctor",
+        "zh-cn": "AI \u4e0a\u4e0b\u6587\u533b\u751f"
+      },
+      "description": {
+        "en": "Scans a repository when a session starts and warns you when build output, lockfiles or logs would eat your agent's context.",
+        "zh-cn": "\u4f1a\u8bdd\u5f00\u59cb\u65f6\u626b\u63cf\u4ed3\u5e93\uff0c\u5f53\u6784\u5efa\u4ea7\u7269\u3001\u9501\u6587\u4ef6\u6216\u65e5\u5fd7\u4f1a\u5403\u6389\u667a\u80fd\u4f53\u4e0a\u4e0b\u6587\u65f6\u63d0\u9192\u4f60\u3002"
+      },
+      "author": "WJDdidi-1",
+      "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
+      "repository": {
+        "url": "https://github.com/WJDdidi-1/ai-context-doctor",
+        "directory": "plugin"
+      },
+      "icon": "https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/plugin/icon.svg",
+      "metadata": {
+        "category": "context",
+        "keywords": [
+          "context",
+          "repository",
+          "tokens",
+          "noise"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1793084348,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        }
+      ]
+    }
+  ]
+}
