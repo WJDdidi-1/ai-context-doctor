@@ -82,6 +82,18 @@ function printHelp() {
 
 function exitWithDirectoryError() {
   const target = targetArg || cwd;
+
+  if (jsonOutput) {
+    // Keep stdout machine-readable on failure too: a script piping --json
+    // output must be able to parse the error instead of choking on a banner.
+    console.log(JSON.stringify({
+      error: 'not-a-readable-directory',
+      message: `${target} is not a readable directory.`,
+      target
+    }, null, 2));
+    process.exit(1);
+  }
+
   console.log('AI Context Doctor');
   console.log('');
   console.error(`Error: ${target} is not a readable directory.`);
