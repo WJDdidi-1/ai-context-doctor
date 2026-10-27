@@ -64,6 +64,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          NAME=$(node -p "require('./package.json').name")
           gh release create "$GITHUB_REF_NAME" \
-            --title "dsh-plugin-ai-context-doctor ${GITHUB_REF_NAME#plugin-v}" \
+            --title "$NAME ${GITHUB_REF_NAME#plugin-v}" \
             --generate-notes
