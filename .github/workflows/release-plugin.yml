@@ -1,0 +1,68 @@
+name: Release plugin
+
+on:
+  push:
+    tags: ["plugin-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish plugin to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub release
+      id-token: write # OIDC token for npm trusted publishing + provenance
+    defaults:
+      run:
+        working-directory: plugin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check the tag matches plugin/package.json
+        run: |
+          expected="plugin-v$(node -p "require('./package.json').version")"
+          if [ "$expected" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match plugin/package.json version $expected"
+            exit 1
+          fi
+
+      # The bundle imports the library at runtime, so publish both is not
+      # required — but a broken bundle must never reach users.
+      - name: Install the bundle the way the Harness does
+        run: |
+          npm pack ../ --pack-destination "$RUNNER_TEMP"
+          npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/ai-context-doctor-*.tgz
+          npm run check
+          npm test
+
+      # The first version of a package cannot use trusted publishing (npm has
+      # no package settings page to configure it on yet), so 0.1.0 was
+      # published by hand. Re-running the tag must not fail on that.
+      - name: Check whether this version is already on npm
+        id: published
+        run: |
+          if npm view "$(node -p "require('./package.json').name")@$(node -p "require('./package.json').version")" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Already published — skipping the publish step."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish
+        if: steps.published.outputs.exists != 'true'
+        run: npm publish --provenance
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "dsh-plugin-ai-context-doctor ${GITHUB_REF_NAME#plugin-v}" \
+            --generate-notes

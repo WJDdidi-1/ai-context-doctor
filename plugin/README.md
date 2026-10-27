@@ -33,6 +33,26 @@ Through the Plugin Manager:
 Installing a local directory links it, so re-check the files directly: `files`
 does not filter a linked directory.
 
+### From the plugin market
+
+Harness has no central store: the **Discover** tab lists whatever indexes the
+user adds. This repository publishes one at
+
+```text
+https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/market/index.json
+```
+
+To use it:
+
+1. Open **Plugins** in the Web sidebar.
+2. Beside **Experimental plugins**, open **More** and switch on **Custom plugin
+   markets**. The Plugins page then gains an **Installed** / **Discover** split.
+3. In **Discover**, add the index URL above.
+4. Install **AI Context Doctor** from the result.
+
+The Harness checks the declared `engines.dsh` range before installing and
+refuses the plugin if the running version falls outside it.
+
 ## Configure
 
 Values go in the plugin's `config` row in `cordis.patch.yml`:

@@ -24,12 +24,25 @@
   "dependencies": {
     "ai-context-doctor": "^0.2.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WJDdidi-1/ai-context-doctor.git",
+    "directory": "plugin"
+  },
+  "homepage": "https://github.com/WJDdidi-1/ai-context-doctor#readme",
+  "bugs": {
+    "url": "https://github.com/WJDdidi-1/ai-context-doctor/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "node --test",
     "check": "node scripts/check-bundle.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=18",
+    "dsh": ">=0.2.0"
   },
   "keywords": [
     "dsh-plugin",

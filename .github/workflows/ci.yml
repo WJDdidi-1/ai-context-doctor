@@ -78,3 +78,19 @@ jobs:
           npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/ai-context-doctor-*.tgz
           npm run check
           npm test
+
+  market:
+    name: Market index (ubuntu, Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate market/index.json with the Harness parser
+        run: |
+          npm install --no-save --no-audit --no-fund @deepseek-ai/dsh-plugin-market-index
+          node scripts/check-market-index.mjs
