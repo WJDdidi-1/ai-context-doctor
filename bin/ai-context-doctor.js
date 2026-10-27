@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const packageInfo = require('../package.json');
+const { scanRepository, formatBytes, statusFor } = require('../lib');
 
 const args = process.argv.slice(2);
 const jsonOutput = args.includes('--json');
@@ -22,37 +23,6 @@ if (firstArg === '--version') {
 
 const targetArg = firstArg;
 const cwd = targetArg ? path.resolve(process.cwd(), targetArg) : process.cwd();
-const repoName = path.basename(cwd);
-const noise = new Map();
-const review = new Map();
-const suggestions = new Set();
-let totalFiles = 0;
-let totalBytes = 0;
-
-const ignoredDirs = new Set([
-  '.git',
-  'node_modules',
-  '.venv',
-  'venv',
-  '__pycache__',
-  'vendor'
-]);
-
-const noiseDirs = new Map([
-  ['dist', 'generated build output'],
-  ['build', 'generated build output'],
-  ['coverage', 'test coverage output'],
-  ['.next', 'framework output'],
-  ['.turbo', 'framework cache']
-]);
-
-const lockfiles = new Set([
-  'package-lock.json',
-  'pnpm-lock.yaml',
-  'yarn.lock'
-]);
-
-const largeFileThresholdBytes = 1024 * 1024;
 
 function printHelp() {
   console.log('AI Context Doctor');
@@ -82,10 +52,7 @@ function printHelp() {
 
 function exitWithDirectoryError() {
   const target = targetArg || cwd;
-
   if (jsonOutput) {
-    // Keep stdout machine-readable on failure too: a script piping --json
-    // output must be able to parse the error instead of choking on a banner.
     console.log(JSON.stringify({
       error: 'not-a-readable-directory',
       message: `${target} is not a readable directory.`,
@@ -93,7 +60,6 @@ function exitWithDirectoryError() {
     }, null, 2));
     process.exit(1);
   }
-
   console.log('AI Context Doctor');
   console.log('');
   console.error(`Error: ${target} is not a readable directory.`);
@@ -115,176 +81,34 @@ function assertReadableDirectory(dir) {
   }
 }
 
-function walk(dir) {
-  let entries = [];
-
-  try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return;
-  }
-
-  for (const entry of entries) {
-    const absolutePath = path.join(dir, entry.name);
-    const relativePath = path.relative(cwd, absolutePath) || entry.name;
-
-    if (entry.isDirectory()) {
-      if (ignoredDirs.has(entry.name)) continue;
-      walk(absolutePath);
-      continue;
-    }
-
-    if (!entry.isFile()) continue;
-
-    let stats;
-    try {
-      stats = fs.statSync(absolutePath);
-    } catch {
-      continue;
-    }
-
-    totalFiles += 1;
-    totalBytes += stats.size;
-    classify(relativePath, stats.size);
-  }
-}
-
-function classify(relativePath, size) {
-  const normalized = relativePath.split(path.sep).join('/');
-  const parts = normalized.split('/');
-  const basename = parts[parts.length - 1];
-
-  for (const part of parts.slice(0, -1)) {
-    if (noiseDirs.has(part)) {
-      const label = `${part}/`;
-      addNoise(label, size, noiseDirs.get(part));
-      suggestions.add(label);
-      return;
-    }
-  }
-
-  if (lockfiles.has(basename)) {
-    addNoise(normalized, size, 'lockfile');
-    // Suggest the exact filename: `*.lock` would miss package-lock.json.
-    suggestions.add(basename);
-    return;
-  }
-
-  if (basename.endsWith('.log')) {
-    addNoise(normalized, size, 'local log file');
-    suggestions.add('*.log');
-    return;
-  }
-
-  if (size > largeFileThresholdBytes) {
-    addNoise(normalized, size, 'large file');
-    return;
-  }
-
-  if (isTemplateFile(basename)) {
-    // Templates like .env.example are meant to be shared; note them, don't alarm.
-    addReview(normalized, 'environment template (usually safe to share)');
-  } else if (isSecretLikeFile(basename)) {
-    addReview(normalized, 'environment-like file');
-    suggestions.add(basename.startsWith('.env') ? '.env*' : basename);
-  }
-
-  if (/deploy/i.test(normalized)) {
-    addReview(normalized, 'deployment script');
-  }
-}
-
-function addNoise(label, size, reason) {
-  const item = noise.get(label) || { size: 0, reason };
-  item.size += size;
-  noise.set(label, item);
-}
-
-// Matches names like `.env`, `.env.production`, `secrets.env`, `credentials.json`.
-const secretLikePattern = /(^\.env(\..+)?$)|(\.env$)|(^credentials(\..+)?$)|(^secrets?(\..+)?$)|(\.pem$)|(\.key$)/i;
-const templatePattern = /\.(example|sample|template|dist)$/i;
-
-function isSecretLikeFile(basename) {
-  return secretLikePattern.test(basename);
-}
-
-function isTemplateFile(basename) {
-  return templatePattern.test(basename);
-}
-
-function addReview(label, reason) {
-  if (!review.has(label)) {
-    review.set(label, reason);
-  }
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  const units = ['KB', 'MB', 'GB'];
-  let value = bytes / 1024;
-  let unit = units[0];
-
-  for (let index = 1; index < units.length && value >= 1024; index += 1) {
-    value /= 1024;
-    unit = units[index];
-  }
-
-  return `${value.toFixed(value >= 10 ? 1 : 2)} ${unit}`;
-}
-
-function statusFor(score) {
-  if (score >= 85) return 'Looks clean for an AI coding agent';
-  if (score >= 60) return 'Some context noise found';
-  return 'Too much noise for an AI coding agent';
-}
-
 function printTable(items, emptyMessage) {
   if (items.length === 0) {
     console.log(emptyMessage);
     return;
   }
 
-  items.forEach(([label, item], index) => {
-    const name = `${index + 1}. ${label}`.padEnd(28);
-    const size = formatBytes(item.size).padStart(9);
+  items.forEach((item, index) => {
+    const name = `${index + 1}. ${item.path}`.padEnd(28);
+    const size = formatBytes(item.bytes).padStart(9);
     console.log(`${name} ${size}   ${item.reason}`);
   });
 }
 
 assertReadableDirectory(cwd);
-walk(cwd);
 
-const noiseBytes = [...noise.values()].reduce((sum, item) => sum + item.size, 0);
-const noisePercent = totalBytes === 0 ? 0 : Math.round((noiseBytes / totalBytes) * 100);
-const usefulPercent = Math.max(0, 100 - noisePercent);
-const healthScore = Math.max(0, Math.min(100, 100 - noisePercent));
-const topNoise = [...noise.entries()].sort((a, b) => b[1].size - a[1].size).slice(0, 5);
+const report = scanRepository(cwd);
 
 if (jsonOutput) {
-  const report = {
-    repo: repoName,
-    scannedFiles: totalFiles,
-    scannedBytes: totalBytes,
-    healthScore,
-    status: statusFor(healthScore),
-    noisePercent,
-    usefulPercent,
-    topNoise: topNoise.map(([label, item]) => ({
-      path: label,
-      bytes: item.size,
-      reason: item.reason
-    })),
-    review: [...review.entries()].map(([label, reason]) => ({ path: label, reason })),
-    suggestedAiignore: [...suggestions]
-  };
   console.log(JSON.stringify(report, null, 2));
   process.exit(0);
 }
 
+const { repo, scannedFiles, scannedBytes, healthScore, noisePercent, usefulPercent } = report;
+
 console.log('AI Context Doctor');
 console.log('');
-console.log(`Repo: ${repoName}`);
-console.log(`Scanned: ${totalFiles} files, ${formatBytes(totalBytes)}`);
+console.log(`Repo: ${repo}`);
+console.log(`Scanned: ${scannedFiles} files, ${formatBytes(scannedBytes)}`);
 console.log('');
 console.log(`AI Context Health: ${healthScore}/100`);
 console.log(`Status: ${statusFor(healthScore)}`);
@@ -294,22 +118,22 @@ console.log(`${noisePercent}% likely noise`);
 console.log(`${usefulPercent}% likely useful source context`);
 console.log('');
 console.log('Top context waste:');
-printTable(topNoise, 'No obvious context waste found.');
+printTable(report.topNoise, 'No obvious context waste found.');
 console.log('');
 console.log('Review before sharing:');
-if (review.size === 0) {
+if (report.review.length === 0) {
   console.log('No environment-like files or deployment scripts found.');
 } else {
-  for (const [label, reason] of review.entries()) {
-    console.log(`- ${label.padEnd(24)} ${reason}`);
+  for (const item of report.review) {
+    console.log(`- ${item.path.padEnd(24)} ${item.reason}`);
   }
 }
 console.log('');
 console.log('Suggested .aiignore:');
-if (suggestions.size === 0) {
+if (report.suggestedAiignore.length === 0) {
   console.log('No suggestions yet.');
 } else {
-  for (const suggestion of suggestions) {
+  for (const suggestion of report.suggestedAiignore) {
     console.log(suggestion);
   }
 }

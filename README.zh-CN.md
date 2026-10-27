@@ -118,6 +118,20 @@ JSON 包含 `healthScore`、`noisePercent`、`topNoise`、`review` 和 `suggeste
 }
 ```
 
+## 在代码中调用
+
+同一个扫描逻辑也可以直接当函数用，其他工具不必再 shell 调用 CLI：
+
+```js
+const { scanRepository } = require('ai-context-doctor');
+
+const report = scanRepository(process.cwd());
+console.log(report.healthScore, report.topNoise);
+```
+
+`scanRepository(root, { maxFiles, maxBytes })` 是同步、无依赖的。传入上限即可
+低成本扫描超大目录，此时报告会带 `truncated: true`。
+
 ## 示例输出
 
 ```text
