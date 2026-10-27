@@ -3,6 +3,7 @@ name: Release plugin
 on:
   push:
     tags: ["plugin-v*"]
+    branches: [diag/exchange]
 
 permissions:
   contents: read
@@ -26,6 +27,7 @@ jobs:
           node-version: 24
 
       - name: Check the tag matches plugin/package.json
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           expected="plugin-v$(node -p "require('./package.json').version")"
           if [ "$expected" != "$GITHUB_REF_NAME" ]; then
