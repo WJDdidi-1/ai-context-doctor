@@ -6,7 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { apply } from '../index.js';
-import { createWorkspaceState, recordSkip, allowPath, savedTokens, buildReport } from '../report.js';
+import { createWorkspaceState, recordSkip, recordRead, allowPath, savedTokens, buildReport } from '../report.js';
 
 function tempWorkspace() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-ui-'));
@@ -95,6 +95,18 @@ test('saved tokens cover the bytes of every skipped read', () => {
   assert.ok(saved.min > 0 && saved.max >= saved.min);
 });
 
+test('the ledger separates what was read from what was refused', () => {
+  const state = createWorkspaceState();
+  recordRead(state, { relativePath: 'src/app.js', bytes: 100, verdict: 'useful' });
+  recordRead(state, { relativePath: 'src/app.js', bytes: 100, verdict: 'useful' });
+  recordRead(state, { relativePath: 'scripts/deploy.sh', bytes: 50, verdict: 'review' });
+
+  const report = buildReport({ cwd: '/w', state, policy: 'deny' });
+  assert.equal(report.reads.length, 2);
+  assert.equal(report.reads.find((item) => item.path === 'src/app.js').attempts, 2);
+  assert.ok(report.readTokens.min > 0);
+});
+
 test('report handler answers with the scanned workspace, then the allow route edits it', async () => {
   const { routes, listeners, guards } = harness();
   assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/report']);
@@ -125,9 +137,23 @@ test('report handler answers with the scanned workspace, then the allow route ed
   });
   assert.equal(JSON.parse(second.body).allowed, true);
 
+  // The retry the user just authorised: the same read now goes through.
+  const retry = guards[0]({ name: 'read', arguments: { file_path: path.join(root, 'dist', 'app.js') }, agent });
+  assert.equal(retry, undefined);
+
   const third = fakeResponse();
   routes.get('/aiignore/report')(fakeRequest(), third);
-  assert.deepEqual(JSON.parse(third.body).skipped, []);
+  const afterAllow = JSON.parse(third.body);
+  assert.deepEqual(afterAllow.skipped, []);
+  assert.equal(afterAllow.reads.find((item) => item.path === 'dist/app.js').verdict, 'allowed');
+
+  // A file the guard never blocks is still counted, so the panel can show what
+  // the session spent as well as what it saved.
+  guards[0]({ name: 'read', arguments: { file_path: path.join(root, 'src', 'app.js') }, agent });
+  const fourth = fakeResponse();
+  routes.get('/aiignore/report')(fakeRequest(), fourth);
+  const last = JSON.parse(fourth.body);
+  assert.equal(last.reads.find((item) => item.path === 'src/app.js').verdict, 'useful');
 
   fs.rmSync(root, { recursive: true, force: true });
 });

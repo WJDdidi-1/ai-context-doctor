@@ -27,8 +27,10 @@ becomes noise itself.
 
 The bundle also ships a browser half. A **Context** button sits in the composer
 dock; nothing is drawn until you click it. The panel then shows this
-workspace's numbers — health score, noise share, and the tokens the guard kept
-out — and one row per refused read, each with a **Read it anyway** button.
+workspace's numbers — health score, noise share, the tokens the guard kept out —
+one row per refused read with a **Read it anyway** button, and a ledger of what
+the session actually read, split into source, review (templates and deploy
+scripts) and files you allowed yourself.
 
 Allowing a file applies to that file only, for the rest of the Host run: the
 next read goes through and nothing else changes. Reloading the Harness forgets

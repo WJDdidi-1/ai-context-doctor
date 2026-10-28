@@ -10,6 +10,7 @@ export function createWorkspaceState() {
   return {
     report: undefined,
     skipped: new Map(),
+    reads: new Map(),
     allowed: new Set()
   };
 }
@@ -27,6 +28,28 @@ export function recordSkip(state, decision) {
       path: decision.relativePath,
       bytes: decision.bytes,
       reason: decision.reason,
+      attempts: 1
+    });
+    return;
+  }
+  existing.attempts += 1;
+}
+
+/**
+ * Record a read that was let through. `verdict` is how the classifier saw it:
+ * 'useful' for source, 'review' for templates and deploy scripts, and
+ * 'allowed' when the user overrode the guard.
+ *
+ * @param {ReturnType<typeof createWorkspaceState>} state
+ * @param {{ relativePath: string, bytes: number, verdict: string }} entry
+ */
+export function recordRead(state, entry) {
+  const existing = state.reads.get(entry.relativePath);
+  if (existing === undefined) {
+    state.reads.set(entry.relativePath, {
+      path: entry.relativePath,
+      bytes: entry.bytes,
+      verdict: entry.verdict,
       attempts: 1
     });
     return;
@@ -96,6 +119,8 @@ export function buildReport({ cwd, state, policy }) {
           tokenEstimate: report.tokenEstimate
         },
     skipped: [...state.skipped.values()].map((item) => ({ ...item })),
+    reads: [...state.reads.values()].map((item) => ({ ...item })),
+    readTokens: estimateTokens([...state.reads.values()].reduce((sum, item) => sum + item.bytes, 0)),
     allowed: [...state.allowed],
     savedTokens: saved
   };
