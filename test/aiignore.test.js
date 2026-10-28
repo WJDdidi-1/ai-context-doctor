@@ -5,6 +5,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { matchesAiignore } = require('../lib/aiignore');
 
 const { planAiignore, renderAiignore, writeAiignore } = require('../lib/aiignore');
 
@@ -94,4 +95,25 @@ test('refuses to replace a directory that happens to be called .aiignore', () =>
   fs.mkdirSync(target);
 
   assert.throws(() => writeAiignore(target, ['dist/']), /not a regular file/);
+});
+
+test('matchesAiignore implements the subset the guard relies on', () => {
+  const rules = ['dist/', '*.log', 'package-lock.json', 'coverage/', '/src/generated.js', 'build/*.map'];
+
+  const blocked = ['dist/app.js', 'a/dist/x.js', 'logs/dev.log', 'package-lock.json', 'sub/package-lock.json', 'coverage/lcov.info', 'src/generated.js', 'build/a.map'];
+  for (const target of blocked) {
+    assert.notEqual(matchesAiignore(rules, target), undefined, `${target} should be blocked`);
+  }
+
+  const allowed = ['src/app.js', 'x/src/generated.js', 'build/a.js', 'README.md'];
+  for (const target of allowed) {
+    assert.equal(matchesAiignore(rules, target), undefined, `${target} should pass`);
+  }
+});
+
+test('matchesAiignore tolerates empty input and malformed rules', () => {
+  assert.equal(matchesAiignore(undefined, 'a.js'), undefined);
+  assert.equal(matchesAiignore([], 'a.js'), undefined);
+  assert.equal(matchesAiignore(['# a comment', ''], 'a.js'), undefined);
+  assert.equal(matchesAiignore(['['], 'a.js'), undefined);
 });

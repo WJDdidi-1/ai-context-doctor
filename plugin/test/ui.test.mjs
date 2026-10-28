@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { apply } from '../index.js';
+import { apply, decideRead, inspectRead } from '../index.js';
 import { createWorkspaceState, recordSkip, recordRead, allowPath, savedTokens, buildReport } from '../report.js';
 
 function tempWorkspace() {
@@ -109,7 +109,7 @@ test('the ledger separates what was read from what was refused', () => {
 
 test('report handler answers with the scanned workspace, then the allow route edits it', async () => {
   const { routes, listeners, guards } = harness();
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/report']);
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/report']);
 
   const root = tempWorkspace();
   const agent = { session: { meta: { cwd: root } }, inject() {} };
@@ -154,6 +154,49 @@ test('report handler answers with the scanned workspace, then the allow route ed
   routes.get('/aiignore/report')(fakeRequest(), fourth);
   const last = JSON.parse(fourth.body);
   assert.equal(last.reads.find((item) => item.path === 'src/app.js').verdict, 'useful');
+
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('a rule in .aiignore refuses a file the heuristic would pass', () => {
+  const root = tempWorkspace();
+  fs.writeFileSync(path.join(root, '.aiignore'), 'src/app.js\n');
+  fs.writeFileSync(path.join(root, 'src', 'generated.js'), 'export const g = 1;\n');
+  fs.writeFileSync(path.join(root, '.aiignore'), 'src/generated.js\n');
+
+  const inspected = inspectRead({ root, filePath: path.join(root, 'src', 'generated.js') });
+  assert.equal(inspected.inside, true);
+
+  const decision = decideRead({ root, filePath: path.join(root, 'src', 'generated.js'), policy: 'deny', rules: ['src/generated.js'] });
+  assert.equal(decision.block, true);
+  assert.equal(decision.reason, 'listed in .aiignore');
+
+  const clean = decideRead({ root, filePath: path.join(root, 'src', 'app.js'), policy: 'deny', rules: ['src/generated.js'] });
+  assert.equal(clean.block, false);
+
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('the ignore route records the decision in .aiignore', async () => {
+  const { routes, listeners } = harness();
+  const root = tempWorkspace();
+  const agent = { session: { meta: { cwd: root } }, inject() {} };
+  listeners.get('agent/created')({ agent });
+
+  const response = fakeResponse();
+  await new Promise((resolve) => {
+    const request = fakeRequest({ method: 'POST', body: JSON.stringify({ path: path.join(root, 'src', 'app.js') }) });
+    response.end = (body) => {
+      response.body = body;
+      resolve();
+    };
+    routes.get('/aiignore/ignore')(request, response);
+  });
+
+  const payload = JSON.parse(response.body);
+  assert.equal(payload.ignored, true);
+  assert.equal(payload.rule, 'src/app.js');
+  assert.match(fs.readFileSync(path.join(root, '.aiignore'), 'utf8'), /^src\/app\.js$/m);
 
   fs.rmSync(root, { recursive: true, force: true });
 });

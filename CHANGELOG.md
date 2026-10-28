@@ -2,6 +2,15 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.5.0
+
+- Export `matchesAiignore()` and `parseRules()`: the guard in the Harness plugin
+  now refuses the paths a workspace's own `.aiignore` lists, including files the
+  size heuristic considers clean. A hand-written rule beats the heuristic.
+- The matcher implements a small gitignore subset — comments, trailing `/` for
+  directories, `*` within a segment, `**` across segments — and never throws on
+  a rule it does not understand.
+
 ## 0.4.0
 
 - Add `tokenEstimate` to the report: a min/max token range derived from the

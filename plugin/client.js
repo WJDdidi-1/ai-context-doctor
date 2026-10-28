@@ -45,6 +45,7 @@ window.__ModuleLoader__.load({
         verdictAllowed: 'you allowed it',
         more: 'more',
         allow: 'Read it anyway',
+        ignore: 'Never read it',
         allowFailed: 'Could not allow this file.',
         allowedNow: 'Allowed — the next read goes through.',
         attempts: 'tries',
@@ -71,6 +72,7 @@ window.__ModuleLoader__.load({
         verdictAllowed: '你放行的',
         more: '更多',
         allow: '仍要读取',
+        ignore: '以后都别读',
         allowFailed: '无法放行这个文件。',
         allowedNow: '已放行——下次读取会正常进行。',
         attempts: '次尝试',
@@ -196,13 +198,29 @@ window.__ModuleLoader__.load({
         )
       );
 
+      const ignore = (target) => {
+        setPending(target);
+        fetch('/aiignore/ignore', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ path: target })
+        })
+          .then((response) => response.json())
+          .then((payload) => {
+            if (payload.ignored === true) load();
+          })
+          .catch(() => setError(new Error('ignore-failed')))
+          .finally(() => setPending(null));
+      };
+
       const reads = (data.reads || []).slice().sort((a, b) => b.bytes - a.bytes);
       const visible = reads.slice(0, 8);
       const hidden = reads.length - visible.length;
       const readRows = visible.map((item) =>
         h('div', { key: item.path, style: styles.row },
           h('div', { style: styles.path }, item.path),
-          h('div', { style: styles.meta }, `${formatBytes(item.bytes)} · ${t(`verdict${item.verdict.charAt(0).toUpperCase()}${item.verdict.slice(1)}`)}`)
+          h('div', { style: styles.meta }, `${formatBytes(item.bytes)} · ${t(`verdict${item.verdict.charAt(0).toUpperCase()}${item.verdict.slice(1)}`)}`),
+          h('button', { type: 'button', style: styles.allow, disabled: pending === item.path, onClick: () => ignore(item.path) }, t('ignore'))
         )
       );
 

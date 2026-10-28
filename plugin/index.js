@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { scanRepository, classifyPath, estimateTokens } from 'ai-context-doctor';
+import { scanRepository, classifyPath, estimateTokens, matchesAiignore, parseRules, writeAiignore } from 'ai-context-doctor';
 import { createWorkspaceState, recordSkip, recordRead, allowPath, isAllowed, buildReport } from './report.js';
 
 /**
@@ -34,6 +34,24 @@ const BLOCKED_REASONS = new Set([
   'local log file',
   'large file'
 ]);
+
+/** Parsed `.aiignore` rules per workspace, refreshed when the file changes. */
+const ruleCache = new Map();
+
+function rulesFor(cwd) {
+  try {
+    const file = path.join(cwd, '.aiignore');
+    const stats = fs.statSync(file);
+    const cached = ruleCache.get(cwd);
+    if (cached !== undefined && cached.mtimeMs === stats.mtimeMs) return cached.rules;
+    const rules = [...parseRules(fs.readFileSync(file, 'utf8'))];
+    ruleCache.set(cwd, { mtimeMs: stats.mtimeMs, rules });
+    return rules;
+  } catch {
+    // No .aiignore yet, or unreadable: nothing extra to refuse.
+    return [];
+  }
+}
 
 /** Per-workspace record of what was skipped, so the UI can show it later. */
 const workspaces = new Map();
@@ -112,14 +130,29 @@ export function inspectRead({ root, filePath }) {
  * Pure apart from the `stat` it needs for the size rule, so it can be tested
  * without a running Harness.
  *
- * @param {{ root: string, filePath: string, policy?: string }} input
- * @returns {{ block: false } | { block: true, relativePath: string, bytes: number, reason: string, tokens: { min: number, max: number } }}
+ * @param {{ root: string, filePath: string, policy?: string, rules?: string[] }} input
+ * @returns {{ block: false } | { block: true, relativePath: string, bytes: number, reason: string, rule?: string, tokens: { min: number, max: number } }}
  */
-export function decideRead({ root, filePath, policy = 'deny' }) {
+export function decideRead({ root, filePath, policy = 'deny', rules }) {
   if (policy !== 'deny') return { block: false };
 
   const inspected = inspectRead({ root, filePath });
   if (inspected.inside !== true) return { block: false };
+
+  // The user's own file wins over the heuristic: a hand-written rule is a
+  // decision, and it can refuse files the classifier considers clean.
+  const rule = matchesAiignore(rules, inspected.relativePath);
+  if (rule !== undefined) {
+    return {
+      block: true,
+      relativePath: inspected.relativePath,
+      bytes: inspected.bytes,
+      reason: 'listed in .aiignore',
+      rule,
+      tokens: estimateTokens(inspected.bytes)
+    };
+  }
+
   if (inspected.classified.noise === undefined) return { block: false };
   if (!BLOCKED_REASONS.has(inspected.classified.noise.reason)) return { block: false };
 
@@ -204,7 +237,7 @@ export function apply(ctx, config = {}) {
       const cwd = session !== null && session !== undefined && session.meta !== undefined ? session.meta.cwd : undefined;
       if (typeof cwd !== 'string' || cwd.length === 0) return undefined;
 
-      const decision = decideRead({ root: cwd, filePath, policy: options.readPolicy });
+      const decision = decideRead({ root: cwd, filePath, policy: options.readPolicy, rules: rulesFor(cwd) });
       const state = stateFor(cwd);
 
       if (decision.block === true) {
@@ -300,6 +333,48 @@ export function apply(ctx, config = {}) {
     });
   };
 
+  const ignoreHandler = (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+    const origin = req.headers.origin;
+    if (typeof origin === 'string' && origin.length > 0 && origin !== `http://${req.headers.host}`) {
+      return sendJson(res, 403, { error: 'cross-origin' });
+    }
+    if (latestCwd === undefined) return sendJson(res, 404, { error: 'nothing-scanned' });
+
+    let body = '';
+    let tooLarge = false;
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 4096) {
+        tooLarge = true;
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      if (tooLarge) return;
+      let target;
+      try {
+        target = JSON.parse(body).path;
+      } catch {
+        return sendJson(res, 400, { error: 'bad-json' });
+      }
+      if (typeof target !== 'string' || target.length === 0) return sendJson(res, 400, { error: 'bad-path' });
+
+      const inspected = inspectRead({ root: latestCwd, filePath: target });
+      if (inspected.inside !== true) return sendJson(res, 400, { error: 'outside-workspace' });
+
+      try {
+        // Recorded in the workspace, not in plugin memory: the decision survives
+        // a restart, shows up in review, and the user can delete the line.
+        const result = writeAiignore(path.join(latestCwd, '.aiignore'), [inspected.relativePath]);
+        ruleCache.delete(latestCwd);
+        return sendJson(res, 200, { ignored: true, rule: inspected.relativePath, created: result.created, added: result.added });
+      } catch {
+        return sendJson(res, 500, { error: 'write-failed' });
+      }
+    });
+  };
+
   let routesInstalled = false;
   const installRoutes = () => {
     if (routesInstalled) return;
@@ -308,6 +383,7 @@ export function apply(ctx, config = {}) {
       if (server === null || server === undefined || typeof server.register !== 'function') return;
       server.register({ kind: 'exact', path: '/aiignore/report', handler: reportHandler });
       server.register({ kind: 'exact', path: '/aiignore/allow', handler: allowHandler });
+      server.register({ kind: 'exact', path: '/aiignore/ignore', handler: ignoreHandler });
       routesInstalled = true;
     } catch {
       // No web server in this profile: the guard still works, the panel does not.
