@@ -1,6 +1,6 @@
 {
   "name": "ai-context-doctor",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Find the files your AI coding agent should not read before sending it your repo.",
   "license": "MIT",
   "bin": {

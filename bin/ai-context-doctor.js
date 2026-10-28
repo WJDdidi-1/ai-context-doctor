@@ -4,21 +4,38 @@
 const fs = require('fs');
 const path = require('path');
 const packageInfo = require('../package.json');
-const { scanRepository, formatBytes, statusFor } = require('../lib');
+const { scanRepository, formatBytes, statusFor, writeAiignore } = require('../lib');
 
 const args = process.argv.slice(2);
+const KNOWN_FLAGS = ['--json', '--write', '--dry-run', '--help', '--version'];
+
+const unknownFlag = args.find((arg) => arg.startsWith('--') && !KNOWN_FLAGS.includes(arg));
+
+if (unknownFlag) {
+  console.error(`Unknown option: ${unknownFlag}`);
+  console.error('Run with --help to see the available options.');
+  process.exit(1);
+}
+
 const jsonOutput = args.includes('--json');
-const positional = args.filter((arg) => arg !== '--json');
+const writeOutput = args.includes('--write');
+const dryRun = args.includes('--dry-run');
+const positional = args.filter((arg) => !arg.startsWith('--'));
 const firstArg = positional[0];
 
-if (firstArg === '--help') {
+if (args.includes('--help')) {
   printHelp();
   process.exit(0);
 }
 
-if (firstArg === '--version') {
+if (args.includes('--version')) {
   console.log(packageInfo.version);
   process.exit(0);
+}
+
+if (dryRun && !writeOutput) {
+  console.error('--dry-run only applies to --write. Pass both, or drop --dry-run.');
+  process.exit(1);
 }
 
 const targetArg = firstArg;
@@ -36,10 +53,14 @@ function printHelp() {
   console.log('  --help      Show this help.');
   console.log('  --version   Print the package version.');
   console.log('  --json      Print the report as JSON for scripts and CI.');
+  console.log('  --write     Add the suggested rules to .aiignore in the scanned directory.');
+  console.log('  --dry-run   With --write, show what would be added without writing.');
   console.log('');
   console.log('Examples:');
   console.log('  node bin/ai-context-doctor.js');
   console.log('  node bin/ai-context-doctor.js ../some-repo');
+  console.log('  node bin/ai-context-doctor.js --write');
+  console.log('  node bin/ai-context-doctor.js --write --dry-run');
   console.log('');
   console.log('What it does:');
   console.log('  Scans a local directory for obvious context noise.');
@@ -98,8 +119,39 @@ assertReadableDirectory(cwd);
 
 const report = scanRepository(cwd);
 
+let writeResult = null;
+
+if (writeOutput) {
+  try {
+    writeResult = writeAiignore(path.join(cwd, '.aiignore'), report.suggestedAiignore, { dryRun });
+  } catch (error) {
+    if (jsonOutput) {
+      console.log(JSON.stringify({
+        error: error.code || 'write-failed',
+        message: error.message,
+        target: path.join(cwd, '.aiignore')
+      }, null, 2));
+      process.exit(1);
+    }
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+}
+
 if (jsonOutput) {
-  console.log(JSON.stringify(report, null, 2));
+  const output = writeResult
+    ? {
+        ...report,
+        write: {
+          path: writeResult.path,
+          created: writeResult.created,
+          added: writeResult.added,
+          written: writeResult.written,
+          dryRun: writeResult.dryRun
+        }
+      }
+    : report;
+  console.log(JSON.stringify(output, null, 2));
   process.exit(0);
 }
 
@@ -137,6 +189,27 @@ if (report.suggestedAiignore.length === 0) {
     console.log(suggestion);
   }
 }
+if (writeResult) {
+  console.log('');
+  console.log('.aiignore:');
+  const relative = path.relative(cwd, writeResult.path) || '.aiignore';
+  if (writeResult.added.length === 0) {
+    console.log(report.suggestedAiignore.length === 0
+      ? 'Nothing to suggest for this directory.'
+      : `${relative} already covers every suggestion.`);
+  } else if (writeResult.dryRun) {
+    console.log(`Would add ${writeResult.added.length} rule(s) to ${relative} (dry run, nothing written).`);
+  } else if (writeResult.created) {
+    console.log(`Created ${relative} with ${writeResult.added.length} rule(s).`);
+  } else {
+    console.log(`Added ${writeResult.added.length} rule(s) to ${relative}.`);
+  }
+}
+
 console.log('');
 console.log('Next step:');
-console.log('Run this before asking your coding agent to inspect a larger repo.');
+if (writeResult && writeResult.written) {
+  console.log('Commit .aiignore so your agent and your teammates share the same list.');
+} else {
+  console.log('Run this before asking your coding agent to inspect a larger repo.');
+}
