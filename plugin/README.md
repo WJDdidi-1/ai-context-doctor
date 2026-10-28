@@ -26,17 +26,23 @@ becomes noise itself.
 ## The panel
 
 The bundle also ships a browser half. A folder button sits beside the add-files
-button in the composer, labelled **Context** / **上下文** for screen readers.
-Hovering it offers two entries, and nothing is drawn until you pick one:
+button in the composer; clicking it opens the **right sidebar** on the
+**Context** tab, and expands the sidebar if it was collapsed. On a Host without
+sidebar services the same button opens the panel as a floating card instead, so
+one plugin covers both.
 
-- **Files** / **文件管理** — the panel opens on **the files this session touched**
-  (what the agent read and what it wrote), then lets you browse the whole
-  workspace a directory at a time. Every row shows the verdict before the agent
-  reads anything, with the size and the token range reading it would cost.
-- **Insights** / **数据分析** — the health score, the noise share, the tokens the
-  guard kept out, the reads it refused and the reads it let through; the files
-  the Host received this session; and a note field that writes
-  `.aiignore.notes.md` and pushes it to the running agent.
+Three tabs inside:
+
+- **Files** — opens on **the files this session touched** (what the agent read
+  and what it wrote), then lets you browse the whole workspace a directory at a
+  time. Search, filter by verdict, and every row carries the scanner's verdict,
+  the size and the token range reading it would cost, before the agent tries.
+- **Insights** — the health score, the noise share, the tokens the guard kept
+  out, the reads it refused and the reads it let through, and the files the Host
+  received this session.
+- **Note** — a message for the agent about this workspace. Saving writes
+  `.aiignore.notes.md` and pushes it to the running agent; the next session picks
+  it up on its own.
 
 Two decisions per file, available from the tree, the session list and the report:
 
@@ -47,15 +53,28 @@ Two decisions per file, available from the tree, the session list and the report
   durable direction, because the file is the record: it survives restarts, shows
   up in review, and you can delete the line yourself.
 
-The panel talks to the Host half over four same-origin routes
-(`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `POST /aiignore/allow`,
-`POST /aiignore/ignore`). They
+Styling comes from the Host's design tokens (`--dsw-*`) with fallbacks, so the
+panel follows light and dark themes instead of shipping its own palette. Every
+control is reachable with `Tab`, and empty, loading and error states are real
+screens rather than blank space.
+
+The panel talks to the Host half over five same-origin routes
+(`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET/POST /aiignore/notes`,
+`POST /aiignore/allow`, `POST /aiignore/ignore`). They
 answer for the most recently scanned workspace, never return file contents, and
 set `no-store`. The Host half installs them through `ctx.inject(['webServer'])`,
 so a profile without a web server still gets the read guard — it just has no panel.
 There is no authentication beyond a same-origin check: like every
 `ctx.webServer` route, this one inherits the loopback bind of the Harness and
 must not be exposed to a network.
+
+### Looking at the panel without a Harness
+
+`dev/preview.html` renders the real panel against the Host's real design tokens
+with mock data: both themes, four scenarios (noisy, healthy, freshly opened,
+request failing), and `?nosidebar=1` to see the floating-card fallback. Open the
+file in a browser; no build, no server. It is a development page and is not part
+of the published package.
 
 ## Install
 
