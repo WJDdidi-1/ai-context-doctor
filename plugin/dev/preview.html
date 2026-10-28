@@ -219,7 +219,7 @@
       const data = SCENARIOS[scenario];
       if (data === null) return record({ error: 'boom' }, 500);
 
-      if (url === '/aiignore/report') {
+      if (url.indexOf('/aiignore/report') === 0) {
         window.__lastReport = data;
         return record(data);
       }
@@ -230,7 +230,7 @@
       }
       // The Scan button: report the noisy workspace as if the host had just
       // scanned it, so the empty state can be driven end to end.
-      if (url === '/aiignore/scan') {
+      if (url.indexOf('/aiignore/scan') === 0) {
         scenario = 'noisy';
         document.querySelectorAll('[data-scenario]').forEach(function (button) {
           button.setAttribute('aria-pressed', button.getAttribute('data-scenario') === 'noisy' ? 'true' : 'false');
@@ -256,7 +256,13 @@
         const mount = function (id, path) {
           const root = document.getElementById(id);
           if (root === null) return;
-          window.ReactLite.render(window.ReactLite.createElement(component, null), root, path);
+          const props = {
+            sessionId: 'preview-session',
+            useSessions: function (select) {
+              return select({ byId: { 'preview-session': { cwd: '/Users/you/code/demo-noise' } } });
+            }
+          };
+          window.ReactLite.render(window.ReactLite.createElement(component, props), root, path);
         };
         if (definition.name === 'sidebar.right.pane.tab') mount('panel-root', 'panel');
         if (definition.name === 'conversation.input.left') mount('composer-root', 'composer');

@@ -162,3 +162,45 @@ test('scan says so when the conversation has no workspace yet', () => {
   assert.equal(response.status, 404);
   assert.equal(JSON.parse(response.body).error, 'no-workspace');
 });
+
+test('the panel may name its own workspace', () => {
+  const root = tempWorkspace();
+  const { routes } = harnessWith({});
+
+  const response = fakeResponse();
+  routes.get('/aiignore/report')(fakeRequest({ url: `/aiignore/report?cwd=${encodeURIComponent(root)}` }), response);
+  assert.equal(response.status, 200);
+  const body = JSON.parse(response.body);
+  assert.equal(body.workspace, root);
+});
+
+test('a named workspace is scanned by the scan route too', () => {
+  const root = tempWorkspace();
+  const { routes } = harnessWith({});
+
+  const response = fakeResponse();
+  routes.get('/aiignore/scan')(fakeRequest({ method: 'POST', url: `/aiignore/scan?cwd=${encodeURIComponent(root)}` }), response);
+  assert.equal(response.status, 200);
+  assert.equal(JSON.parse(response.body).workspace, root);
+});
+
+test('a named path must be an absolute directory', () => {
+  const root = tempWorkspace();
+  const file = path.join(root, 'src', 'app.js');
+  const { routes } = harnessWith({});
+
+  for (const value of ['relative/path', file, path.join(root, 'missing')]) {
+    const response = fakeResponse();
+    routes.get('/aiignore/report')(fakeRequest({ url: `/aiignore/report?cwd=${encodeURIComponent(value)}` }), response);
+    assert.equal(JSON.parse(response.body).workspace, null, value);
+  }
+});
+
+test('reads refuse a cross-origin caller', () => {
+  const root = tempWorkspace();
+  const { routes } = harnessWith({ agents: workspaceOf(root) });
+
+  const response = fakeResponse();
+  routes.get('/aiignore/report')(fakeRequest({ url: '/aiignore/report', origin: 'http://evil.example' }), response);
+  assert.equal(response.status, 403);
+});

@@ -1,3 +1,18 @@
+## 0.15.0
+
+The panel now tells the Host which conversation it belongs to.
+
+- **Fixed: Scan still answered "no workspace" after 0.14.0.** Asking
+  `ctx.agents.list()` and `ctx.sessions.list()` did not produce a directory in a
+  real profile, so the panel had nothing to scan. The slot body is rendered with
+  its `sessionId` and a `useSessions` selector — a fact only the conversation
+  itself holds — so the panel now reads its session's `cwd` and passes it to the
+  Host as `?cwd=`, on the report, the tree and the scan.
+- The Host half accepts that directory only when it is an absolute path to an
+  existing directory; anything else is ignored and the previous fallbacks
+  (registries, then the last scanned workspace) still apply.
+- Reads now refuse a cross-origin caller with 403, not just writes.
+
 ## 0.14.0
 
 The panel now finds its workspace instead of waiting to be told about it.

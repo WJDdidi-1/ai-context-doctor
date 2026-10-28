@@ -1067,6 +1067,27 @@ window.__ModuleLoader__.load({
       return 'good';
     }
 
+    /**
+     * The slot body is rendered by the Host with the session it belongs to. Read
+     * that session's directory; when the framework does not hand us one (an
+     * older Host, the preview page, a test), the panel falls back to whatever the
+     * Host half has scanned.
+     */
+    function sessionCwd(props) {
+      const holder = props === null || props === undefined ? null : props;
+      if (holder === null) return undefined;
+      const useSessions = holder.useSessions;
+      const sessionId = holder.sessionId;
+      if (typeof useSessions !== 'function' || typeof sessionId !== 'string' || sessionId === '') return undefined;
+      let cwd;
+      try {
+        cwd = useSessions((sessions) => (sessions && sessions.byId ? (sessions.byId[sessionId] || {}).cwd : undefined));
+      } catch {
+        return undefined;
+      }
+      return typeof cwd === 'string' && cwd.length > 0 ? cwd : undefined;
+    }
+
     //#endregion helpers
 
     //#region components
@@ -1131,31 +1152,35 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function useReport() {
+    function useReport(cwd) {
       const [data, setData] = useState(null);
       const [error, setError] = useState(null);
       const [at, setAt] = useState('');
       const [tree, setTree] = useState(null);
+      // The panel names the workspace it belongs to: the Host half cannot always
+      // work it out on its own, and this is the one fact the conversation knows.
+      const suffix = typeof cwd === 'string' && cwd.length > 0 ? `?cwd=${encodeURIComponent(cwd)}` : '';
 
       const loadReport = useCallback(() => {
-        fetch('/aiignore/report', { headers: { accept: 'application/json' } })
+        fetch(`/aiignore/report${suffix}`, { headers: { accept: 'application/json' } })
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => {
             setData(payload);
             setError(null);
           })
           .catch((reason) => setError(reason));
-      }, []);
+      }, [suffix]);
 
       const loadTree = useCallback((dir) => {
-        fetch(`/aiignore/tree?dir=${encodeURIComponent(dir)}`, { headers: { accept: 'application/json' } })
+        const sep = suffix === '' ? '?' : '&';
+        fetch(`/aiignore/tree?dir=${encodeURIComponent(dir)}${suffix === '' ? '' : `${sep}cwd=${encodeURIComponent(cwd)}`}`, { headers: { accept: 'application/json' } })
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => {
             setTree(payload);
             setError(null);
           })
           .catch((reason) => setError(reason));
-      }, []);
+      }, [suffix]);
 
       useEffect(() => {
         loadReport();
@@ -1625,8 +1650,9 @@ window.__ModuleLoader__.load({
     //#endregion views
 
     //#region shell
-    function Panel() {
-      const { data, error, at, setAt, tree, reload, reloadTree } = useReport();
+    function Panel(props) {
+      const cwd = sessionCwd(props);
+      const { data, error, at, setAt, tree, reload, reloadTree } = useReport(cwd);
       const [view, setView] = useState('files');
       const [pending, setPending] = useState(null);
       const [postError, setPostError] = useState(null);
@@ -1653,7 +1679,8 @@ window.__ModuleLoader__.load({
       const scan = () => {
         setPending('scan');
         setScanError(false);
-        fetch('/aiignore/scan', { method: 'POST', headers: { 'content-type': 'application/json' } })
+        const target = typeof cwd === 'string' && cwd.length > 0 ? `/aiignore/scan?cwd=${encodeURIComponent(cwd)}` : '/aiignore/scan';
+        fetch(target, { method: 'POST', headers: { 'content-type': 'application/json' } })
           .then((response) => response.json())
           .then((payload) => {
             if (payload === null || typeof payload !== 'object' || payload.workspace === undefined || payload.workspace === null) {
