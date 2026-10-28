@@ -124,7 +124,7 @@ test('the ledger separates what was read from what was refused', () => {
 
 test('report handler answers with the scanned workspace, then the allow route edits it', async () => {
   const { routes, listeners, guards } = harness();
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/client-report', '/aiignore/debug', '/aiignore/ignore', '/aiignore/notes', '/aiignore/overview', '/aiignore/report', '/aiignore/scan', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/client-report', '/aiignore/debug', '/aiignore/ignore', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
 
   const root = tempWorkspace();
   const agent = { session: { meta: { cwd: root } }, inject() {} };
@@ -254,8 +254,8 @@ test('a service that mounts late still gets the routes and the guard', async () 
   for (const entry of deferred) entry.callback(ctx);
 
   assert.equal(guards.length, 1, 'the guard installs once the tool registry appears');
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/client-report', '/aiignore/debug', '/aiignore/ignore', '/aiignore/notes', '/aiignore/overview', '/aiignore/report', '/aiignore/scan', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
-  assert.equal(late.routes.size, 12, 'a context with both services installs eagerly');
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/client-report', '/aiignore/debug', '/aiignore/ignore', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
+  assert.equal(late.routes.size, 16, 'a context with both services installs eagerly');
 });
 
 test('the tree route lists the scanned workspace, one directory at a time', () => {

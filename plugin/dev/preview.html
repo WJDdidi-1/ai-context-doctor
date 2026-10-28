@@ -155,6 +155,46 @@
       broken: null
     };
 
+    const LEVELS = [
+      { level: 1, key: 'off', label: 'Off', maxBytes: 0, categories: [], note: 'Nothing is filtered except your own rules.' },
+      { level: 2, key: 'light', label: 'Light', maxBytes: 4194304, categories: ['build'], note: 'Skips generated output and files over 4 MB.' },
+      { level: 3, key: 'balanced', label: 'Balanced', maxBytes: 1048576, categories: ['build', 'lockfile', 'log'], note: 'Skips generated output, lockfiles, logs and files over 1 MB. The recommended default.' },
+      { level: 4, key: 'strong', label: 'Strong', maxBytes: 262144, categories: ['build', 'lockfile', 'log'], note: 'Also skips files over 256 KB.' },
+      { level: 5, key: 'strict', label: 'Strict', maxBytes: 65536, categories: ['build', 'lockfile', 'log', 'large'], note: 'Also skips files over 64 KB.' }
+    ];
+
+    // Scoring, mirrored from lib/rules.js so the bars show what the Host would
+    // compute: each category can cost its weight, scaled by its share.
+    const BREAKDOWN_NOISY = [
+      { id: 'build', label: 'build output', weight: 40, bytes: 918273, share: 58, lost: 23.4 },
+      { id: 'large', label: 'large files', weight: 25, bytes: 0, share: 0, lost: 0 },
+      { id: 'lockfile', label: 'lockfiles', weight: 20, bytes: 36044, share: 2.3, lost: 0.5 },
+      { id: 'log', label: 'logs', weight: 15, bytes: 18841, share: 1.2, lost: 0.2 }
+    ];
+    const BREAKDOWN_CLEAN = [
+      { id: 'build', label: 'build output', weight: 40, bytes: 0, share: 0, lost: 0 },
+      { id: 'large', label: 'large files', weight: 25, bytes: 0, share: 0, lost: 0 },
+      { id: 'lockfile', label: 'lockfiles', weight: 20, bytes: 12044, share: 3, lost: 0.6 },
+      { id: 'log', label: 'logs', weight: 15, bytes: 0, share: 0, lost: 0 }
+    ];
+    Object.entries(SCENARIOS).forEach(([name, scenario]) => {
+      if (scenario === null) return;
+      scenario.levels = LEVELS;
+      if (typeof scenario.level !== 'number') scenario.level = 3;
+      if (!scenario.scanned) {
+        scenario.suggestedAiignore = [];
+        return;
+      }
+      if (!Array.isArray(scenario.suggestedAiignore)) {
+        scenario.suggestedAiignore = name === 'noisy' ? ['dist/', 'package-lock.json'] : [];
+      }
+      if (!scenario.scanned.scoreBreakdown) {
+        const rows = name === 'noisy' ? BREAKDOWN_NOISY : BREAKDOWN_CLEAN;
+        scenario.scanned.scoreBreakdown = rows;
+        scenario.scanned.scoreLost = Math.round(rows.reduce((sum, row) => sum + row.lost, 0) * 10) / 10;
+      }
+    });
+
     const TREES = {
       '': {
         dir: '', parent: null, total: 8, truncated: false,
@@ -282,6 +322,16 @@
       if (url === '/aiignore/ignore') return record({ ignored: true, rule: String((body && body.path) || '') });
       if (url === '/aiignore/unignore') return record({ removed: true });
       if (url === '/aiignore/notes') return record({ written: true, removed: false });
+      if (url === '/aiignore/policy') {
+        const next = Number((body && body.level) || 3);
+        LEVELS.forEach((entry) => { if (entry.level === next) window.__level = entry; });
+        return record({ level: next, levels: LEVELS, policy: 'deny' });
+      }
+      if (url === '/aiignore/optimize') {
+        const before = (window.__lastReport && window.__lastReport.scanned.healthScore) || 0;
+        return record({ added: ['dist/', 'package-lock.json'], written: true, before: before, after: 92, saved: ['dist/', 'package-lock.json'] });
+      }
+      if (url === '/aiignore/optimize/undo') return record({ undone: true, restored: 'previous' });
       return record({ error: 'unknown route' }, 404);
     };
 
