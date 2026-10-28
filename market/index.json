@@ -26,8 +26,8 @@
         "zh-cn": "dsh-aiignore"
       },
       "description": {
-        "en": "Follows the conversation: it reads the session the app is showing, audits that folder, and ranks every workspace you have used on one page in the left rail — so nothing has to be picked before the first scan.",
-        "zh": "跟随当前对话：读取应用正在展示的会话，审计它所在目录，并把用过的所有工作区按健康度排在左侧栏的一个页面里，第一次扫描之前不需要手动选择。",
+        "en": "Stops your coding agent from reading the wrong files: it scores a workspace by context noise, follows the conversation you are in, explains the score per category, filters at the strength you choose, and applies the suggested .aiignore in one click.",
+        "zh": "阻止编码代理读错文件：按上下文噪音给仓库打分，跟随你当前所在的对话，按类别解释分数，以你选择的力度过滤，并可一键写入建议的 .aiignore。",
         "zh-cn": "跟随当前对话：读取应用正在展示的会话，审计它所在目录，并把用过的所有工作区按健康度排在左侧栏的一个页面里，第一次扫描之前不需要手动选择。"
       },
       "author": "WJDdidi-1",
@@ -47,6 +47,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.18.0",
+          "publishTimestamp": 1793187810,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.17.0",
           "publishTimestamp": 1793190716,
