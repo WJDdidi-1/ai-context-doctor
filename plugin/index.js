@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { scanRepository, classifyPath, estimateTokens, matchesAiignore, parseRules, writeAiignore } from 'ai-context-doctor';
-import { createWorkspaceState, recordSkip, recordRead, allowPath, allowAnyPath, isAllowed, buildReport } from './report.js';
+import { createWorkspaceState, recordSkip, recordRead, recordWrite, allowPath, allowAnyPath, isAllowed, buildReport } from './report.js';
 import { listDirectory } from './tree.js';
 
 /**
@@ -219,16 +219,15 @@ export function formatNotice(report) {
  * @param {any} ctx Plugin context.
  * @param {{ healthThreshold?: number, maxFiles?: number, maxBytes?: number, readPolicy?: string }} [config]
  */
+const WRITE_TOOLS = new Set(['write', 'edit', 'multiedit', 'apply_patch', 'create']);
+
 export function apply(ctx, config = {}) {
   const options = { ...DEFAULTS, ...config };
   const inspected = new Set();
 
   const guard = (exec) => {
     try {
-      if (options.readPolicy !== 'deny') return undefined;
       if (exec === null || typeof exec !== 'object') return undefined;
-      // Only the file-read tool carries a path we can judge.
-      if (exec.name !== 'read') return undefined;
 
       const args = exec.arguments !== null && typeof exec.arguments === 'object' ? exec.arguments : {};
       const filePath = typeof args.file_path === 'string' ? args.file_path : args.path;
@@ -237,6 +236,25 @@ export function apply(ctx, config = {}) {
       const session = exec.agent !== null && exec.agent !== undefined ? exec.agent.session : undefined;
       const cwd = session !== null && session !== undefined && session.meta !== undefined ? session.meta.cwd : undefined;
       if (typeof cwd !== 'string' || cwd.length === 0) return undefined;
+
+      // Files this session writes are listed in the panel too, so the user sees
+      // what appeared under their feet even when nothing was ever refused.
+      if (WRITE_TOOLS.has(exec.name)) {
+        try {
+          const inspected = inspectRead({ root: cwd, filePath });
+          if (inspected.inside === true) {
+            recordWrite(stateFor(cwd), { relativePath: inspected.relativePath, bytes: inspected.bytes });
+          }
+        } catch {
+          // stat may fail while a tool is still writing; the path still counts.
+          recordWrite(stateFor(cwd), { relativePath: filePath, bytes: 0 });
+        }
+        return undefined;
+      }
+
+      if (options.readPolicy !== 'deny') return undefined;
+      // Only the file-read tool carries a path we can judge.
+      if (exec.name !== 'read') return undefined;
 
       const decision = decideRead({ root: cwd, filePath, policy: options.readPolicy, rules: rulesFor(cwd) });
       const state = stateFor(cwd);

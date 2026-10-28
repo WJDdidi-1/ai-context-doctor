@@ -29,6 +29,15 @@ window.__ModuleLoader__.load({
       en: {
         button: 'Context',
         title: 'AI context report',
+        menuFiles: 'Files',
+        menuInsights: 'Insights',
+        sessionTitle: 'Files this session touched',
+        sessionNone: 'Nothing yet — files show up here as the session reads or writes them.',
+        kindRead: 'read',
+        kindWritten: 'written',
+        kindUseful: 'source',
+        kindReview: 'review',
+        allFiles: 'Browse the workspace',
         close: 'Close',
         loading: 'Reading this workspace…',
         empty: 'No workspace scanned in this session yet.',
@@ -71,6 +80,15 @@ window.__ModuleLoader__.load({
       zh: {
         button: '上下文',
         title: 'AI 上下文报告',
+        menuFiles: '文件管理',
+        menuInsights: '数据分析',
+        sessionTitle: '本次会话碰过的文件',
+        sessionNone: '还没有——会话读取或写入文件后会出现在这里。',
+        kindRead: '已读取',
+        kindWritten: '已生成',
+        kindUseful: '源码',
+        kindReview: '需留意',
+        allFiles: '浏览工作区',
         close: '关闭',
         loading: '正在读取工作区…',
         empty: '本次会话还没有扫描任何工作区。',
@@ -180,10 +198,13 @@ window.__ModuleLoader__.load({
       name: { fontSize: '12px' },
       action: { marginTop: '8px', display: 'block', width: '100%', padding: '5px 8px', borderRadius: '6px', border: '1px solid var(--border-color, rgba(127,127,127,0.35))', background: 'transparent', color: 'inherit', font: 'inherit', fontSize: '11px', cursor: 'pointer' },
       allow: { marginTop: '6px', border: '1px solid rgba(127,127,127,0.35)', background: 'transparent', color: 'inherit', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' },
-      note: { opacity: 0.6, fontSize: '11px', marginTop: '12px' }
+      note: { opacity: 0.6, fontSize: '11px', marginTop: '12px' },
+      menu: { position: 'absolute', bottom: '34px', left: 0, zIndex: 1001, minWidth: '132px', padding: '4px', borderRadius: '10px', border: '1px solid rgba(127,127,127,0.35)', background: 'var(--panel-background, #1b1b1f)', color: 'var(--panel-foreground, #f2f2f2)', boxShadow: '0 8px 20px rgba(0,0,0,0.35)' },
+      menuItem: { display: 'block', width: '100%', padding: '6px 10px', border: 'none', borderRadius: '6px', background: 'transparent', color: 'inherit', font: 'inherit', fontSize: '12px', textAlign: 'left', cursor: 'pointer' },
+      sectionTitle: { fontWeight: 600, fontSize: '12px', marginTop: '4px' }
     };
 
-    function Report() {
+    function Report({ view }) {
       const [data, setData] = useState(null);
       const [tree, setTree] = useState(null);
       const [at, setAt] = useState('');
@@ -217,8 +238,9 @@ window.__ModuleLoader__.load({
       }, [loadSummary]);
 
       useEffect(() => {
+        if (view !== 'files') return;
         loadTree(at);
-      }, [at, loadTree]);
+      }, [at, view, loadTree]);
 
       const post = (route, target, done) => {
         setPending(target);
@@ -242,19 +264,15 @@ window.__ModuleLoader__.load({
       const ignore = (target) => post('/aiignore/ignore', target, (payload) => payload.ignored === true);
 
       if (error !== null) {
-        return h('div', null, h('div', { style: styles.title }, t('title')), h('div', { style: styles.meta }, t('allowFailed')));
+        return h('div', { style: styles.meta }, t('allowFailed'));
       }
 
       if (data === null) {
-        return h('div', { style: styles.title }, t('loading'));
-      }
-
-      if (!data.workspace) {
-        return h('div', null, h('div', { style: styles.title }, t('title')), h('div', { style: styles.meta }, t('empty')));
+        return h('div', { style: styles.meta }, t('loading'));
       }
 
       const scanned = data.scanned || {};
-      const dot = { noise: '#e0a33a', review: '#6f9fe0', dir: '#9a9a9a', source: '#4ea36b' };
+      const dot = { noise: '#e0a33a', review: '#6f9fe0', dir: '#9a9a9a', source: '#4ea36b', written: '#c77ddc' };
       const badgeLabel = (entry) => {
         if (entry.ignored === true) return t('badgeIgnored');
         if (entry.type === 'dir') return t('badgeDir');
@@ -262,6 +280,75 @@ window.__ModuleLoader__.load({
         if (entry.badge === 'review') return t('badgeReview');
         return t('badgeSource');
       };
+
+      const detail = selected === null
+        ? h('div', { style: styles.meta }, t('pickHint'))
+        : h('div', null,
+            h('div', { style: styles.path }, selected.name || selected.path),
+            h('div', { style: styles.meta }, selected.path),
+            selected.badge !== undefined ? h('div', { style: styles.meta }, badgeLabel(selected)) : null,
+            h('div', { style: { ...styles.meta, marginTop: '8px' } }, `${t('sizeLabel')} · ${formatBytes(selected.bytes)}`),
+            h('div', { style: styles.meta }, `${t('tokensLabel')} · ${formatTokens(selected.tokens)}`),
+            selected.read === true ? h('div', { style: styles.meta }, t('statusRead')) : null,
+            selected.blocked === true ? h('div', { style: styles.meta }, `${t('statusBlocked')} ${selected.tries}×`) : null,
+            h('button', { type: 'button', style: styles.action, disabled: pending === selected.path, onClick: () => allow(selected.path) }, t('readOnce')),
+            h('button', { type: 'button', style: styles.action, disabled: pending === selected.path, onClick: () => ignore(selected.path) }, t('ignore'))
+          );
+
+      const metrics = h('div', { style: styles.grid },
+        h('div', { style: styles.cell }, h('div', { style: styles.label }, t('score')), h('div', { style: styles.value }, typeof scanned.healthScore === 'number' ? `${scanned.healthScore}/100` : '—')),
+        h('div', { style: styles.cell }, h('div', { style: styles.label }, t('noise')), h('div', { style: styles.value }, typeof scanned.noisePercent === 'number' ? `${scanned.noisePercent}%` : '—')),
+        h('div', { style: styles.cell }, h('div', { style: styles.label }, t('saved')), h('div', { style: styles.value }, formatTokens(data.savedTokens)))
+      );
+
+      const skippedRows = (data.skipped || []).map((item) =>
+        h('div', { key: item.path, style: styles.row },
+          h('div', { style: styles.path }, item.path),
+          h('div', { style: styles.meta }, `${formatBytes(item.bytes)} · ${item.reason} · ${item.attempts} ${t('attempts')}`),
+          h('button', { type: 'button', style: styles.allow, disabled: pending === item.path, onClick: () => allow(item.path) }, t('allow'))
+        )
+      );
+      const readRows = (data.reads || []).map((item) =>
+        h('div', { key: item.path, style: styles.row },
+          h('div', { style: styles.path }, item.path),
+          h('div', { style: styles.meta }, `${formatBytes(item.bytes)} · ${t(item.verdict === 'review' ? 'verdictReview' : item.verdict === 'allowed' ? 'verdictAllowed' : 'verdictUseful')}`),
+          h('button', { type: 'button', style: styles.allow, disabled: pending === item.path, onClick: () => ignore(item.path) }, t('ignore'))
+        )
+      );
+
+      if (view === 'insights') {
+        return h('div', null,
+          data.workspace ? h('div', { style: styles.meta }, data.workspace) : null,
+          metrics,
+          h('div', { style: styles.sectionTitle }, t('skippedTitle')),
+          skippedRows.length > 0 ? skippedRows : h('div', { style: styles.meta }, t('skippedNone')),
+          h('div', { style: styles.sectionTitle }, t('readsTitle')),
+          readRows.length > 0 ? readRows : h('div', { style: styles.meta }, t('readsNone')),
+          h('div', { style: styles.note }, data.policy === 'deny' ? t('policyDeny') : t('policyOff')),
+          h('div', { style: styles.note }, t('tokensHint'))
+        );
+      }
+
+      const sessionFiles = (data.sessionFiles || []).slice(0, 8).map((item) =>
+        h('button', {
+          key: item.path,
+          type: 'button',
+          style: selected !== null && selected.path === item.path ? { ...styles.rowButton, ...styles.rowActive } : styles.rowButton,
+          onClick: () => setSelected({ ...item, name: item.path.split('/').pop() })
+        },
+          h('span', { style: { display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 } },
+            h('span', { style: { ...styles.dot, background: dot[item.kind === 'written' ? 'written' : item.kind === 'review' ? 'review' : 'source'] } }),
+            h('span', { style: { ...styles.name, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, item.path),
+            h('span', { style: styles.meta }, t(item.kind === 'written' ? 'kindWritten' : item.kind === 'review' ? 'kindReview' : 'kindRead'))
+          ),
+          h('span', { style: styles.meta }, formatBytes(item.bytes))
+        )
+      );
+
+      const sessionSection = h('div', null,
+        h('div', { style: styles.sectionTitle }, t('sessionTitle')),
+        sessionFiles.length > 0 ? sessionFiles : h('div', { style: styles.meta }, t('sessionNone'))
+      );
 
       const crumbs = [];
       const parts = at === '' ? [] : at.split('/');
@@ -283,7 +370,7 @@ window.__ModuleLoader__.load({
               setAt(entry.path);
               setSelected(null);
             } else {
-              setSelected(entry);
+              setSelected({ ...entry, name: entry.name });
             }
           }
         },
@@ -296,27 +383,10 @@ window.__ModuleLoader__.load({
         )
       );
 
-      const detail = selected === null
-        ? h('div', { style: styles.meta }, t('pickHint'))
-        : h('div', null,
-            h('div', { style: styles.path }, selected.name),
-            h('div', { style: styles.meta }, selected.path),
-            h('div', { style: styles.meta }, badgeLabel(selected)),
-            h('div', { style: { ...styles.meta, marginTop: '8px' } }, `${t('sizeLabel')} · ${formatBytes(selected.bytes)}`),
-            h('div', { style: styles.meta }, `${t('tokensLabel')} · ${formatTokens(selected.tokens)}`),
-            selected.read === true ? h('div', { style: styles.meta }, t('statusRead')) : null,
-            selected.blocked === true ? h('div', { style: styles.meta }, `${t('statusBlocked')} ${selected.tries}×`) : null,
-            h('button', { type: 'button', style: styles.action, disabled: pending === selected.path, onClick: () => allow(selected.path) }, t('readOnce')),
-            h('button', { type: 'button', style: styles.action, disabled: pending === selected.path, onClick: () => ignore(selected.path) }, t('ignore'))
-          );
-
       return h('div', null,
-        h('div', { style: styles.meta }, data.workspace),
-        h('div', { style: styles.grid },
-          h('div', { style: styles.cell }, h('div', { style: styles.label }, t('score')), h('div', { style: styles.value }, typeof scanned.healthScore === 'number' ? `${scanned.healthScore}/100` : '—')),
-          h('div', { style: styles.cell }, h('div', { style: styles.label }, t('noise')), h('div', { style: styles.value }, typeof scanned.noisePercent === 'number' ? `${scanned.noisePercent}%` : '—')),
-          h('div', { style: styles.cell }, h('div', { style: styles.label }, t('saved')), h('div', { style: styles.value }, formatTokens(data.savedTokens)))
-        ),
+        data.workspace ? h('div', { style: styles.meta }, data.workspace) : null,
+        sessionSection,
+        h('div', { style: { ...styles.sectionTitle, marginTop: '12px' } }, t('allFiles')),
         h('div', { style: styles.crumb }, crumbs),
         h('div', { style: styles.body },
           h('div', { style: styles.list },
@@ -325,7 +395,6 @@ window.__ModuleLoader__.load({
           ),
           h('div', { style: styles.detail }, detail)
         ),
-        h('div', { style: styles.note }, data.policy === 'deny' ? t('policyDeny') : t('policyOff')),
         h('div', { style: styles.note }, t('tokensHint'))
       );
     }
@@ -347,18 +416,37 @@ window.__ModuleLoader__.load({
 
     function Dock() {
       const [open, setOpen] = useState(false);
+      const [view, setView] = useState('files');
+      const [hover, setHover] = useState(false);
       const label = tr('button');
+      const pick = (next) => {
+        setView(next);
+        setOpen(true);
+        setHover(false);
+      };
       return h(React.Fragment, null,
-        h('button', { type: 'button', style: styles.button, title: label, 'aria-label': label, onClick: () => setOpen((value) => !value) },
-          h(FolderIcon, null)
+        h('span', {
+          style: { position: 'relative', display: 'inline-flex' },
+          onMouseEnter: () => setHover(true),
+          onMouseLeave: () => setHover(false)
+        },
+          h('button', { type: 'button', style: styles.button, title: label, 'aria-label': label, onClick: () => setOpen((value) => !value) },
+            h(FolderIcon, null)
+          ),
+          hover && open === false
+            ? h('div', { style: styles.menu },
+                h('button', { type: 'button', style: styles.menuItem, onClick: () => pick('files') }, tr('menuFiles')),
+                h('button', { type: 'button', style: styles.menuItem, onClick: () => pick('insights') }, tr('menuInsights'))
+              )
+            : null
         ),
         open
           ? h('div', { style: { ...styles.overlay, ...styles.wide } },
               h('div', { style: styles.header },
-                h('span', null, tr('title')),
+                h('span', null, `${tr('title')} · ${tr(view === 'files' ? 'menuFiles' : 'menuInsights')}`),
                 h('button', { type: 'button', style: styles.close, onClick: () => setOpen(false) }, '×')
               ),
-              h(Report, null)
+              h(Report, { view })
             )
           : null
       );
