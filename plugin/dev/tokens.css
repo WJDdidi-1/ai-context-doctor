@@ -1,0 +1,74 @@
+/* Design tokens mirrored from the host theme package, for dev/preview.html only.
+ * These are the host's own light and dark bindings, resolved one level, so the
+ * preview renders with the real values. The shipped panel never sets them.
+ */
+
+:root{
+  --dsw-alias-label-primary: #0f1115;
+  --dsw-alias-label-secondary: #61666b;
+  --dsw-alias-label-tertiary: #81858c;
+  --dsw-alias-label-caption: #adb2b8;
+  --dsw-alias-label-dimmed: #e1e5ee;
+  --dsw-alias-label-primary-foreground: #fff;
+  --dsw-alias-bg-base: #fff;
+  --dsw-alias-bg-layer-1: #fff;
+  --dsw-alias-bg-layer-2: #fff;
+  --dsw-alias-bg-skeleton: #0000000a;
+  --dsw-alias-bg-overlay: #e9ecf2;
+  --dsw-alias-border-l1: #0000000a;
+  --dsw-alias-border-l2: #0000001a;
+  --dsw-alias-border-l3: #0000001f;
+  --dsw-alias-border-l4: #00000029;
+  --dsw-alias-interactive-bg-hover: #2631480f;
+  --dsw-alias-interactive-bg-active: #2631481a;
+  --dsw-alias-interactive-bg-hover-accent: #26314824;
+  --dsw-alias-interactive-bg-hover-danger: #ec13130d;
+  --dsw-alias-state-business-primary: #4176e6;
+  --dsw-alias-state-business-tertiary: #e4edfd;
+  --dsw-alias-state-success-primary: #22c55e;
+  --dsw-alias-state-success-tertiary: #e6faed;
+  --dsw-alias-state-warn-primary: #f59e0b;
+  --dsw-alias-state-warn-label: #dd8629;
+  --dsw-alias-state-warn-tertiary: #fef5e7;
+  --dsw-alias-state-error-primary: #ec1313;
+  --dsw-alias-scrollbar-bg-l1: #e5e5e5;
+  --dsw-alias-scrollbar-hover-l1: #d4d4d4;
+  --dsw-focus-ring-color: var(--dsw-alias-state-business-primary);
+  --ds-font-family-code: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --dsw-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+}
+
+[data-theme="dark"]{
+  --dsw-alias-label-primary: #f9fafb;
+  --dsw-alias-label-secondary: #cfd3d6;
+  --dsw-alias-label-tertiary: #adb2b8;
+  --dsw-alias-label-caption: #81858c;
+  --dsw-alias-label-dimmed: #43454a;
+  --dsw-alias-label-primary-foreground: #0f1115;
+  --dsw-alias-bg-base: #151517;
+  --dsw-alias-bg-layer-1: #232324;
+  --dsw-alias-bg-layer-2: #2c2c2e;
+  --dsw-alias-bg-skeleton: #ffffff14;
+  --dsw-alias-bg-overlay: #61666b;
+  --dsw-alias-border-l1: #ffffff0f;
+  --dsw-alias-border-l2: #ffffff1f;
+  --dsw-alias-border-l3: #ffffff29;
+  --dsw-alias-border-l4: #fff3;
+  --dsw-alias-interactive-bg-hover: #ffffff14;
+  --dsw-alias-interactive-bg-active: #ffffff24;
+  --dsw-alias-interactive-bg-hover-accent: #ffffff3d;
+  --dsw-alias-interactive-bg-hover-danger: #f25a5a26;
+  --dsw-alias-state-business-primary: #7aaaff;
+  --dsw-alias-state-business-tertiary: #34415b;
+  --dsw-alias-state-success-primary: #22c55e;
+  --dsw-alias-state-success-tertiary: #233c2c;
+  --dsw-alias-state-warn-primary: #f59e0b;
+  --dsw-alias-state-warn-label: #dd8629;
+  --dsw-alias-state-warn-tertiary: #27241f;
+  --dsw-alias-state-error-primary: #f25a5a;
+  --dsw-alias-scrollbar-bg-l1: #3c3c3d;
+  --dsw-alias-scrollbar-hover-l1: #545557;
+  --dsw-focus-ring-color: var(--dsw-alias-state-business-primary);
+  --ds-font-family-code: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --dsw-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+}

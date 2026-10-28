@@ -1,3 +1,34 @@
+## 0.11.0
+
+The panel moved out of a floating box and into the right sidebar, and it now
+looks like the rest of the app instead of like a widget.
+
+- **The report is a sidebar tab.** The folder button in the composer opens the
+  right sidebar on the tab (and expands the sidebar if it is collapsed). When a
+  host has no sidebar services, the button falls back to the old floating panel,
+  so one plugin still works on both.
+- **Three tabs: Files, Insights, Note.** Files decides what may be read,
+  Insights reports what was read, Note is the message to the agent.
+- **Styled from the Host's design tokens.** Every color, radius, shadow and font
+  comes from `--dsw-*` variables with a fallback, so light and dark themes both
+  look right; the old hard-coded dark palette is gone.
+- Type hierarchy instead of one 12px size: 11px section labels, 13px rows,
+  20px figures with tabular numerals.
+- Icons are 14px line icons drawn inline; status shows as an icon plus a word,
+  not as a color dot alone.
+- Search, the four filter chips, the session file list, the breadcrumb and the
+  detail card all work from the keyboard: `Tab` reaches every control, `Enter`
+  activates, focus rings come from the Host.
+- Empty, loading and error states are real screens: a skeleton while the first
+  report loads, a centered empty state, and an error state with a human sentence
+  and a retry button.
+- The panel no longer repeats its own title — the tab title carries it.
+- `plugin/dev/preview.html` renders the panel against the Host's real tokens
+  with mock data, in both themes, without a Harness running. It is a development
+  page and is not part of the published package.
+- Guarded registration: a host without slots, without a sidebar, or with
+  services that mount late loads the plugin instead of failing.
+
 ## 0.10.0
 
 - Files you upload during a session now appear in **Insights**, under "Files

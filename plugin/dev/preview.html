@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI context panel — preview</title>
+<link rel="stylesheet" href="./tokens.css" />
+<style>
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--dsw-font-family, -apple-system, "Segoe UI", sans-serif);
+    background: var(--dsw-alias-bg-overlay, #f4f5f7);
+    color: var(--dsw-alias-label-primary, #0f1115);
+  }
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,0.06));
+    background: var(--dsw-alias-bg-base, #fff);
+  }
+  .toolbar strong { font-weight: 600; font-size: 12px; margin-right: 4px; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar button {
+    font: inherit; font-size: 12px;
+    padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,0.1));
+    background: transparent; color: var(--dsw-alias-label-secondary, #61666b);
+  }
+  .toolbar button[aria-pressed="true"] {
+    background: var(--dsw-alias-state-business-primary, #4d6bfe);
+    border-color: transparent;
+    color: #fff;
+  }
+  .stage {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    height: calc(100vh - 45px);
+  }
+  .main {
+    display: flex; flex-direction: column;
+    gap: 12px; padding: 24px;
+    color: var(--dsw-alias-label-caption, #adb2b8);
+    font-size: 13px;
+  }
+  .bubble {
+    max-width: 520px; padding: 10px 14px;
+    border-radius: var(--dsw-radius-md, 12px);
+    background: var(--dsw-alias-bg-layer-1, #fff);
+    border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,0.06));
+    color: var(--dsw-alias-label-secondary, #61666b);
+  }
+  .composer {
+    margin-top: auto;
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 10px;
+    border-radius: var(--dsw-radius-lg, 16px);
+    border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,0.1));
+    background: var(--dsw-alias-bg-base, #fff);
+  }
+  .composer .plus {
+    width: 26px; height: 26px; border-radius: 8px;
+    display: grid; place-items: center;
+    color: var(--dsw-alias-label-tertiary, #81858c);
+  }
+  .composer .hint {
+    flex: 1; font-size: 13px; color: var(--dsw-alias-label-caption, #adb2b8);
+  }
+  aside {
+    border-left: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,0.06));
+    background: var(--dsw-alias-bg-base, #fff);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  #panel-root { flex: 1; min-height: 0; display: flex; }
+  #panel-root > * { flex: 1; min-width: 0; }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <strong>Preview</strong>
+    <span>scenario</span>
+    <button data-scenario="noisy" aria-pressed="true">noisy repo</button>
+    <button data-scenario="healthy" aria-pressed="false">healthy repo</button>
+    <button data-scenario="fresh" aria-pressed="false">nothing scanned</button>
+    <button data-scenario="broken" aria-pressed="false">request fails</button>
+    <span class="spacer"></span>
+    <button id="theme">dark</button>
+  </div>
+
+  <div class="stage">
+    <div class="main">
+      <div class="bubble">A mock conversation, so the composer row is where it really is.</div>
+      <div class="composer" id="composer-root">
+        <span class="plus">+</span>
+        <span class="hint">Ask, or drop a file…</span>
+      </div>
+    </div>
+    <aside>
+      <div id="chip-root" style="padding: 8px 12px; border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,0.06));"></div>
+      <div id="panel-root"></div>
+    </aside>
+  </div>
+
+  <script src="./react-lite.js"></script>
+  <script>
+    // ---- mock host data -------------------------------------------------
+    const now = Date.now();
+    const TOK = (bytes) => ({ min: Math.round(bytes / 4), max: Math.round(bytes / 3.2), bytes });
+
+    const SCENARIOS = {
+      noisy: {
+        workspace: '/Users/you/code/demo-noise',
+        scanned: { files: 8, bytes: 1572864, healthScore: 22, noisePercent: 78, tokenEstimate: TOK(1572864) },
+        skipped: [
+          { path: 'dist/bundle.js', bytes: 918273, reason: 'generated build output', attempts: 2 },
+          { path: 'package-lock.json', bytes: 36044, reason: 'lockfile', attempts: 1 },
+          { path: 'logs/dev.log', bytes: 18841, reason: 'local log file', attempts: 1 }
+        ],
+        reads: [
+          { path: 'src/index.js', bytes: 2048, verdict: 'useful' },
+          { path: 'src/legacy.js', bytes: 90112, verdict: 'review' },
+          { path: 'src/gen/schema.js', bytes: 6144, verdict: 'allowed' }
+        ],
+        sessionFiles: [
+          { path: 'docs/plan.md', bytes: 4096, kind: 'written', tokens: TOK(4096) },
+          { path: 'src/index.js', bytes: 2048, kind: 'read', tokens: TOK(2048) },
+          { path: 'src/legacy.js', bytes: 90112, kind: 'read', tokens: TOK(90112) }
+        ],
+        savedTokens: TOK(973158),
+        uploads: [
+          { name: 'f4ff838c', bytes: 18026, type: 'webp', receivedAt: now - 12 * 60000 },
+          { name: '9c2e1ab4', bytes: 20480, type: 'pdf', receivedAt: now - 3 * 60000 }
+        ],
+        notes: 'Prefer lib/ over legacy/. Never read dist/.'
+      },
+      healthy: {
+        workspace: '/Users/you/code/clean-app',
+        scanned: { files: 42, bytes: 380000, healthScore: 91, noisePercent: 4, tokenEstimate: TOK(380000) },
+        skipped: [{ path: 'pnpm-lock.yaml', bytes: 12044, reason: 'lockfile', attempts: 1 }],
+        reads: [{ path: 'src/app.ts', bytes: 5120, verdict: 'useful' }],
+        sessionFiles: [{ path: 'src/app.ts', bytes: 5120, kind: 'read', tokens: TOK(5120) }],
+        savedTokens: TOK(12044),
+        uploads: [],
+        notes: ''
+      },
+      fresh: { workspace: null, skipped: [], allowed: [], savedTokens: TOK(0) },
+      broken: null
+    };
+
+    const TREES = {
+      '': {
+        dir: '', parent: null, total: 8, truncated: false,
+        entries: [
+          { name: 'src', path: 'src', type: 'dir', bytes: 0, badge: 'useful', ignored: false },
+          { name: 'dist', path: 'dist', type: 'dir', bytes: 918273, badge: 'noise', reason: 'generated build output', ignored: false },
+          { name: 'docs', path: 'docs', type: 'dir', bytes: 4096, badge: 'useful', ignored: false },
+          { name: 'package-lock.json', path: 'package-lock.json', type: 'file', bytes: 36044, badge: 'noise', reason: 'lockfile', ignored: true },
+          { name: 'README.md', path: 'README.md', type: 'file', bytes: 6210, badge: 'useful', ignored: false },
+          { name: '.env.example', path: '.env.example', type: 'file', bytes: 412, badge: 'review', ignored: false },
+          { name: 'big-export.json', path: 'big-export.json', type: 'file', bytes: 4194304, badge: 'noise', reason: 'large file', ignored: false },
+          { name: 'dev.log', path: 'dev.log', type: 'file', bytes: 18841, badge: 'noise', reason: 'local log file', ignored: false }
+        ]
+      },
+      src: {
+        dir: 'src', parent: '', total: 3, truncated: false,
+        entries: [
+          { name: 'gen', path: 'src/gen', type: 'dir', bytes: 0, badge: 'useful', ignored: false },
+          { name: 'index.js', path: 'src/index.js', type: 'file', bytes: 2048, badge: 'useful', ignored: false },
+          { name: 'legacy.js', path: 'src/legacy.js', type: 'file', bytes: 90112, badge: 'review', ignored: false }
+        ]
+      },
+      'src/gen': {
+        dir: 'src/gen', parent: 'src', total: 1, truncated: false,
+        entries: [
+          { name: 'schema.js', path: 'src/gen/schema.js', type: 'file', bytes: 6144, badge: 'noise', reason: 'generated build output', ignored: false }
+        ]
+      }
+    };
+
+    let scenario = 'noisy';
+    const calls = [];
+
+    window.fetch = function (url, init) {
+      const method = (init && init.method) || 'GET';
+      calls.push(method + ' ' + url);
+      const record = (body, status) =>
+        Promise.resolve({
+          ok: status === undefined || status < 400,
+          status: status || 200,
+          json: () => Promise.resolve(body)
+        });
+
+      const data = SCENARIOS[scenario];
+      if (data === null) return record({ error: 'boom' }, 500);
+
+      if (url === '/aiignore/report') {
+        window.__lastReport = data;
+        return record(data);
+      }
+
+      if (url.indexOf('/aiignore/tree') === 0) {
+        const dir = decodeURIComponent((url.split('dir=')[1] || ''));
+        return record(TREES[dir] || { dir, parent: '', total: 0, truncated: false, entries: [] });
+      }
+      if (url === '/aiignore/allow') return record({ allowed: true });
+      if (url === '/aiignore/ignore') return record({ ignored: true });
+      if (url === '/aiignore/notes') return record({ written: true, removed: false });
+      return record({ error: 'unknown route' }, 404);
+    };
+
+    // ---- mock host: services, slots, locale -----------------------------
+    const dicts = {};
+    let language = 'en';
+
+    const slots = {
+      inject: function (name, register) { register(); },
+      register: function (definition, component) {
+        const mount = function (id, path) {
+          const root = document.getElementById(id);
+          if (root === null) return;
+          window.ReactLite.render(window.ReactLite.createElement(component, null), root, path);
+        };
+        if (definition.name === 'sidebar.right.pane.tab') mount('panel-root', 'panel');
+        if (definition.name === 'conversation.input.left') mount('composer-root', 'composer');
+        if (definition.name === 'sidebar.right.pane.tab.title') {
+          const root = document.getElementById('chip-root');
+          if (root !== null) {
+            window.ReactLite.render(window.ReactLite.createElement(component, null), root, 'chip');
+          }
+        }
+        return function () {};
+      }
+    };
+
+    const hostCtx = {
+      locale: {
+        register: function (ns, dict) { dicts[ns] = dict; },
+        bind: function (ns) {
+          return function (key) {
+            const dict = dicts[ns] || {};
+            const table = dict[language] || dict.en || {};
+            return table[key] === undefined ? key : table[key];
+          };
+        }
+      },
+      slots: slots,
+      sidebarRightTabs: { register: function () { return function () {}; } },
+      sidebarRight: location.search.indexOf('nosidebar') !== -1
+        ? undefined
+        : { openTab: function () { /* the pane is already mounted */ } },
+      inject: function (deps, callback) {
+        if (location.search.indexOf('nosidebar') !== -1 && deps.indexOf('sidebarRight') !== -1) return;
+        callback({
+          slots: slots,
+          sidebarRightTabs: hostCtx.sidebarRightTabs,
+          sidebarRight: hostCtx.sidebarRight,
+          effect: function (run) { run(); return function () {}; }
+        });
+      },
+      effect: function (run) { return run(); }
+    };
+
+    // ---- load the real plugin ------------------------------------------
+    window.__ModuleLoader__ = {
+      load: function (definition) {
+        const panel = definition.factory(function (name) {
+          if (name === 'react') return window.ReactLite;
+          throw new Error('preview has no module ' + name);
+        });
+        panel.apply(hostCtx);
+        window.__panel = panel;
+      }
+    };
+  </script>
+  <script src="../client.js"></script>
+  <script>
+    // ---- controls -------------------------------------------------------
+    document.querySelectorAll('[data-scenario]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        scenario = button.getAttribute('data-scenario');
+        document.querySelectorAll('[data-scenario]').forEach(function (other) {
+          other.setAttribute('aria-pressed', other === button ? 'true' : 'false');
+        });
+        window.ReactLite.rerender();
+      });
+    });
+
+    document.getElementById('theme').addEventListener('click', function () {
+      const dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      this.textContent = dark ? 'light' : 'dark';
+    });
+
+    window.__preview = {
+      scenario: function (name) {
+        scenario = name;
+        document.querySelectorAll('[data-scenario]').forEach(function (button) {
+          button.setAttribute('aria-pressed', button.getAttribute('data-scenario') === name ? 'true' : 'false');
+        });
+        window.ReactLite.rerender();
+      },
+      tab: function (index) {
+        const tabs = document.querySelectorAll('.aicd-tab');
+        if (tabs[index]) tabs[index].click();
+      },
+      theme: function (name) {
+        document.documentElement.setAttribute('data-theme', name);
+        document.getElementById('theme').textContent = name === 'dark' ? 'light' : 'dark';
+      },
+      row: function (path) {
+        const rows = Array.prototype.slice.call(document.querySelectorAll('.aicd-row'));
+        const hit = rows.find(function (row) { return row.textContent.indexOf(path) !== -1; });
+        if (hit) hit.click();
+      },
+      calls: calls
+    };
+
+    window.__calls = calls;
+  </script>
+</body>
+</html>
