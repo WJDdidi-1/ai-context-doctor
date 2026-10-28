@@ -26,6 +26,29 @@ if (!entry || !fs.existsSync(path.join(root, entry))) {
   }
 }
 
+// The browser half is optional, but once declared it must resolve: the client
+// module loader fails the whole plugin row when the import 404s.
+const clientExport = manifest.exports?.['./client'];
+if (clientExport !== undefined) {
+  const clientFile = path.join(root, clientExport.replace('./', ''));
+  if (!fs.existsSync(clientFile)) {
+    problems.push(`exports["./client"] points at missing file ${clientExport}`);
+  } else {
+    const source = fs.readFileSync(clientFile, 'utf8');
+    if (!source.includes('__ModuleLoader__.load')) {
+      problems.push('client module does not call window.__ModuleLoader__.load');
+    }
+  }
+  if (manifest.dsh?.client?.platform !== 'web') {
+    problems.push('dsh.client.platform must be "web" when exports["./client"] is declared');
+  }
+  for (const dependency of manifest.dsh?.client?.inject ?? []) {
+    if (!dependency.startsWith('@deepseek-ai/')) {
+      problems.push(`dsh.client.inject lists ${dependency}, which is not a Harness client package`);
+    }
+  }
+}
+
 if (!manifest.exports?.['./icon']) {
   problems.push('exports["./icon"] is missing, so the plugin row has no icon');
 } else {

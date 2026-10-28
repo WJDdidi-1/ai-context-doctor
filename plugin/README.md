@@ -23,6 +23,25 @@ Do not read those files unless the task needs them; ask before opening large gen
 Clean workspaces get no message at all — a plugin that speaks on every session
 becomes noise itself.
 
+## The panel
+
+The bundle also ships a browser half. A **Context** button sits in the composer
+dock; nothing is drawn until you click it. The panel then shows this
+workspace's numbers — health score, noise share, and the tokens the guard kept
+out — and one row per refused read, each with a **Read it anyway** button.
+
+Allowing a file applies to that file only, for the rest of the Host run: the
+next read goes through and nothing else changes. Reloading the Harness forgets
+it, which is the honest default — a permanent allowlist belongs in `.aiignore`,
+where you can review it in git.
+
+The panel talks to the Host half over two same-origin routes
+(`GET /aiignore/report`, `POST /aiignore/allow`). They answer for the most
+recently scanned workspace, never return file contents, and set `no-store`.
+There is no authentication beyond a same-origin check: like every
+`ctx.webServer` route, this one inherits the loopback bind of the Harness and
+must not be exposed to a network.
+
 ## Install
 
 Through the Plugin Manager:
@@ -108,3 +127,7 @@ list what this session did not open.
   intercepted: the guard only sees the `read` tool.
 - `.gitignore` is ignored on purpose: the point is what the agent *would* read,
   not what git tracks.
+- The panel reports the last workspace scanned in this Host run. With several
+  workspaces open it can trail the one you are looking at.
+- Switching the interface language takes effect the next time the panel opens;
+  the open panel does not re-render.
