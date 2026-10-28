@@ -1,3 +1,24 @@
+## 0.12.0
+
+Three things the panel could describe but not do.
+
+- **Uploads are visible.** Images the user dropped into the composer appear as
+  thumbnails, grouped by day (Today / Yesterday / date), newest first. The route
+  behind them (`GET /aiignore/upload?digest=`) serves only content inside the
+  attachment store, only image types, re-checked against the digest — and it
+  answers 404 for anything that is not a 64-hex digest.
+- **A note can start from a template.** Three one-click starting points (entry
+  point, what to skip, how to check) insert a sentence into the note instead of
+  making the user write it from scratch; the note still round-trips through
+  `.aiignore.notes.md` as before.
+- **The report can leave the window.** "Export report (.md)" writes a Markdown
+  copy of the current report — refused reads, reads, session files, uploads and
+  the note — through a client-side download, so nothing new needs to be served.
+- The browser half now declares named regions (`copy`, `styles`, `helpers`,
+  `components`, `views`, `shell`, `registration`). It ships as a single file
+  because the Harness loads it with `__ModuleLoader__.load({ factory })` and
+  there is no build step; a test keeps the regions in order and bounded.
+
 ## 0.11.0
 
 The panel moved out of a floating box and into the right sidebar, and it now

@@ -322,6 +322,7 @@ export function recentUploads(since, home = dshHome()) {
         if (!stats.isFile() || stats.mtimeMs < since) continue;
         found.push({
           name: name.slice(0, 8),
+          digest: name,
           bytes: stats.size,
           type: guessType(absolute),
           receivedAt: Math.round(stats.mtimeMs)
@@ -333,6 +334,34 @@ export function recentUploads(since, home = dshHome()) {
   }
   return found.sort((left, right) => right.receivedAt - left.receivedAt).slice(0, UPLOAD_LIMIT);
 }
+
+/**
+ * One stored upload, addressed by content digest.
+ *
+ * The path is derived from a validated 64-hex digest and re-checked against the
+ * objects directory, so a request cannot walk out of it.
+ *
+ * @param {string} digest
+ * @param {string} [home]
+ * @returns {{ absolute: string, type: string } | null}
+ */
+export function uploadFile(digest, home = dshHome()) {
+  if (typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest)) return null;
+  const root = path.join(home, 'attachments', 'v1', 'objects');
+  const absolute = path.join(root, digest.slice(0, 2), digest);
+  const within = path.relative(root, absolute);
+  if (within.startsWith('..') || path.isAbsolute(within)) return null;
+  try {
+    const stats = fs.statSync(absolute);
+    if (!stats.isFile()) return null;
+    return { absolute, type: guessType(absolute) };
+  } catch {
+    return null;
+  }
+}
+
+const IMAGE_TYPES = new Set(['png', 'jpeg', 'webp', 'gif']);
+const IMAGE_LIMIT = 12 * 1024 * 1024;
 
 function guessType(absolute) {
   try {
@@ -606,6 +635,35 @@ export function apply(ctx, config = {}) {
     });
   };
 
+  const uploadHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    const url = new URL(req.url, 'http://localhost');
+    const found = uploadFile(url.searchParams.get('digest') || '');
+    if (found === null) return sendJson(res, 404, { error: 'no-such-upload' });
+    if (!IMAGE_TYPES.has(found.type)) return sendJson(res, 415, { error: 'not-an-image' });
+    let stats;
+    try {
+      stats = fs.statSync(found.absolute);
+    } catch {
+      return sendJson(res, 404, { error: 'no-such-upload' });
+    }
+    if (stats.size > IMAGE_LIMIT) return sendJson(res, 413, { error: 'too-large' });
+    let body;
+    try {
+      body = fs.readFileSync(found.absolute);
+    } catch {
+      return sendJson(res, 404, { error: 'no-such-upload' });
+    }
+    res.statusCode = 200;
+    // A thumbnail of a file the user just uploaded, not a public asset: keep it
+    // private to this browser and make sure nothing sniffs it into HTML.
+    res.setHeader('Content-Type', `image/${found.type === 'jpeg' ? 'jpeg' : found.type}`);
+    res.setHeader('Content-Length', String(body.length));
+    res.setHeader('Cache-Control', 'private, max-age=60');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.end(body);
+  };
+
   let routesInstalled = false;
   const installRoutes = (serviceCtx) => {
     if (routesInstalled) return;
@@ -617,6 +675,7 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/tree', handler: treeHandler });
       server.register({ kind: 'exact', path: '/aiignore/allow', handler: allowHandler });
       server.register({ kind: 'exact', path: '/aiignore/ignore', handler: ignoreHandler });
+      server.register({ kind: 'exact', path: '/aiignore/upload', handler: uploadHandler });
       routesInstalled = true;
     } catch {
       // No web server in this profile: the guard still works, the panel does not.

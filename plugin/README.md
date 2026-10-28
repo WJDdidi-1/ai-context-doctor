@@ -58,9 +58,11 @@ panel follows light and dark themes instead of shipping its own palette. Every
 control is reachable with `Tab`, and empty, loading and error states are real
 screens rather than blank space.
 
-The panel talks to the Host half over five same-origin routes
+The panel talks to the Host half over six same-origin routes
 (`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET/POST /aiignore/notes`,
-`POST /aiignore/allow`, `POST /aiignore/ignore`). They
+`POST /aiignore/allow`, `POST /aiignore/ignore`, `GET /aiignore/upload?digest=`).
+The last one serves a thumbnail of an upload and refuses anything that is not a
+64-hex digest inside the attachment store. They
 answer for the most recently scanned workspace, never return file contents, and
 set `no-store`. The Host half installs them through `ctx.inject(['webServer'])`,
 so a profile without a web server still gets the read guard — it just has no panel.
