@@ -1,3 +1,14 @@
+## 0.10.0
+
+- Files you upload during a session now appear in **Insights**, under "Files
+  received this session". The Host stores uploads by content digest and drops
+  the original name, so the row shows the digest prefix, the size and a type
+  guessed from the magic bytes — not a filename.
+- **Insights** gains a note field: write what the agent should know about this
+  workspace, and it is saved to `.aiignore.notes.md` and pushed to the running
+  agent immediately. The next session picks it up on its own.
+- An empty note deletes the file rather than leaving a blank one.
+
 ## 0.9.0
 
 - The folder button now opens a menu with two entries, **Files** and

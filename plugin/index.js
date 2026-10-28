@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { scanRepository, classifyPath, estimateTokens, matchesAiignore, parseRules, writeAiignore } from 'ai-context-doctor';
 import { createWorkspaceState, recordSkip, recordRead, recordWrite, allowPath, allowAnyPath, isAllowed, buildReport } from './report.js';
@@ -188,6 +189,16 @@ export function formatDenial(decision) {
  * @param {ReturnType<typeof scanRepository>} report
  * @returns {string}
  */
+export function formatNotes(text) {
+  return [
+    'The user left a note for this workspace in .aiignore.notes.md:',
+    '',
+    text.trim(),
+    '',
+    'Treat it as project context from the user, not as a tool result.'
+  ].join('\n');
+}
+
 export function formatNotice(report) {
   // Older callers may pass a report from before tokenEstimate existed.
   const noiseTokens = report.tokenEstimate && report.tokenEstimate.noise
@@ -221,9 +232,133 @@ export function formatNotice(report) {
  */
 const WRITE_TOOLS = new Set(['write', 'edit', 'multiedit', 'apply_patch', 'create']);
 
+/** The notes file the panel edits, relative to the workspace root. */
+export const NOTES_FILE = '.aiignore.notes.md';
+
+/** A note is a paragraph for the agent, not a document. */
+const NOTES_LIMIT = 4000;
+
+/** Uploaded attachments the panel lists, newest first. */
+const UPLOAD_LIMIT = 12;
+
+function dshHome() {
+  const configured = process.env.DSH_HOME;
+  return typeof configured === 'string' && configured.length > 0
+    ? configured
+    : path.join(os.homedir(), '.dsh');
+}
+
+/**
+ * Read the user's own note for this workspace.
+ *
+ * Deliberately a plain Markdown file in the repository: it can be reviewed,
+ * committed and diffed, which is the same reason `.aiignore` is a file.
+ *
+ * @param {string} cwd
+ * @returns {string}
+ */
+export function readNotes(cwd) {
+  try {
+    return fs.readFileSync(path.join(cwd, NOTES_FILE), 'utf8');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Persist the note. An empty string deletes the file instead of leaving a
+ * blank one behind.
+ *
+ * @param {string} cwd
+ * @param {string} text
+ * @returns {{ written: boolean, length: number }}
+ */
+export function writeNotes(cwd, text) {
+  const target = path.join(cwd, NOTES_FILE);
+  const trimmed = typeof text === 'string' ? text.slice(0, NOTES_LIMIT) : '';
+  if (trimmed.trim().length === 0) {
+    try {
+      fs.unlinkSync(target);
+    } catch {
+      // Already gone.
+    }
+    return { written: true, length: 0 };
+  }
+  fs.writeFileSync(target, trimmed.endsWith('\n') ? trimmed : `${trimmed}\n`);
+  return { written: true, length: trimmed.length };
+}
+
+/**
+ * Attachments the Host stored since `since` (epoch ms).
+ *
+ * They are content-addressed blobs with no original filename — the protocol
+ * adapter drops the name before storing — so the list can only show the digest,
+ * the size and a guessed type. Naming them is the Host's job, not ours.
+ *
+ * @param {number} since
+ * @param {string} [home]
+ * @returns {Array<{ name: string, bytes: number, type: string, receivedAt: number }>}
+ */
+export function recentUploads(since, home = dshHome()) {
+  const root = path.join(home, 'attachments', 'v1', 'objects');
+  const found = [];
+  let buckets;
+  try {
+    buckets = fs.readdirSync(root);
+  } catch {
+    return found;
+  }
+  for (const bucket of buckets) {
+    let names;
+    try {
+      names = fs.readdirSync(path.join(root, bucket));
+    } catch {
+      continue;
+    }
+    for (const name of names) {
+      const absolute = path.join(root, bucket, name);
+      try {
+        const stats = fs.statSync(absolute);
+        if (!stats.isFile() || stats.mtimeMs < since) continue;
+        found.push({
+          name: name.slice(0, 8),
+          bytes: stats.size,
+          type: guessType(absolute),
+          receivedAt: Math.round(stats.mtimeMs)
+        });
+      } catch {
+        // A half-written object is not worth failing the panel over.
+      }
+    }
+  }
+  return found.sort((left, right) => right.receivedAt - left.receivedAt).slice(0, UPLOAD_LIMIT);
+}
+
+function guessType(absolute) {
+  try {
+    const handle = fs.openSync(absolute, 'r');
+    const header = Buffer.alloc(12);
+    fs.readSync(handle, header, 0, 12, 0);
+    fs.closeSync(handle);
+    if (header[0] === 0x89 && header[1] === 0x50) return 'png';
+    if (header[0] === 0xff && header[1] === 0xd8) return 'jpeg';
+    if (header.slice(0, 4).toString('ascii') === 'RIFF') return 'webp';
+    if (header.slice(0, 4).toString('ascii') === 'GIF8') return 'gif';
+    if (header.slice(0, 4).toString('ascii') === '%PDF') return 'pdf';
+    if (header[0] === 0x50 && header[1] === 0x4b) return 'archive';
+  } catch {
+    // Fall through to the generic label.
+  }
+  return 'file';
+}
+
 export function apply(ctx, config = {}) {
   const options = { ...DEFAULTS, ...config };
   const inspected = new Set();
+  // The session started when this bundle was applied, which is the earliest
+  // point an upload could have arrived for it.
+  const startedAt = Date.now();
+  const agents = new Map();
 
   const guard = (exec) => {
     try {
@@ -341,7 +476,11 @@ export function apply(ctx, config = {}) {
   const reportHandler = (req, res) => {
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
     if (latestCwd === undefined) return sendJson(res, 200, { workspace: null, skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
-    return sendJson(res, 200, buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy }));
+    return sendJson(res, 200, {
+      ...buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy }),
+      uploads: recentUploads(startedAt),
+      notes: readNotes(latestCwd)
+    });
   };
 
   const allowHandler = (req, res) => {
@@ -425,6 +564,48 @@ export function apply(ctx, config = {}) {
     });
   };
 
+  const notesHandler = (req, res) => {
+    if (req.method !== 'GET' && req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (latestCwd === undefined) return sendJson(res, 404, { error: 'nothing-scanned' });
+    if (req.method === 'GET') return sendJson(res, 200, { notes: readNotes(latestCwd) });
+
+    if (options.readPolicy === 'deny' && typeof req.headers.origin === 'string') {
+      const expected = `http://${req.headers.host}`;
+      if (req.headers.origin !== expected) return sendJson(res, 403, { error: 'cross-origin' });
+    }
+
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > NOTES_LIMIT * 2) {
+        sendJson(res, 413, { error: 'too-large' });
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      try {
+        const payload = body.length > 0 ? JSON.parse(body) : {};
+        const text = typeof payload.text === 'string' ? payload.text : '';
+        const result = writeNotes(latestCwd, text);
+        // Push it now so the agent does not have to wait for the next session.
+        const agent = agents.get(latestCwd);
+        if (result.length > 0 && agent !== undefined && typeof agent.inject === 'function') {
+          try {
+            agent.inject({
+              content: [{ type: 'text', text: formatNotes(text) }],
+              source: { kind: 'ai-context-doctor' }
+            });
+          } catch {
+            // Injection is best effort; the file is the durable part.
+          }
+        }
+        return sendJson(res, 200, { ...result, injected: result.length > 0 && agent !== undefined });
+      } catch {
+        return sendJson(res, 400, { error: 'bad-request' });
+      }
+    });
+  };
+
   let routesInstalled = false;
   const installRoutes = (serviceCtx) => {
     if (routesInstalled) return;
@@ -432,6 +613,7 @@ export function apply(ctx, config = {}) {
       const server = serviceCtx !== null && serviceCtx !== undefined ? serviceCtx.webServer : undefined;
       if (server === null || server === undefined || typeof server.register !== 'function') return;
       server.register({ kind: 'exact', path: '/aiignore/report', handler: reportHandler });
+      server.register({ kind: 'exact', path: '/aiignore/notes', handler: notesHandler });
       server.register({ kind: 'exact', path: '/aiignore/tree', handler: treeHandler });
       server.register({ kind: 'exact', path: '/aiignore/allow', handler: allowHandler });
       server.register({ kind: 'exact', path: '/aiignore/ignore', handler: ignoreHandler });
@@ -472,7 +654,20 @@ export function apply(ctx, config = {}) {
 
       inspected.add(cwd);
       latestCwd = cwd;
+      agents.set(cwd, agent);
       stateFor(cwd).report = report;
+
+      const notes = readNotes(cwd);
+      if (notes.trim().length > 0 && typeof agent.inject === 'function') {
+        try {
+          agent.inject({
+            content: [{ type: 'text', text: formatNotes(notes) }],
+            source: { kind: 'ai-context-doctor' }
+          });
+        } catch {
+          // Never break the session over a note.
+        }
+      }
 
       if (report.healthScore >= options.healthThreshold) return;
       if (typeof agent.inject !== 'function') return;
