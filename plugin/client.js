@@ -55,9 +55,24 @@ window.__ModuleLoader__.load({
         blockedBadge: 'blocked',
         refresh: 'Refresh',
         tabFiles: 'Files',
-        tabInsights: 'Insights',
+        tabInsights: 'Score',
         tabNote: 'Note',
+        tabChat: 'Chat',
         tabStrategy: 'Strategy',
+        chatTitle: 'This conversation',
+        chatScore: 'conversation score',
+        chatTurns: 'turns',
+        chatRead: 'read',
+        chatFiles: 'files',
+        chatNoise: 'noise reads',
+        chatOptimize: 'Optimize this conversation',
+        chatRulesWritten: 'Rules written',
+        chatBlocked: 'reads now blocked',
+        chatPick: 'Conversation',
+        chatFollow: 'Follow the open conversation',
+        chatEmpty: 'No conversation data yet.',
+        chatComposition: 'What this conversation spent tokens on',
+        working: 'Working…',
         scoreTitle: 'Why this score',
         scoreFormula: 'Each category can cost at most its weight. What it costs is how much of the repository it occupies.',
         optimizeTitle: 'Make it better',
@@ -171,9 +186,24 @@ window.__ModuleLoader__.load({
         blockedBadge: '项已拦',
         refresh: '刷新',
         tabFiles: '文件',
-        tabInsights: '分析',
+        tabInsights: '评分',
         tabNote: '说明',
+        tabChat: '对话',
         tabStrategy: '策略',
+        chatTitle: '本对话',
+        chatScore: '本对话评分',
+        chatTurns: '轮',
+        chatRead: '已读',
+        chatFiles: '个文件',
+        chatNoise: '噪音读入',
+        chatOptimize: '优化本对话',
+        chatRulesWritten: '已写入规则',
+        chatBlocked: '条读入现在会被拦截',
+        chatPick: '对话',
+        chatFollow: '跟随当前打开的对话',
+        chatEmpty: '还没有对话数据。',
+        chatComposition: '这个对话的 token 花在哪',
+        working: '处理中…',
         scoreTitle: '评分从哪来',
         scoreFormula: '每类最多扣掉它的权重；实际扣多少，取决于它占仓库的比例。',
         optimizeTitle: '一键优化',
@@ -1266,6 +1296,111 @@ window.__ModuleLoader__.load({
   line-height: 1.5;
   color: var(--dsw-alias-label-tertiary, rgba(242, 242, 242, 0.55));
 }
+
+/* The Chat tab: one conversation, and what it cost. */
+.aicd-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-x: hidden;
+}
+
+.aicd-chat .aicd-row {
+  max-width: 100%;
+}
+
+.aicd-chat .aicd-row-name {
+  min-width: 0;
+}
+
+.aicd-chat-title {
+  font: var(--dsw-font-xs-strong-13, 600 13px/1.4 sans-serif);
+  color: var(--dsw-alias-label-primary, inherit);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-chat-meta {
+  font: var(--dsw-font-xxxs-11, 11px/1.4 sans-serif);
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.9));
+}
+
+.aicd-chat-score {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.aicd-comp {
+  display: flex;
+  height: 8px;
+  border-radius: var(--dsw-radius-xs, 4px);
+  overflow: hidden;
+  background: var(--dsw-alias-bg-skeleton, rgba(127, 127, 127, 0.18));
+}
+
+.aicd-comp-seg {
+  display: block;
+  height: 100%;
+}
+
+.aicd-comp-seg[data-seg='assistant'],
+.aicd-swatch[data-seg='assistant'] {
+  background: var(--dsw-alias-state-idle-primary, #9a9a9a);
+}
+
+.aicd-comp-seg[data-seg='tool'],
+.aicd-swatch[data-seg='tool'] {
+  background: var(--dsw-alias-state-business-primary, #6f9fe0);
+}
+
+.aicd-comp-seg[data-seg='user'],
+.aicd-swatch[data-seg='user'] {
+  background: var(--dsw-alias-state-success-primary, #4ea36b);
+}
+
+.aicd-comp-seg[data-seg='inject'],
+.aicd-swatch[data-seg='inject'] {
+  background: var(--dsw-alias-state-warn-primary, #e0a33a);
+}
+
+.aicd-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font: var(--dsw-font-xxxs-11, 11px/1.4 sans-serif);
+  color: var(--dsw-alias-label-tertiary, rgba(127, 127, 127, 0.9));
+}
+
+.aicd-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.aicd-swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.aicd-chat-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aicd-select {
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.3));
+  background: var(--dsw-alias-bg-layer-1, transparent);
+  color: var(--dsw-alias-label-secondary, inherit);
+  font: var(--dsw-font-xxs-12, 12px/1.4 sans-serif);
+}
 `;
 
     //#endregion styles
@@ -1451,6 +1586,53 @@ window.__ModuleLoader__.load({
     }
 
     //#endregion helpers
+
+    /** One number, short enough for a row. */
+    function bytesShort(value) {
+      if (typeof value !== 'number' || Number.isFinite(value) !== true) return '—';
+      if (value >= 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+      if (value >= 1024) return `${Math.round(value / 1024)} KB`;
+      return `${value} B`;
+    }
+
+    /**
+     * The conversation in front of the user, read from the app's own projection:
+     * its title, what it read, and what those reads cost. `pinnedSession` lets the
+     * user look at another conversation without leaving this one.
+     */
+    function useConversation(pinnedSession) {
+      const [conv, setConv] = useState(null);
+      const [error, setError] = useState(null);
+      const [tick, setTick] = useState(0);
+
+      useEffect(() => {
+        let live = true;
+        const target = pinnedSession === null
+          ? '/aiignore/conversation'
+          : `/aiignore/conversation?session=${encodeURIComponent(pinnedSession)}`;
+        fetch(target, { headers: { accept: 'application/json' } })
+          .then((response) => (response.ok ? response.json() : null))
+          .then((payload) => {
+            if (!live) return;
+            if (payload === null || typeof payload !== 'object' || payload.error !== undefined) {
+              setError({ message: payload !== null && typeof payload === 'object' ? payload.error : 'unavailable' });
+              return;
+            }
+            setConv(payload);
+            setError(null);
+          })
+          .catch((caught) => {
+            if (live) setError(caught);
+          });
+        const timer = setInterval(() => setTick((value) => value + 1), 5000);
+        return () => {
+          live = false;
+          clearInterval(timer);
+        };
+      }, [pinnedSession, tick]);
+
+      return { conv, error };
+    }
 
     //#region components
     let stylesInjected = false;
@@ -2172,6 +2354,140 @@ window.__ModuleLoader__.load({
 
     //#endregion views
 
+    //#region chat
+
+    /**
+     * The panel's first tab: one conversation, not one folder. Its title, what it
+     * spent tokens on, which files it read, and one button that turns those reads
+     * into `.aiignore` rules — with the before/after score right there.
+     */
+    function ChatView({ conv, error, pinnedSession, onPin }) {
+      const [pending, setPending] = useState(null);
+      const [result, setResult] = useState(null);
+      const [failed, setFailed] = useState(false);
+
+      const optimize = () => {
+        if (conv === null || pending !== null) return;
+        setPending('optimize');
+        setFailed(false);
+        fetch('/aiignore/optimize', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ session: conv.id })
+        })
+          .then((response) => response.json())
+          .then((payload) => {
+            if (payload === null || typeof payload !== 'object' || payload.error !== undefined) setFailed(true);
+            else setResult(payload);
+          })
+          .catch(() => setFailed(true))
+          .finally(() => setPending(null));
+      };
+
+      if (error !== null) {
+        return h('div', { className: 'aicd-body', 'data-center': 'true' },
+          h(Empty, { icon: 'warn', title: tr('errorTitle'), hint: tr('chatEmpty') }));
+      }
+      if (conv === null) return h('div', { className: 'aicd-body' }, h(Skeleton, null));
+
+      const tokens = conv.tokens !== undefined && conv.tokens !== null ? conv.tokens : {};
+      const parts = [
+        ['assistant', tokens.assistant || 0],
+        ['tool', tokens.tool || 0],
+        ['user', tokens.user || 0],
+        ['inject', (tokens.inject || 0) + (tokens.skill || 0)]
+      ];
+      const total = parts.reduce((sum, [, value]) => sum + value, 0);
+      const blocked = Array.isArray(conv.noise) ? conv.noise : [];
+      const reads = Array.isArray(conv.reads) ? conv.reads.slice(0, 6) : [];
+      const blockedNow = result === null || Array.isArray(result.blockedNow) !== true
+        ? []
+        : result.blockedNow.filter((item) => item.blocked === true).length;
+
+      return h('div', { className: 'aicd-body' },
+        h('div', { className: 'aicd-chat' },
+          h('div', { className: 'aicd-chat-title', title: conv.title || conv.cwd || '' }, conv.title || tr('chatTitle')),
+          h('div', { className: 'aicd-chat-meta' },
+            `${conv.turns || 0} ${tr('chatTurns')} · ${bytesShort(conv.readBytes)} ${tr('chatRead')} · ${conv.readFiles || 0} ${tr('chatFiles')}`),
+
+          h('div', { className: 'aicd-chat-score' },
+            h('span', { className: 'aicd-score', 'data-tone': toneFor(conv.score) }, String(conv.score === undefined ? '—' : conv.score)),
+            h('span', { className: 'aicd-caption' }, tr('chatScore'))),
+
+          h('div', { className: 'aicd-section-title' }, tr('chatComposition')),
+          h('div', { className: 'aicd-comp', role: 'img', 'aria-label': tr('chatComposition') },
+            parts.map(([name, value]) => h('span', {
+              key: name,
+              className: 'aicd-comp-seg',
+              'data-seg': name,
+              title: `${name} ${value.toLocaleString()}`,
+              style: { flexGrow: String(total === 0 ? 1 : Math.max(value, 1)), flexBasis: '0px' }
+            }))),
+          h('div', { className: 'aicd-legend' },
+            parts.map(([name, value]) => h('span', { key: name, className: 'aicd-legend-item' },
+              h('span', { className: 'aicd-swatch', 'data-seg': name }),
+              `${name} ${total === 0 ? 0 : Math.round((value / total) * 100)}%`))),
+
+          blocked.length > 0
+            ? h('div', { className: 'aicd-section' },
+                h('div', { className: 'aicd-section-title' }, tr('chatNoise')),
+                blocked.slice(0, 4).map((item) => h(Row, {
+                  key: item.path,
+                  icon: 'warn',
+                  name: item.relativePath || item.path,
+                  badge: [{ text: (item.reason || 'noise').replace(/^(generated|local) /, ''), tone: 'noise' }],
+                  meta: bytesShort(item.bytes)
+                })))
+            : null,
+
+          reads.length > 0
+            ? h('div', { className: 'aicd-section' },
+                h('div', { className: 'aicd-section-title' }, tr('chatRead')),
+                reads.map((item) => h(Row, {
+                  key: item.path,
+                  icon: 'file',
+                  name: item.relativePath || item.path,
+                  meta: bytesShort(item.bytes)
+                })))
+            : null,
+
+          h('div', { className: 'aicd-chat-actions' },
+            h('button', {
+              type: 'button',
+              className: 'aicd-btn',
+              'data-variant': 'primary',
+              disabled: pending !== null ? 'true' : undefined,
+              onClick: optimize
+            }, pending === 'optimize' ? tr('working') : tr('chatOptimize')),
+            failed === true ? h('span', { className: 'aicd-note', 'data-tone': 'bad' }, tr('optimizeFailed')) : null),
+
+          result === null
+            ? null
+            : h('div', { className: 'aicd-opt' },
+                h('div', { className: 'aicd-note', 'data-tone': 'ok' },
+                  `${tr('chatRulesWritten')}: ${Array.isArray(result.added) ? result.added.length : 0}`),
+                h('div', { className: 'aicd-note' },
+                  `${tr('scoreNow')} ${result.before} → ${result.after}`),
+                h('div', { className: 'aicd-note', 'data-tone': blockedNow > 0 ? 'ok' : undefined },
+                  `${blockedNow} / ${Array.isArray(result.blockedNow) ? result.blockedNow.length : 0} ${tr('chatBlocked')}`)),
+
+          h('div', { className: 'aicd-section' },
+            h('div', { className: 'aicd-section-title' }, tr('chatPick')),
+            h('select', {
+              className: 'aicd-select',
+              'aria-label': tr('chatPick'),
+              value: pinnedSession === null ? '' : pinnedSession,
+              onChange: (event) => onPin(event.target.value === '' ? null : event.target.value)
+            },
+              h('option', { value: '' }, tr('chatFollow')),
+              (Array.isArray(conv.available) ? conv.available : []).map((entry) => h('option', {
+                key: entry.id,
+                value: entry.id
+              }, `${entry.id.slice(-8)} · ${shortPath(entry.cwd || '')}`))))));
+    }
+
+    //#endregion chat
+
     //#region summary
 
     /**
@@ -2436,7 +2752,10 @@ window.__ModuleLoader__.load({
         reload();
         reloadTree();
       };
-      const [view, setView] = useState('files');
+      // Which conversation the Chat tab looks at. null follows the open one.
+      const [pinnedSession, setPinnedSession] = useState(null);
+      const { conv, error: convError } = useConversation(pinnedSession);
+      const [view, setView] = useState('chat');
       const [pending, setPending] = useState(null);
       const [postError, setPostError] = useState(null);
       const [lastIgnored, setLastIgnored] = useState(null);
@@ -2504,6 +2823,7 @@ window.__ModuleLoader__.load({
       const score = typeof scanned.healthScore === 'number' ? scanned.healthScore : null;
 
       const tabs = [
+        ['chat', tr('tabChat')],
         ['files', tr('tabFiles')],
         ['insights', tr('tabInsights')],
         ['note', tr('tabStrategy')]
@@ -2530,17 +2850,21 @@ window.__ModuleLoader__.load({
           : data === null
             ? h('div', { className: 'aicd-body' }, h(Skeleton, null))
             : data.workspace === null || data.workspace === undefined || choosing === true
-              ? h('div', { className: 'aicd-body', 'data-center': 'true' },
-                  h(NoWorkspace, { spaces, pending, scan, pick, scanError, choosing })
-                )
-              : view === 'files'
-                ? h(FilesView, {
+              // The Chat tab needs no workspace: it reads the conversation itself.
+              ? (view === 'chat' && choosing !== true
+                  ? h(ChatView, { conv, error: convError, pinnedSession, onPin: setPinnedSession })
+                  : h('div', { className: 'aicd-body', 'data-center': 'true' },
+                      h(NoWorkspace, { spaces, pending, scan, pick, scanError, choosing })))
+              : view === 'chat'
+                ? h(ChatView, { conv, error: convError, pinnedSession, onPin: setPinnedSession })
+                : view === 'files'
+                  ? h(FilesView, {
                     data, tree, at, setAt, pending, onAllow, onIgnore,
                     lastIgnored, onUndo
                   })
-                : view === 'insights'
-                  ? h(InsightsView, { data, onDone: reload })
-                  : h(NoteView, { data, onSaved: reload }),
+                  : view === 'insights'
+                    ? h(InsightsView, { data, onDone: reload })
+                    : h(NoteView, { data, onSaved: reload }),
         postError !== null ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
       );
     }
