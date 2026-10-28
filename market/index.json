@@ -26,8 +26,8 @@
         "zh-cn": "dsh-aiignore"
       },
       "description": {
-        "en": "Refuses reads of generated output, lockfiles and logs, opens a sidebar tab that lists every file the session touched, and carries a note you can send to the agent.",
-        "zh-cn": "拒绝读取构建产物、锁文件与日志；侧栏标签列出每次会话碰过的文件，并带一个可以直接发给 AI 的说明。"
+        "en": "Refuses reads of generated output, lockfiles and logs, and opens a sidebar tab that lists every file the session touched, lets you pick or drop files in bulk, and carries a note you can send to the agent.",
+        "zh-cn": "拒绝读取构建产物、锁文件与日志；侧栏标签列出每次会话碰过的文件，可单条或批量决定是否读取，并带一个可以直接发给 AI 的说明。"
       },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
@@ -46,6 +46,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.13.0",
+          "publishTimestamp": 1793177075,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.12.0",
           "publishTimestamp": 1793175999,

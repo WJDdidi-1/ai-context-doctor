@@ -154,7 +154,9 @@ console.log(report.healthScore, report.topNoise);
 dsh plugin --profile web add dsh-aiignore
 ```
 
-插件还会在右侧栏加一个 **上下文** 标签（从输入框旁的文件夹按钮打开）：列出本次会话碰过的每个文件、带结论地浏览工作区、报告守卫拦下的读取，并提供一个可以直接发给 AI 的说明。面板跟随 Harness 的浅色与深色主题。
+插件还会在右侧栏加一个 **上下文** 标签（从输入框旁的文件夹按钮打开）：列出本次会话碰过的每个文件、带结论地浏览工作区、可单个或批量决定读不读、报告守卫拦下的读取，并提供一个可以直接发给 AI 的说明。面板跟随 Harness 的浅色与深色主题。
+
+![右侧栏里的上下文标签](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
 
 它声明了 `engines.dsh: ">=0.2.0"`，Harness 会在安装前检查这个范围。源码、配置项与限制见 [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md)。
 
