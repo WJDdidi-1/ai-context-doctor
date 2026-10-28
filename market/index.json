@@ -26,8 +26,8 @@
         "zh-cn": "dsh-aiignore"
       },
       "description": {
-        "en": "Finds the conversation's workspace instead of waiting to be told about it, lists every file the session touched, lets you pick or drop files in bulk, and carries a note you can send to the agent.",
-        "zh-cn": "主动找到当前对话的工作区，列出会话碰过的每个文件，支持批量放行或拦下，并把一句说明带给智能体。"
+        "en": "Reads the conversation's own directory so it always knows which workspace to audit, lists every file the session touched, lets you pick or drop files in bulk, and carries a note you can send to the agent.",
+        "zh-cn": "直接读取当前对话的目录，始终知道该审计哪个工作区；列出会话碰过的每个文件，支持批量放行或拦下，并把一句说明带给智能体。"
       },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
@@ -46,6 +46,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.15.0",
+          "publishTimestamp": 1793185413,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.14.0",
           "publishTimestamp": 1793178525,
