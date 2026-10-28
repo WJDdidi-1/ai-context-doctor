@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { scanRepository, classifyPath, estimateTokens } from 'ai-context-doctor';
+import { createWorkspaceState, recordSkip, allowPath, isAllowed, buildReport } from './report.js';
 
 /**
  * Values a user can override in cordis.patch.yml.
@@ -34,8 +35,17 @@ const BLOCKED_REASONS = new Set([
   'large file'
 ]);
 
-/** Per-workspace record of what was skipped, so a UI can show it later. */
-const readLog = new Map();
+/** Per-workspace record of what was skipped, so the UI can show it later. */
+const workspaces = new Map();
+
+function stateFor(cwd) {
+  let state = workspaces.get(cwd);
+  if (state === undefined) {
+    state = createWorkspaceState();
+    workspaces.set(cwd, state);
+  }
+  return state;
+}
 
 function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -49,20 +59,6 @@ function formatTokens(range) {
   return min === max ? `~${min}` : `~${min}–${max}`;
 }
 
-function recordSkip(cwd, relativePath, size, reason) {
-  let entry = readLog.get(cwd);
-  if (entry === undefined) {
-    entry = new Map();
-    readLog.set(cwd, entry);
-  }
-  const existing = entry.get(relativePath);
-  if (existing === undefined) {
-    entry.set(relativePath, { path: relativePath, bytes: size, reason, attempts: 1 });
-  } else {
-    existing.attempts += 1;
-  }
-}
-
 /**
  * Reads the plugin refused, grouped by workspace. Exported for tests and for
  * the UI half that lists what this session did not read.
@@ -71,14 +67,12 @@ function recordSkip(cwd, relativePath, size, reason) {
  * @returns {Array<{ path: string, bytes: number, reason: string, attempts: number }>}
  */
 export function getSkippedReads(cwd) {
-  const entry = readLog.get(cwd);
-  if (entry === undefined) return [];
-  return [...entry.values()].map((item) => ({ ...item }));
+  return buildReport({ cwd, state: stateFor(cwd), policy: 'deny' }).skipped;
 }
 
 /** Test seam: forget everything recorded so far. */
 export function resetSkipLog() {
-  readLog.clear();
+  workspaces.clear();
 }
 
 /**
@@ -201,7 +195,9 @@ export function apply(ctx, config = {}) {
       const decision = decideRead({ root: cwd, filePath, policy: options.readPolicy });
       if (decision.block !== true) return undefined;
 
-      recordSkip(cwd, decision.relativePath, decision.bytes, decision.reason);
+      const state = stateFor(cwd);
+      if (isAllowed(state, decision.relativePath)) return undefined;
+      recordSkip(state, decision);
       return formatDenial(decision);
     } catch {
       // A guard that throws would break every tool call in the session.
@@ -224,10 +220,79 @@ export function apply(ctx, config = {}) {
 
   installGuard();
 
+  // The browser half reads this workspace's state over plain HTTP: third-party
+  // bundles cannot mint a remote namespace, and a route is the only channel the
+  // Host exposes to them. Read-only plus one allow action, no secrets, and the
+  // response is never cached.
+  let latestCwd;
+
+  const sendJson = (res, status, body) => {
+    res.writeHead(status, {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store'
+    });
+    res.end(JSON.stringify(body));
+  };
+
+  const reportHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (latestCwd === undefined) return sendJson(res, 200, { workspace: null, skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
+    return sendJson(res, 200, buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy }));
+  };
+
+  const allowHandler = (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+    // Same-origin only: the route has no authentication of its own.
+    const origin = req.headers.origin;
+    if (typeof origin === 'string' && origin.length > 0 && origin !== `http://${req.headers.host}`) {
+      return sendJson(res, 403, { error: 'cross-origin' });
+    }
+    if (latestCwd === undefined) return sendJson(res, 404, { error: 'nothing-scanned' });
+
+    let body = '';
+    let tooLarge = false;
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 4096) {
+        tooLarge = true;
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      if (tooLarge) return;
+      let target;
+      try {
+        target = JSON.parse(body).path;
+      } catch {
+        return sendJson(res, 400, { error: 'bad-json' });
+      }
+      if (typeof target !== 'string' || target.length === 0) return sendJson(res, 400, { error: 'bad-path' });
+      const allowed = allowPath(stateFor(latestCwd), target);
+      return sendJson(res, allowed ? 200 : 404, { allowed });
+    });
+  };
+
+  let routesInstalled = false;
+  const installRoutes = () => {
+    if (routesInstalled) return;
+    try {
+      const server = ctx.webServer;
+      if (server === null || server === undefined || typeof server.register !== 'function') return;
+      server.register({ kind: 'exact', path: '/aiignore/report', handler: reportHandler });
+      server.register({ kind: 'exact', path: '/aiignore/allow', handler: allowHandler });
+      routesInstalled = true;
+    } catch {
+      // No web server in this profile: the guard still works, the panel does not.
+    }
+  };
+
+  installRoutes();
+
   ctx.on('agent/created', (payload) => {
     try {
       // The registry may mount after this plugin; retry here, where it exists.
       installGuard();
+      installRoutes();
 
       const agent = payload && payload.agent ? payload.agent : payload;
       const cwd = agent && agent.session && agent.session.meta && agent.session.meta.cwd;
@@ -240,6 +305,8 @@ export function apply(ctx, config = {}) {
       });
 
       inspected.add(cwd);
+      latestCwd = cwd;
+      stateFor(cwd).report = report;
 
       if (report.healthScore >= options.healthThreshold) return;
       if (typeof agent.inject !== 'function') return;

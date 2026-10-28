@@ -1,0 +1,102 @@
+import { estimateTokens } from 'ai-context-doctor';
+
+/**
+ * Per-workspace state the UI reads.
+ *
+ * Kept apart from the plugin wiring so it can be tested without a Host: every
+ * function here is plain data in, plain data out.
+ */
+export function createWorkspaceState() {
+  return {
+    report: undefined,
+    skipped: new Map(),
+    allowed: new Set()
+  };
+}
+
+/**
+ * Record a refused read.
+ *
+ * @param {ReturnType<typeof createWorkspaceState>} state
+ * @param {{ relativePath: string, bytes: number, reason: string }} decision
+ */
+export function recordSkip(state, decision) {
+  const existing = state.skipped.get(decision.relativePath);
+  if (existing === undefined) {
+    state.skipped.set(decision.relativePath, {
+      path: decision.relativePath,
+      bytes: decision.bytes,
+      reason: decision.reason,
+      attempts: 1
+    });
+    return;
+  }
+  existing.attempts += 1;
+}
+
+/**
+ * Allow one path for this workspace, dropping it from the skipped list.
+ * Returns false when the path was never blocked, so the UI can say so.
+ *
+ * @param {ReturnType<typeof createWorkspaceState>} state
+ * @param {string} relativePath
+ * @returns {boolean}
+ */
+export function allowPath(state, relativePath) {
+  if (!state.skipped.has(relativePath)) return false;
+  state.allowed.add(relativePath);
+  state.skipped.delete(relativePath);
+  return true;
+}
+
+/**
+ * @param {ReturnType<typeof createWorkspaceState>} state
+ * @param {string} relativePath
+ * @returns {boolean}
+ */
+export function isAllowed(state, relativePath) {
+  return state.allowed.has(relativePath);
+}
+
+/**
+ * Sum the tokens the guard kept out of the context.
+ *
+ * @param {ReturnType<typeof createWorkspaceState>} state
+ * @returns {{ min: number, max: number, bytes: number }}
+ */
+export function savedTokens(state) {
+  let bytes = 0;
+  for (const item of state.skipped.values()) {
+    bytes += item.bytes;
+  }
+  return { ...estimateTokens(bytes), bytes };
+}
+
+/**
+ * The payload the UI fetches. Deliberately flat and JSON-only: the browser
+ * half must not need a schema or a build step to read it.
+ *
+ * @param {{ cwd: string, state: ReturnType<typeof createWorkspaceState>, policy: string }} input
+ * @returns {object}
+ */
+export function buildReport({ cwd, state, policy }) {
+  const report = state.report;
+  const saved = savedTokens(state);
+
+  return {
+    workspace: cwd,
+    policy,
+    scanned: report === undefined
+      ? undefined
+      : {
+          files: report.scannedFiles,
+          bytes: report.scannedBytes,
+          healthScore: report.healthScore,
+          noisePercent: report.noisePercent,
+          tokenEstimate: report.tokenEstimate
+        },
+    skipped: [...state.skipped.values()].map((item) => ({ ...item })),
+    allowed: [...state.allowed],
+    savedTokens: saved
+  };
+}

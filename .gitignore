@@ -1,1 +1,4 @@
 node_modules/
+
+# Packed tarballs from local install rehearsals
+*.tgz
