@@ -66,8 +66,10 @@ window.__ModuleLoader__.load({
         up: 'Up',
         filesCount: '{n} files',
         loading: 'Reading this workspace…',
-        emptyTitle: 'Nothing scanned yet',
-        emptyHint: 'The report appears once an agent works in this workspace.',
+        emptyTitle: 'No workspace yet',
+        emptyHint: 'Scan the workspace of this conversation to see what the agent could read here.',
+        scanNow: 'Scan this conversation',
+        scanFailed: 'The scan did not run. The conversation may not have a workspace yet.',
         webTitle: 'No workspace yet',
         errorTitle: 'Could not read the report',
         errorHint: 'The panel could not reach the plugin server in this window.',
@@ -151,8 +153,10 @@ window.__ModuleLoader__.load({
         up: '上一级',
         filesCount: '{n} 个文件',
         loading: '正在读取工作区…',
-        emptyTitle: '还没有扫描',
-        emptyHint: '当有 AI 在这个工作区工作时，报告会出现在这里。',
+        emptyTitle: '还没有工作区',
+        emptyHint: '扫描当前对话的工作区，就能看到 AI 在这里会读到什么。',
+        scanNow: '扫描当前对话',
+        scanFailed: '扫描没有执行。这个对话可能还没有确定工作目录。',
         webTitle: '还没有工作区',
         errorTitle: '读取报告失败',
         errorHint: '面板无法连接插件服务，可能是插件还没加载完成。',
@@ -1645,6 +1649,24 @@ window.__ModuleLoader__.load({
           .finally(() => setPending(null));
       };
 
+      const [scanError, setScanError] = useState(false);
+      const scan = () => {
+        setPending('scan');
+        setScanError(false);
+        fetch('/aiignore/scan', { method: 'POST', headers: { 'content-type': 'application/json' } })
+          .then((response) => response.json())
+          .then((payload) => {
+            if (payload === null || typeof payload !== 'object' || payload.workspace === undefined || payload.workspace === null) {
+              setScanError(true);
+              return;
+            }
+            reload();
+            reloadTree();
+          })
+          .catch(() => setScanError(true))
+          .finally(() => setPending(null));
+      };
+
       const onAllow = (target, after) => post('/aiignore/allow', target, (payload) => {
         const ok = payload.allowed === true;
         if (ok && after !== undefined) after();
@@ -1704,7 +1726,7 @@ window.__ModuleLoader__.load({
                   `${tr('noise')} ${typeof scanned.noisePercent === 'number' ? `${scanned.noisePercent}%` : '—'}`)
               )
             : null,
-          data === null || data.workspace === null || data.workspace === undefined
+          data === null
             ? null
             : h('div', { className: 'aicd-tabs', role: 'tablist' },
             tabs.map(([id, label]) =>
@@ -1736,7 +1758,21 @@ window.__ModuleLoader__.load({
             ? h('div', { className: 'aicd-body' }, h(Skeleton, null))
             : data.workspace === null || data.workspace === undefined
               ? h('div', { className: 'aicd-body', 'data-center': 'true' },
-                  h(Empty, { icon: 'spark', title: tr('emptyTitle'), hint: tr('emptyHint') })
+                  h(Empty, {
+                    icon: 'spark',
+                    title: tr('emptyTitle'),
+                    hint: tr('emptyHint'),
+                    action: h('div', null,
+                      h('button', {
+                        type: 'button',
+                        className: 'aicd-btn',
+                        'data-variant': 'primary',
+                        disabled: pending === 'scan' ? 'true' : undefined,
+                        onClick: scan
+                      }, tr('scanNow')),
+                      scanError ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('scanFailed')) : null
+                    )
+                  })
                 )
               : view === 'files'
                 ? h(FilesView, {
