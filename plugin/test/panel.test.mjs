@@ -89,6 +89,8 @@ test('the tab body, the tab title and the composer entry are all registered', ()
   const names = registrations.map((entry) => entry.name).sort();
   assert.deepEqual(names, [
     'conversation.input.left',
+    'main',
+    'sidebar.panellist',
     'sidebar.right.pane.tab',
     'sidebar.right.pane.tab.title'
   ]);
@@ -101,7 +103,9 @@ test('the entry survives a host without a sidebar', () => {
   const { ctx, registrations, types } = fakeContext({ sidebar: false });
   assert.doesNotThrow(() => loadPanel().apply(ctx));
   assert.deepEqual(types, [], 'no tab type without the sidebar services');
-  assert.deepEqual(registrations.map((entry) => entry.name), ['conversation.input.left']);
+  // The summary page lives in the left navigation, which exists without a right
+  // sidebar; only the tab type and the composer entry depend on those services.
+  assert.deepEqual(registrations.map((entry) => entry.name).sort(), ['conversation.input.left', 'main', 'sidebar.panellist']);
 });
 
 test('a host without slots at all does not break the plugin', () => {

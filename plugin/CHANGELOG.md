@@ -1,4 +1,24 @@
+## 0.17.0
+
+The panel stopped asking which folder to audit. It reads the conversation.
+
+- **Follows the conversation, by default.** The Host half finds the session whose
+  log was written last under `~/.dsh/sessions`, maps it to a folder through
+  `~/.dsh/storages/workspace.json`, and scans that. Opening a conversation is the
+  whole interaction; the "No workspace yet" dead end is gone for good.
+- **Pinning is reversible.** The folder button now opens a menu: follow the
+  conversation, choose another folder, or stop pinning. Pinning only lasts as
+  long as the panel is open — nothing is written to disk.
+- **The aggregate view moved where it belongs.** *Context across your workspaces*
+  is a page in the left rail, under New Session: every folder this app has been
+  used in, ranked by health, so a noisy repository is visible before you open it.
+  It is cached for five minutes (`GET /aiignore/overview`).
+- **Faithful preview.** `dev/preview.html` now mounts the rail icon and the
+  overview page too, and a request that names its folder wins, exactly like the
+  Host half — that is what makes "stop pinning" observable without a restart.
+
 ## 0.16.0
+
 
 - **The panel can no longer dead-end.** When it cannot tell which folder the
   conversation runs in — the case that left 0.14.0 and 0.15.0 showing "No

@@ -305,6 +305,86 @@ export function writeNotes(cwd, text) {
  * directory the conversation belongs to: rather than showing an empty screen, it
  * offers the folders the user has actually been working in.
  */
+/** The session store: one directory per cwd, one directory per session inside. */
+export function sessionsRoot(home = dshHome()) {
+  return path.join(home, 'sessions');
+}
+
+/**
+ * The session that wrote last. The Harness appends to a session's log as the
+ * conversation moves, so the freshest log is the conversation in front of the
+ * user — the one fact the Host half can learn about "this conversation" without
+ * being told, and the reason the panel no longer has to ask.
+ */
+export function activeSession(home = dshHome()) {
+  const root = sessionsRoot(home);
+  let entries;
+  try {
+    entries = fs.readdirSync(root, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+  let best = null;
+  for (const bucket of entries) {
+    if (bucket.isDirectory() !== true) continue;
+    const bucketPath = path.join(root, bucket.name);
+    let sessions;
+    try {
+      sessions = fs.readdirSync(bucketPath, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const session of sessions) {
+      if (session.isDirectory() !== true || session.name.startsWith('session-') !== true) continue;
+      const dir = path.join(bucketPath, session.name);
+      const log = path.join(dir, 'session.v4.jsonl.zstd');
+      let at = 0;
+      try {
+        at = fs.statSync(log).mtimeMs;
+      } catch {
+        try {
+          at = fs.statSync(dir).mtimeMs;
+        } catch {
+          continue;
+        }
+      }
+      if (best === null || at > best.at) best = { id: session.name, at };
+    }
+  }
+  return best;
+}
+
+/** Which workspace a session belongs to, according to the app's own store. */
+export function workspaceForSession(sessionId, home = dshHome()) {
+  if (typeof sessionId !== 'string' || sessionId.length === 0) return undefined;
+  let store;
+  try {
+    store = JSON.parse(fs.readFileSync(path.join(home, 'storages', 'workspace.json'), 'utf8'));
+  } catch {
+    return undefined;
+  }
+  const table = store !== null && typeof store === 'object' && store.tables !== undefined ? store.tables.workspaces : undefined;
+  if (table === null || typeof table !== 'object') return undefined;
+  for (const workspace of Object.values(table)) {
+    if (workspace === null || typeof workspace !== 'object') continue;
+    if (Array.isArray(workspace.sessionIds) !== true || workspace.sessionIds.includes(sessionId) !== true) continue;
+    if (typeof workspace.path !== 'string') continue;
+    try {
+      if (fs.statSync(workspace.path).isDirectory() === true) return workspace.path;
+    } catch {
+      // A workspace whose folder is gone is not a workspace.
+    }
+  }
+  return undefined;
+}
+
+/** The folder the conversation in front of the user is working in. */
+export function activeWorkspace(home = dshHome()) {
+  const session = activeSession(home);
+  if (session === null) return undefined;
+  return workspaceForSession(session.id, home);
+}
+
 export function knownWorkspaces(home = dshHome()) {
   const file = path.join(home, 'storages', 'workspace.json');
   let parsed;
@@ -563,8 +643,27 @@ export function apply(ctx, config = {}) {
     return typeof meta === 'object' && meta !== null && typeof meta.cwd === 'string' && meta.cwd.length > 0 ? meta.cwd : undefined;
   };
 
+  // How the workspace was chosen, so the panel can say "following this
+  // conversation" instead of pretending the user picked it.
+  let resolvedSource = 'none';
+
   const resolveWorkspace = () => {
-    if (typeof latestCwd === 'string' && latestCwd.length > 0) return latestCwd;
+    // The session store is consulted first: it is the only source that follows
+    // the conversation the user is actually looking at. Registries and the last
+    // scan are fallbacks for the case where the store is unavailable.
+    try {
+      const automatic = activeWorkspace();
+      if (automatic !== undefined) {
+        resolvedSource = 'session';
+        return automatic;
+      }
+    } catch {
+      // No session store: fall through to what we already knew.
+    }
+    if (typeof latestCwd === 'string' && latestCwd.length > 0) {
+      resolvedSource = 'last';
+      return latestCwd;
+    }
     const pools = [];
     try {
       if (agentRegistry !== undefined && typeof agentRegistry.list === 'function') pools.push(agentRegistry.list());
@@ -577,7 +676,10 @@ export function apply(ctx, config = {}) {
       // Newest first: the session the user is looking at is the last one made.
       for (let index = pool.length - 1; index >= 0; index -= 1) {
         const cwd = cwdOf(pool[index]);
-        if (cwd !== undefined) return cwd;
+        if (cwd !== undefined) {
+          resolvedSource = 'registry';
+          return cwd;
+        }
       }
     }
     return undefined;
@@ -628,6 +730,7 @@ export function apply(ctx, config = {}) {
     const asked = askedCwd(req);
     if (asked !== undefined) {
       if (asked !== latestCwd) scanWorkspace(asked);
+      resolvedSource = 'request';
       return asked;
     }
     return ensureWorkspace();
@@ -639,6 +742,37 @@ export function apply(ctx, config = {}) {
     if (cwd === undefined) return undefined;
     if (cwd !== latestCwd || stateFor(cwd).report === undefined) scanWorkspace(cwd);
     return cwd;
+  };
+
+  // The overview scans other folders too, so it gets its own budget: small
+  // enough to answer in a second, and cached, because a summary page is opened
+  // far more often than a folder changes.
+  const overviewCache = new Map();
+  const OVERVIEW_TTL = 5 * 60 * 1000;
+  const OVERVIEW_LIMITS = { maxFiles: 4000, maxBytes: 48 * 1024 * 1024 };
+
+  const overviewOf = (entry) => {
+    const cached = overviewCache.get(entry.path);
+    if (cached !== undefined && Date.now() - cached.at < OVERVIEW_TTL) return cached.value;
+    let report;
+    try {
+      report = scanRepository(entry.path, OVERVIEW_LIMITS);
+    } catch {
+      return { path: entry.path, title: entry.title, sessions: entry.sessions, error: 'unreadable' };
+    }
+    const value = {
+      path: entry.path,
+      title: entry.title,
+      sessions: entry.sessions,
+      healthScore: report.healthScore,
+      files: report.scannedFiles,
+      bytes: report.scannedBytes,
+      noisePercent: report.noisePercent,
+      noise: report.topNoise.slice(0, 2).map((item) => item.path),
+      truncated: report.truncated === true
+    };
+    overviewCache.set(entry.path, { at: Date.now(), value });
+    return value;
   };
 
   const sendJson = (res, status, body) => {
@@ -677,9 +811,10 @@ export function apply(ctx, config = {}) {
   const reportHandler = (req, res) => {
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
     if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
-    if (bindWorkspace(req) === undefined) return sendJson(res, 200, { workspace: null, skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
+    if (bindWorkspace(req) === undefined) return sendJson(res, 200, { workspace: null, source: 'none', skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
     return sendJson(res, 200, {
       ...buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy }),
+      source: resolvedSource,
       uploads: recentUploads(startedAt),
       notes: readNotes(latestCwd)
     });
@@ -880,6 +1015,23 @@ export function apply(ctx, config = {}) {
    * workspace of its own, so "no workspace selected" is a choice instead of a
    * dead end.
    */
+  const overviewHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    let list = [];
+    try {
+      list = knownWorkspaces();
+    } catch {
+      list = [];
+    }
+    const current = bindWorkspace(req);
+    return sendJson(res, 200, {
+      current: typeof current === 'string' ? current : null,
+      source: resolvedSource,
+      workspaces: list.map(overviewOf)
+    });
+  };
+
   const workspacesHandler = (req, res) => {
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
     if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
@@ -984,6 +1136,7 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/unignore', handler: unignoreHandler });
       server.register({ kind: 'exact', path: '/aiignore/scan', handler: scanHandler });
       server.register({ kind: 'exact', path: '/aiignore/workspaces', handler: workspacesHandler });
+      server.register({ kind: 'exact', path: '/aiignore/overview', handler: overviewHandler });
       server.register({ kind: 'exact', path: '/aiignore/client-report', handler: clientReportHandler });
       server.register({ kind: 'exact', path: '/aiignore/debug', handler: debugHandler });
       routesInstalled = true;

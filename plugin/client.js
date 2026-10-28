@@ -23,6 +23,7 @@ window.__ModuleLoader__.load({
 
     const NS = 'dsh-aiignore';
     const KIND = 'ai-context';
+    const SUMMARY_ID = 'dsh-aiignore-summary';
 
     let translate = (key) => key;
     const tr = (key) => {
@@ -73,6 +74,16 @@ window.__ModuleLoader__.load({
         pickTitle: 'Pick the folder to audit',
         pickHint: 'The panel could not tell which folder this conversation runs in. Choose one:',
         pickSessions: 'sessions',
+        follow: 'Follow this conversation',
+        followOn: 'following this conversation',
+        chooseFolder: 'Choose another folder…',
+        clearChoice: 'Stop pinning this folder',
+        panelLabel: 'AI context',
+        overviewTitle: 'Context across your workspaces',
+        overviewHint: 'Every folder this app has been used in, scanned with the same rules as the panel.',
+        overviewNone: 'No workspaces yet.',
+        overviewCurrent: 'current',
+        overviewFiles: 'files',
         webTitle: 'No workspace yet',
         errorTitle: 'Could not read the report',
         errorHint: 'The panel could not reach the plugin server in this window.',
@@ -163,6 +174,16 @@ window.__ModuleLoader__.load({
         pickTitle: '选择要检查的文件夹',
         pickHint: '面板没能确定这个对话属于哪个文件夹，请选择：',
         pickSessions: '个会话',
+        follow: '跟随当前对话',
+        followOn: '跟随当前对话',
+        chooseFolder: '选择其它文件夹…',
+        clearChoice: '取消固定文件夹',
+        panelLabel: 'AI 上下文',
+        overviewTitle: '各工作区的上下文状况',
+        overviewHint: '这个应用用过的每个文件夹，用和面板相同的规则扫一遍。',
+        overviewNone: '还没有工作区。',
+        overviewCurrent: '当前',
+        overviewFiles: '个文件',
         webTitle: '还没有工作区',
         errorTitle: '读取报告失败',
         errorHint: '面板无法连接插件服务，可能是插件还没加载完成。',
@@ -252,6 +273,7 @@ window.__ModuleLoader__.load({
 /* ---------- header ---------- */
 
 .aicd-head {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -801,6 +823,154 @@ window.__ModuleLoader__.load({
   padding: 36px 16px;
   text-align: center;
   color: var(--dsw-alias-label-tertiary, currentColor);
+}
+
+.aicd-follow {
+  padding: 1px 6px;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.9));
+  font-size: var(--dsw-font-xxxs-11, 11px);
+  white-space: nowrap;
+}
+
+.aicd-menu {
+  position: absolute;
+  top: 30px;
+  right: 8px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 168px;
+  padding: 4px;
+  border: 1px solid var(--dsw-alias-border-l3, rgba(127, 127, 127, 0.3));
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: var(--dsw-alias-bg-layer-2, #1f1f24);
+  box-shadow: var(--dsw-elevation-panel, 0 8px 24px rgba(0, 0, 0, 0.28));
+}
+
+.aicd-menu-item {
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: transparent;
+  color: var(--dsw-alias-label-primary, #f2f2f2);
+  font: inherit;
+  font-size: var(--dsw-font-xxs-12, 12px);
+  text-align: left;
+  cursor: pointer;
+}
+
+.aicd-menu-item:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+}
+
+.aicd-menu-item[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.aicd-page {
+  height: 100%;
+  overflow: auto;
+  padding: 32px 24px 48px;
+  color: var(--dsw-alias-label-primary, #f2f2f2);
+  background: var(--dsw-alias-bg-base, transparent);
+}
+
+.aicd-page-inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.aicd-page-title {
+  margin: 0 0 4px;
+  font-size: var(--dsw-font-m-18, 18px);
+  font-weight: 600;
+}
+
+.aicd-page-hint {
+  margin: 0 0 20px;
+  color: var(--dsw-alias-label-tertiary, rgba(127, 127, 127, 0.9));
+  font-size: var(--dsw-font-xxs-12, 12px);
+}
+
+.aicd-page-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--dsw-radius-md, 12px);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.2));
+  margin-bottom: 8px;
+}
+
+.aicd-page-row:hover {
+  border-color: var(--dsw-alias-border-l3, rgba(127, 127, 127, 0.3));
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.08));
+}
+
+.aicd-page-score {
+  min-width: 40px;
+  font-size: var(--dsw-font-m-18, 18px);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-secondary, rgba(127, 127, 127, 0.95));
+}
+
+.aicd-page-score[data-tone="good"] {
+  color: var(--dsw-alias-state-success-primary, #4ea36b);
+}
+
+.aicd-page-score[data-tone="warn"] {
+  color: var(--dsw-alias-state-warn-primary, #e0a33a);
+}
+
+.aicd-page-score[data-tone="bad"] {
+  color: var(--dsw-alias-state-error-primary, #d9534f);
+}
+
+.aicd-page-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.aicd-page-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--dsw-font-xs-13, 13px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-page-badge {
+  padding: 0 6px;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-state-business-primary, #3b82f6);
+  color: #ffffff;
+  font-size: var(--dsw-font-xxxs-11, 11px);
+}
+
+.aicd-page-meta {
+  color: var(--dsw-alias-label-tertiary, rgba(127, 127, 127, 0.9));
+  font-size: var(--dsw-font-xxxs-11, 11px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-page-noise {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.85));
+  font-size: var(--dsw-font-xxxs-11, 11px);
+  font-family: var(--ds-font-family-code, ui-monospace, monospace);
 }
 
 .aicd-pick {
@@ -1699,16 +1869,78 @@ window.__ModuleLoader__.load({
       );
     }
 
+    //#endregion views
+
+    //#region summary
+
+    /**
+     * The left sidebar's own page: every folder this app has been used in, with
+     * the same health score the panel shows. It is the aggregate view — the
+     * panel answers "this conversation", this answers "all of them".
+     */
+    function SummaryPage() {
+      const [data, setData] = useState(null);
+      const [failed, setFailed] = useState(false);
+
+      const load = () => {
+        setFailed(false);
+        fetch('/aiignore/overview', { headers: { accept: 'application/json' } })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then((payload) => setData(Array.isArray(payload.workspaces) ? payload : { workspaces: [] }))
+          .catch(() => setFailed(true));
+      };
+      useEffect(load, []);
+
+      const rows = data === null
+        ? []
+        : data.workspaces.slice().sort((left, right) => (left.healthScore ?? 101) - (right.healthScore ?? 101));
+
+      return h('div', { className: 'aicd-page' },
+        h('div', { className: 'aicd-page-inner' },
+          h('h1', { className: 'aicd-page-title' }, tr('overviewTitle')),
+          h('p', { className: 'aicd-page-hint' }, tr('overviewHint')),
+          failed === true ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('errorHint')) : null,
+          rows.length === 0 && data !== null
+            ? h('p', { className: 'aicd-page-hint' }, tr('overviewNone'))
+            : null,
+          rows.map((row) =>
+            h('div', { key: row.path, className: 'aicd-page-row' },
+              h('span', {
+                className: 'aicd-page-score',
+                'data-tone': typeof row.healthScore === 'number' ? toneFor(row.healthScore) : 'bad'
+              }, typeof row.healthScore === 'number' ? String(row.healthScore) : '—'),
+              h('span', { className: 'aicd-page-text' },
+                h('span', { className: 'aicd-page-name' },
+                  row.title,
+                  row.path === (data === null ? null : data.current) ? h('span', { className: 'aicd-page-badge' }, tr('overviewCurrent')) : null
+                ),
+                h('span', { className: 'aicd-page-meta' },
+                  typeof row.files === 'number'
+                    ? `${row.files} ${tr('overviewFiles')} · ${formatBytes(row.bytes)} · ${tr('noise')} ${row.noisePercent}%`
+                    : row.path
+                )
+              ),
+              row.noise !== undefined && row.noise.length > 0
+                ? h('span', { className: 'aicd-page-noise', title: row.noise.join(', ') }, row.noise[0])
+                : null
+            )
+          )
+        )
+      );
+    }
+
+    //#endregion summary
+
     /**
      * No workspace: offer the folders this app has been used in, and the Scan
      * button for the conversation's own directory. A dead end is a bug.
      */
-    function NoWorkspace({ spaces, pending, scan, pick, scanError }) {
+    function NoWorkspace({ spaces, pending, scan, pick, scanError, choosing }) {
       const knows = spaces !== null && spaces.length > 0;
       return h('div', { className: 'aicd-body', 'data-center': 'true' },
         h(Empty, {
           icon: 'spark',
-          title: tr('emptyTitle'),
+          title: choosing === true ? tr('chooseFolder') : tr('emptyTitle'),
           hint: knows ? tr('pickHint') : tr('emptyHint'),
           action: h('div', null,
             knows
@@ -1746,7 +1978,7 @@ window.__ModuleLoader__.load({
      * (reported once, so a future mismatch is one GET away), and the folders this
      * app has been used in, which it offers when it has no workspace.
      */
-    function useClientFacts(props, cwd, data, error) {
+    function useClientFacts(props, cwd, data, error, want) {
       const [spaces, setSpaces] = useState(null);
 
       useEffect(() => {
@@ -1765,24 +1997,117 @@ window.__ModuleLoader__.load({
 
       const missing = data !== null && error === null && (data.workspace === null || data.workspace === undefined);
       useEffect(() => {
-        if (missing !== true || spaces !== null) return;
+        if ((missing !== true && want !== true) || spaces !== null) return;
         fetch('/aiignore/workspaces', { headers: { accept: 'application/json' } })
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => setSpaces(Array.isArray(payload.workspaces) ? payload.workspaces : []))
           .catch(() => setSpaces([]));
-      }, [missing, spaces]);
+      }, [missing, want, spaces]);
 
       return spaces;
     }
 
+    /** The panel header: where you are, whether it follows the conversation, and the few actions. */
+    function PanelHead({ data, pinned, menu, setMenu, follow, setChoosing, setPinned, reload, reloadTree, view, setView, tabs, score, scanned }) {
+      return (
+        h('div', { className: 'aicd-head' },
+              h('div', { className: 'aicd-head-main' },
+                h('div', { className: 'aicd-head-text' },
+                  h('span', { className: 'aicd-path', title: data === null ? '' : (data.workspace || '') },
+                    data === null ? tr('loading') : (data.workspace === null || data.workspace === undefined
+                      // No workspace: the body says so once, with the picker. Repeating it
+                      // in the header just reads like a stutter.
+                      ? ''
+                      : shortPath(data.workspace))
+                  )
+                ),
+                // "Following" is a promise about behaviour, not about which internal
+            // source answered: as long as nothing is pinned, the panel is showing
+            // the conversation's own folder.
+            data !== null && data.workspace !== null && data.workspace !== undefined && pinned === null
+                  ? h('span', { className: 'aicd-follow', title: tr('follow') }, tr('followOn'))
+                  : null,
+                h('button', {
+                  type: 'button',
+                  className: 'aicd-iconbtn',
+                  title: tr('chooseFolder'),
+                  'aria-label': tr('chooseFolder'),
+                  'aria-expanded': menu === true ? 'true' : 'false',
+                  onClick: () => setMenu(menu !== true)
+                }, h(Icon, { name: 'folder', size: 14 })),
+                h('button', {
+                  type: 'button',
+                  className: 'aicd-iconbtn',
+                  title: tr('refresh'),
+                  'aria-label': tr('refresh'),
+                  onClick: () => { reload(); reloadTree(); }
+                }, h(Icon, { name: 'refresh', size: 14 })),
+                menu === true
+                  ? h('div', { className: 'aicd-menu', role: 'menu' },
+                      h('button', {
+                        type: 'button',
+                        role: 'menuitem',
+                        className: 'aicd-menu-item',
+                        'aria-disabled': pinned === null ? 'true' : undefined,
+                        onClick: follow
+                      }, tr('follow')),
+                      h('button', {
+                        type: 'button',
+                        role: 'menuitem',
+                        className: 'aicd-menu-item',
+                        onClick: () => { setChoosing(true); setMenu(false); }
+                      }, tr('chooseFolder')),
+                      pinned === null
+                        ? null
+                        : h('button', {
+                            type: 'button',
+                            role: 'menuitem',
+                            className: 'aicd-menu-item',
+                            onClick: () => { setPinned(null); setChoosing(false); setMenu(false); reload(); reloadTree(); }
+                          }, tr('clearChoice'))
+                    )
+                  : null
+              ),
+              data !== null && score !== null && data.workspace !== null && data.workspace !== undefined
+                ? h('div', { className: 'aicd-summary' },
+                    h('span', { className: 'aicd-score', 'data-tone': toneFor(score) }, String(score)),
+                    h('span', { className: 'aicd-caption' }, `${tr('score')} · ${tr('scoreHint')}`),
+                    h('span', { className: 'aicd-summary-spacer' }),
+                    h('span', { className: 'aicd-caption' },
+                      `${tr('noise')} ${typeof scanned.noisePercent === 'number' ? `${scanned.noisePercent}%` : '—'}`)
+                  )
+                : null,
+              data === null
+                ? null
+                : h('div', { className: 'aicd-tabs', role: 'tablist' },
+                tabs.map(([id, label]) =>
+                  h('button', {
+                    key: id,
+                    type: 'button',
+                    role: 'tab',
+                    className: 'aicd-tab',
+                    'aria-selected': view === id ? 'true' : 'false',
+                    onClick: () => setView(id)
+                  }, label)
+                )
+              )
+        )
+      );
+    }
+
     /** The panel: one header, three views, one report. */
-    //#endregion views
 
     //#region shell
     function Panel(props) {
-      const cwd = sessionCwd(props);
+      // Which folder this panel audits. null means "follow the conversation":
+      // the Host half reads that from the session store. Pinning one here is
+      // always undoable — a choice you cannot leave is not a choice.
+      const [pinned, setPinned] = useState(null);
+      const [menu, setMenu] = useState(false);
+      const [choosing, setChoosing] = useState(false);
+      const cwd = pinned === null ? sessionCwd(props) : pinned;
       const { data, error, at, setAt, tree, reload, reloadTree } = useReport(cwd);
-      const spaces = useClientFacts(props, cwd, data, error);
+      const spaces = useClientFacts(props, cwd, data, error, choosing);
 
       const pick = (dir) => {
         setPending('pick');
@@ -1794,11 +2119,21 @@ window.__ModuleLoader__.load({
               setScanError(true);
               return;
             }
+            setPinned(dir);
+            setChoosing(false);
             reload();
             reloadTree();
           })
           .catch(() => setScanError(true))
           .finally(() => setPending(null));
+      };
+
+      const follow = () => {
+        setPinned(null);
+        setChoosing(false);
+        setMenu(false);
+        reload();
+        reloadTree();
       };
       const [view, setView] = useState('files');
       const [pending, setPending] = useState(null);
@@ -1874,49 +2209,10 @@ window.__ModuleLoader__.load({
       ];
 
       return h('div', { className: 'aicd-panel' },
-        h('div', { className: 'aicd-head' },
-          h('div', { className: 'aicd-head-main' },
-            h('div', { className: 'aicd-head-text' },
-              h('span', { className: 'aicd-path', title: data === null ? '' : (data.workspace || '') },
-                data === null ? tr('loading') : (data.workspace === null || data.workspace === undefined
-                  // No workspace: the body says so once, with the picker. Repeating it
-                  // in the header just reads like a stutter.
-                  ? ''
-                  : shortPath(data.workspace))
-              )
-            ),
-            h('button', {
-              type: 'button',
-              className: 'aicd-iconbtn',
-              title: tr('refresh'),
-              'aria-label': tr('refresh'),
-              onClick: () => { reload(); reloadTree(); }
-            }, h(Icon, { name: 'refresh', size: 14 }))
-          ),
-          data !== null && score !== null && data.workspace !== null && data.workspace !== undefined
-            ? h('div', { className: 'aicd-summary' },
-                h('span', { className: 'aicd-score', 'data-tone': toneFor(score) }, String(score)),
-                h('span', { className: 'aicd-caption' }, `${tr('score')} · ${tr('scoreHint')}`),
-                h('span', { className: 'aicd-summary-spacer' }),
-                h('span', { className: 'aicd-caption' },
-                  `${tr('noise')} ${typeof scanned.noisePercent === 'number' ? `${scanned.noisePercent}%` : '—'}`)
-              )
-            : null,
-          data === null
-            ? null
-            : h('div', { className: 'aicd-tabs', role: 'tablist' },
-            tabs.map(([id, label]) =>
-              h('button', {
-                key: id,
-                type: 'button',
-                role: 'tab',
-                className: 'aicd-tab',
-                'aria-selected': view === id ? 'true' : 'false',
-                onClick: () => setView(id)
-              }, label)
-            )
-          )
-        ),
+        h(PanelHead, {
+          data, pinned, menu, setMenu, follow, setChoosing, setPinned, reload, reloadTree,
+          view, setView, tabs, score, scanned
+        }),
         error !== null
           ? h('div', { className: 'aicd-body', 'data-center': 'true' },
               h(Empty, {
@@ -1932,9 +2228,9 @@ window.__ModuleLoader__.load({
             )
           : data === null
             ? h('div', { className: 'aicd-body' }, h(Skeleton, null))
-            : data.workspace === null || data.workspace === undefined
+            : data.workspace === null || data.workspace === undefined || choosing === true
               ? h('div', { className: 'aicd-body', 'data-center': 'true' },
-                  h(NoWorkspace, { spaces, pending, scan, pick, scanError })
+                  h(NoWorkspace, { spaces, pending, scan, pick, scanError, choosing })
                 )
               : view === 'files'
                 ? h(FilesView, {
@@ -2074,6 +2370,23 @@ window.__ModuleLoader__.load({
           });
         } catch {
           // Registration failures never take the composer entry down with them.
+        }
+
+        // The aggregate page lives in the left navigation, under New Session:
+        // a summary belongs to the app, not to one conversation.
+        if (ctx.slots !== undefined && ctx.slots !== null && typeof ctx.slots.inject === 'function') {
+          ctx.slots.inject('main', () =>
+            ctx.slots.register({ name: 'main', key: SUMMARY_ID, locale: NS }, SummaryPage)
+          );
+          ctx.slots.inject('sidebar.panellist', () =>
+            ctx.slots.register({
+              name: 'sidebar.panellist',
+              id: SUMMARY_ID,
+              order: 12,
+              locale: NS,
+              label: () => tr('panelLabel')
+            }, () => h(Icon, { name: 'spark', size: 16 }))
+          );
         }
 
         // The entry: one click, and the sidebar opens on the report. Guarded so a

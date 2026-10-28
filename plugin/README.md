@@ -55,22 +55,33 @@ Two decisions per file, available from the tree, the session list and the report
   durable direction, because the file is the record: it survives restarts, shows
   up in review, and you can delete the line yourself.
 
-The panel finds its workspace three ways, in this order: the directory of the
-session it is rendered in (the slot hands the body its `sessionId` and a
-`useSessions` selector, so the panel passes `?cwd=` to the Host), then the agent
-and session registries, then whatever was scanned last. Only an absolute path to
-an existing directory is accepted. The empty state carries a **Scan this
-conversation** button that rescans on demand.
+The panel follows the conversation. The Host half reads `~/.dsh/sessions` for the
+session whose log was written last, maps it through
+`~/.dsh/storages/workspace.json`, and audits that folder — so opening a
+conversation is enough, with nothing to pick. The folder button in the header
+pins a different one for as long as you want it, and the menu's **Stop pinning
+this folder** goes back to following; a choice you cannot leave is not a choice.
+When the session store cannot answer, the panel falls back to the directory the
+slot hands it (`?cwd=`), then to the agent and session registries, then to
+whatever was scanned last. Only an absolute path to an existing directory is
+accepted.
+
+The aggregate view lives in the left rail, under New Session: **Context across
+your workspaces** scans every folder this app has been used in and ranks them by
+health, so a repo that is quietly feeding noise to every conversation shows up
+without opening it. It is served by `GET /aiignore/overview` and cached for five
+minutes.
 
 Styling comes from the Host's design tokens (`--dsw-*`) with fallbacks, so the
 panel follows light and dark themes instead of shipping its own palette. Every
 control is reachable with `Tab`, and empty, loading and error states are real
 screens rather than blank space.
 
-The panel talks to the Host half over eleven same-origin routes
-(`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET/POST /aiignore/notes`,
-`GET /aiignore/upload?digest=`, `GET /aiignore/workspaces`, `GET /aiignore/debug`,
-`POST /aiignore/scan`, `POST /aiignore/client-report`, `POST /aiignore/allow`,
+The panel talks to the Host half over twelve same-origin routes
+(`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET /aiignore/overview`,
+`GET/POST /aiignore/notes`, `GET /aiignore/upload?digest=`,
+`GET /aiignore/workspaces`, `GET /aiignore/debug`, `POST /aiignore/scan`,
+`POST /aiignore/client-report`, `POST /aiignore/allow`,
 `POST /aiignore/ignore`, `POST /aiignore/unignore`). The upload route serves a thumbnail and refuses
 anything that is not a 64-hex digest inside the attachment store; the unignore
 route removes exactly one rule line and refuses symlinks and directories. They
