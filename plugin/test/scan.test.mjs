@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { apply } from '../index.js';
+import { apply, knownWorkspaces } from '../index.js';
 
 function tempWorkspace() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-scan-'));
@@ -203,4 +203,69 @@ test('reads refuse a cross-origin caller', () => {
   const response = fakeResponse();
   routes.get('/aiignore/report')(fakeRequest({ url: '/aiignore/report', origin: 'http://evil.example' }), response);
   assert.equal(response.status, 403);
+});
+
+test('known workspaces come from the app store and skip missing folders', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-home-'));
+  const kept = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-ws-'));
+  fs.mkdirSync(path.join(home, 'storages'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'storages', 'workspace.json'), JSON.stringify({
+    tables: {
+      workspaces: {
+        one: { path: kept, title: 'Kept', sessionIds: ['a', 'b'] },
+        two: { path: path.join(home, 'gone'), title: 'Gone', sessionIds: ['c'] }
+      }
+    }
+  }));
+
+  const list = knownWorkspaces(home);
+  assert.deepEqual(list.map((entry) => entry.title), ['Kept']);
+  assert.equal(list[0].sessions, 2);
+});
+
+test('the workspaces route lists what the app has been used in', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-home-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-ws-'));
+  fs.mkdirSync(path.join(home, 'storages'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'storages', 'workspace.json'), JSON.stringify({
+    tables: { workspaces: { one: { path: dir, title: 'Mine', sessionIds: ['x'] } } }
+  }));
+
+  const previous = process.env.DSH_HOME;
+  process.env.DSH_HOME = home;
+  try {
+    const { routes } = harnessWith({});
+    const response = fakeResponse();
+    routes.get('/aiignore/workspaces')(fakeRequest({ url: '/aiignore/workspaces' }), response);
+    assert.equal(response.status, 200);
+    const body = JSON.parse(response.body);
+    assert.equal(body.current, null);
+    assert.deepEqual(body.workspaces.map((entry) => entry.title), ['Mine']);
+  } finally {
+    if (previous === undefined) delete process.env.DSH_HOME;
+    else process.env.DSH_HOME = previous;
+  }
+});
+
+test('the browser half can report what it sees, and debug reads it back', async () => {
+  const { routes } = harnessWith({});
+
+  const report = fakeResponse();
+  const request = fakeRequest({ method: 'POST', url: '/aiignore/client-report' });
+  request.setEncoding = () => {};
+  request.on = (name, handler) => {
+    if (name === 'data') process.nextTick(() => handler(JSON.stringify({ keys: ['sessionId', 'useSessions'], sessionId: 's-1', hasUseSessions: true, cwd: '/w' })));
+    if (name === 'end') process.nextTick(handler);
+    return request;
+  };
+  routes.get('/aiignore/client-report')(request, report);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(report.status, 200);
+
+  const debug = fakeResponse();
+  routes.get('/aiignore/debug')(fakeRequest({ url: '/aiignore/debug' }), debug);
+  const body = JSON.parse(debug.body);
+  assert.equal(body.client.sessionId, 's-1');
+  assert.equal(body.client.hasUseSessions, true);
+  assert.deepEqual(body.client.keys, ['sessionId', 'useSessions']);
 });

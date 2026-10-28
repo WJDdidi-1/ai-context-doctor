@@ -70,6 +70,9 @@ window.__ModuleLoader__.load({
         emptyHint: 'Scan the workspace of this conversation to see what the agent could read here.',
         scanNow: 'Scan this conversation',
         scanFailed: 'The scan did not run. The conversation may not have a workspace yet.',
+        pickTitle: 'Pick the folder to audit',
+        pickHint: 'The panel could not tell which folder this conversation runs in. Choose one:',
+        pickSessions: 'sessions',
         webTitle: 'No workspace yet',
         errorTitle: 'Could not read the report',
         errorHint: 'The panel could not reach the plugin server in this window.',
@@ -157,6 +160,9 @@ window.__ModuleLoader__.load({
         emptyHint: '扫描当前对话的工作区，就能看到 AI 在这里会读到什么。',
         scanNow: '扫描当前对话',
         scanFailed: '扫描没有执行。这个对话可能还没有确定工作目录。',
+        pickTitle: '选择要检查的文件夹',
+        pickHint: '面板没能确定这个对话属于哪个文件夹，请选择：',
+        pickSessions: '个会话',
         webTitle: '还没有工作区',
         errorTitle: '读取报告失败',
         errorHint: '面板无法连接插件服务，可能是插件还没加载完成。',
@@ -795,6 +801,53 @@ window.__ModuleLoader__.load({
   padding: 36px 16px;
   text-align: center;
   color: var(--dsw-alias-label-tertiary, currentColor);
+}
+
+.aicd-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 12px;
+}
+
+.aicd-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.2));
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: var(--dsw-alias-bg-layer-1, transparent);
+  color: var(--dsw-alias-label-primary, #f2f2f2);
+  font: inherit;
+  font-size: var(--dsw-font-xxs-12, 12px);
+  text-align: left;
+  cursor: pointer;
+}
+
+.aicd-pick-row:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+  border-color: var(--dsw-alias-border-l3, rgba(127, 127, 127, 0.3));
+}
+
+.aicd-pick-row:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.aicd-pick-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-pick-meta {
+  margin-left: auto;
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.9));
+  font-size: var(--dsw-font-xxxs-11, 11px);
 }
 
 .aicd-empty-icon {
@@ -1646,6 +1699,82 @@ window.__ModuleLoader__.load({
       );
     }
 
+    /**
+     * No workspace: offer the folders this app has been used in, and the Scan
+     * button for the conversation's own directory. A dead end is a bug.
+     */
+    function NoWorkspace({ spaces, pending, scan, pick, scanError }) {
+      const knows = spaces !== null && spaces.length > 0;
+      return h('div', { className: 'aicd-body', 'data-center': 'true' },
+        h(Empty, {
+          icon: 'spark',
+          title: tr('emptyTitle'),
+          hint: knows ? tr('pickHint') : tr('emptyHint'),
+          action: h('div', null,
+            knows
+              ? h('div', { className: 'aicd-pick' },
+                  spaces.slice(0, 6).map((space) =>
+                    h('button', {
+                      key: space.path,
+                      type: 'button',
+                      className: 'aicd-pick-row',
+                      title: space.path,
+                      disabled: pending === 'pick' ? 'true' : undefined,
+                      onClick: () => pick(space.path)
+                    },
+                      h('span', { className: 'aicd-pick-name' }, space.title),
+                      h('span', { className: 'aicd-pick-meta' }, `${space.sessions} ${tr('pickSessions')}`)
+                    )
+                  )
+                )
+              : null,
+            h('button', {
+              type: 'button',
+              className: 'aicd-btn',
+              'data-variant': 'primary',
+              disabled: pending === 'scan' ? 'true' : undefined,
+              onClick: scan
+            }, tr('scanNow')),
+            scanError ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('scanFailed')) : null
+          )
+        })
+      );
+    }
+
+    /**
+     * The two facts the panel learns on its own: what the Host handed this body
+     * (reported once, so a future mismatch is one GET away), and the folders this
+     * app has been used in, which it offers when it has no workspace.
+     */
+    function useClientFacts(props, cwd, data, error) {
+      const [spaces, setSpaces] = useState(null);
+
+      useEffect(() => {
+        const holder = props === null || props === undefined ? {} : props;
+        fetch('/aiignore/client-report', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            keys: Object.keys(holder),
+            sessionId: typeof holder.sessionId === 'string' ? holder.sessionId : null,
+            hasUseSessions: typeof holder.useSessions === 'function',
+            cwd: cwd === undefined ? null : cwd
+          })
+        }).catch(() => {});
+      }, []);
+
+      const missing = data !== null && error === null && (data.workspace === null || data.workspace === undefined);
+      useEffect(() => {
+        if (missing !== true || spaces !== null) return;
+        fetch('/aiignore/workspaces', { headers: { accept: 'application/json' } })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then((payload) => setSpaces(Array.isArray(payload.workspaces) ? payload.workspaces : []))
+          .catch(() => setSpaces([]));
+      }, [missing, spaces]);
+
+      return spaces;
+    }
+
     /** The panel: one header, three views, one report. */
     //#endregion views
 
@@ -1653,6 +1782,24 @@ window.__ModuleLoader__.load({
     function Panel(props) {
       const cwd = sessionCwd(props);
       const { data, error, at, setAt, tree, reload, reloadTree } = useReport(cwd);
+      const spaces = useClientFacts(props, cwd, data, error);
+
+      const pick = (dir) => {
+        setPending('pick');
+        setScanError(false);
+        fetch(`/aiignore/scan?cwd=${encodeURIComponent(dir)}`, { method: 'POST', headers: { 'content-type': 'application/json' } })
+          .then((response) => response.json())
+          .then((payload) => {
+            if (payload === null || typeof payload !== 'object' || payload.workspace === undefined || payload.workspace === null) {
+              setScanError(true);
+              return;
+            }
+            reload();
+            reloadTree();
+          })
+          .catch(() => setScanError(true))
+          .finally(() => setPending(null));
+      };
       const [view, setView] = useState('files');
       const [pending, setPending] = useState(null);
       const [postError, setPostError] = useState(null);
@@ -1732,7 +1879,9 @@ window.__ModuleLoader__.load({
             h('div', { className: 'aicd-head-text' },
               h('span', { className: 'aicd-path', title: data === null ? '' : (data.workspace || '') },
                 data === null ? tr('loading') : (data.workspace === null || data.workspace === undefined
-                  ? tr('webTitle')
+                  // No workspace: the body says so once, with the picker. Repeating it
+                  // in the header just reads like a stutter.
+                  ? ''
                   : shortPath(data.workspace))
               )
             ),
@@ -1785,21 +1934,7 @@ window.__ModuleLoader__.load({
             ? h('div', { className: 'aicd-body' }, h(Skeleton, null))
             : data.workspace === null || data.workspace === undefined
               ? h('div', { className: 'aicd-body', 'data-center': 'true' },
-                  h(Empty, {
-                    icon: 'spark',
-                    title: tr('emptyTitle'),
-                    hint: tr('emptyHint'),
-                    action: h('div', null,
-                      h('button', {
-                        type: 'button',
-                        className: 'aicd-btn',
-                        'data-variant': 'primary',
-                        disabled: pending === 'scan' ? 'true' : undefined,
-                        onClick: scan
-                      }, tr('scanNow')),
-                      scanError ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('scanFailed')) : null
-                    )
-                  })
+                  h(NoWorkspace, { spaces, pending, scan, pick, scanError })
                 )
               : view === 'files'
                 ? h(FilesView, {
