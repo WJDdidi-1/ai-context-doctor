@@ -2,6 +2,13 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.4.0
+
+- Add `tokenEstimate` to the report: a min/max token range derived from the
+  measured 3.08–4.32 bytes-per-token ratio, never a single invented number.
+- Export `classifyPath()` and `estimateTokens()` so the Harness plugin blocks
+  exactly the files the report flags instead of keeping a second rule list.
+
 ## 0.3.0 — 2026-10-28
 
 ### Added
