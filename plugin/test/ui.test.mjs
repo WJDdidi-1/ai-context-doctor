@@ -121,7 +121,7 @@ test('the ledger separates what was read from what was refused', () => {
 
 test('report handler answers with the scanned workspace, then the allow route edits it', async () => {
   const { routes, listeners, guards } = harness();
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/notes', '/aiignore/report', '/aiignore/tree', '/aiignore/upload']);
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/notes', '/aiignore/report', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload']);
 
   const root = tempWorkspace();
   const agent = { session: { meta: { cwd: root } }, inject() {} };
@@ -251,8 +251,8 @@ test('a service that mounts late still gets the routes and the guard', async () 
   for (const entry of deferred) entry.callback(ctx);
 
   assert.equal(guards.length, 1, 'the guard installs once the tool registry appears');
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/notes', '/aiignore/report', '/aiignore/tree', '/aiignore/upload']);
-  assert.equal(late.routes.size, 6, 'a context with both services installs eagerly');
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/notes', '/aiignore/report', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload']);
+  assert.equal(late.routes.size, 7, 'a context with both services installs eagerly');
 });
 
 test('the tree route lists the scanned workspace, one directory at a time', () => {

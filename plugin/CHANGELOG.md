@@ -1,3 +1,18 @@
+## 0.13.0
+
+The file list behaves like a file list, and a decision can be taken back.
+
+- **Multi-select.** Click selects one row, Cmd/Ctrl-click toggles a row, Shift-click
+  selects a range; with more than one selected the toolbar offers "Never read N
+  files" and "Clear". Batch ignore posts one rule at a time, so a failure stops
+  where it happened instead of half-writing a list.
+- **Undo.** After a file is written into `.aiignore` the panel shows what it did
+  and offers Undo, which calls `POST /aiignore/unignore` — a route that removes
+  exactly that one rule line and leaves every other line (and comment) untouched.
+  A symlink, a directory, or a missing file is refused rather than rewritten.
+- **Sort.** "Largest first" (the default — the biggest files waste the most
+  context) or "Name"; folders always stay above files.
+
 ## 0.12.0
 
 Three things the panel could describe but not do.

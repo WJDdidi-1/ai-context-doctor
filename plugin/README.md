@@ -58,13 +58,15 @@ panel follows light and dark themes instead of shipping its own palette. Every
 control is reachable with `Tab`, and empty, loading and error states are real
 screens rather than blank space.
 
-The panel talks to the Host half over six same-origin routes
+The panel talks to the Host half over seven same-origin routes
 (`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET/POST /aiignore/notes`,
-`POST /aiignore/allow`, `POST /aiignore/ignore`, `GET /aiignore/upload?digest=`).
-The last one serves a thumbnail of an upload and refuses anything that is not a
-64-hex digest inside the attachment store. They
-answer for the most recently scanned workspace, never return file contents, and
-set `no-store`. The Host half installs them through `ctx.inject(['webServer'])`,
+`GET /aiignore/upload?digest=`, `POST /aiignore/allow`, `POST /aiignore/ignore`,
+`POST /aiignore/unignore`). The upload route serves a thumbnail and refuses
+anything that is not a 64-hex digest inside the attachment store; the unignore
+route removes exactly one rule line and refuses symlinks and directories. They
+answer for the most recently scanned workspace and set `no-store`; the only one
+that returns file bytes is the upload thumbnail, and it only ever returns an
+image the user already handed to this session. The Host half installs them through `ctx.inject(['webServer'])`,
 so a profile without a web server still gets the read guard — it just has no panel.
 There is no authentication beyond a same-origin check: like every
 `ctx.webServer` route, this one inherits the loopback bind of the Harness and

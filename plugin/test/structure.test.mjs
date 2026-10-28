@@ -22,7 +22,7 @@ test('client.js declares its regions once, in reading order', () => {
 });
 
 test('each region holds a bounded amount of code', () => {
-  const bounds = { copy: 220, styles: 780, helpers: 200, components: 200, views: 400, shell: 240, registration: 90 };
+  const bounds = { copy: 220, styles: 780, helpers: 200, components: 200, views: 460, shell: 260, registration: 90 };
   const lines = CLIENT.split('\n');
   let open = null;
   let start = 0;
