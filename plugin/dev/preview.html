@@ -92,7 +92,9 @@
   </div>
 
   <div class="stage">
-    <div class="main">
+    <div class="main" style="position: relative;">
+      <div class="rail" id="rail-root"></div>
+      <div id="stage-root"></div>
       <div class="bubble">A mock conversation, so the composer row is where it really is.</div>
       <div class="composer" id="composer-root">
         <span class="plus">+</span>
@@ -100,6 +102,7 @@
       </div>
     </div>
     <aside>
+      <div class="rail-note">left rail icon ↑ / overview page ↓</div>
       <div id="chip-root" style="padding: 8px 12px; border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,0.06));"></div>
       <div id="panel-root"></div>
     </aside>
@@ -227,14 +230,21 @@
         // `?nocwd=1` models the real failure: the panel has no session, so it
         // asks without a cwd and the Host has nothing to answer with.
         const blind = location.search.indexOf('nocwd') !== -1 && bound === null && url.indexOf('cwd=') === -1;
-        const workspace = bound === null ? data.workspace : bound;
-        const answer = blind ? Object.assign({}, data, { workspace: null, policy: null }) : Object.assign({}, data, { workspace: workspace });
+        // A request that names its folder wins, exactly like the Host half: that
+        // is what lets the panel go back to following the conversation.
+        const asked = url.match(/[?&]cwd=([^&]+)/);
+        const workspace = asked !== null ? decodeURIComponent(asked[1]) : (bound === null ? data.workspace : bound);
+        const source = asked !== null ? 'request' : (bound === null ? 'session' : 'last');
+        const answer = blind
+          ? Object.assign({}, data, { workspace: null, policy: null, source: 'none' })
+          : Object.assign({}, data, { workspace: workspace, source: source });
         window.__lastReport = answer;
         return record(answer);
       }
 
       if (url.indexOf('/aiignore/tree') === 0) {
-        const dir = decodeURIComponent((url.split('dir=')[1] || ''));
+        const found = url.match(/[?&]dir=([^&]*)/);
+        const dir = found === null ? '' : decodeURIComponent(found[1]);
         return record(TREES[dir] || { dir, parent: '', total: 0, truncated: false, entries: [] });
       }
       // The Scan button: report the noisy workspace as if the host had just
@@ -258,6 +268,16 @@
         });
       }
       if (url.indexOf('/aiignore/client-report') === 0) return record({ received: true });
+      if (url.indexOf('/aiignore/overview') === 0) {
+        return record({
+          current: '/Users/you/code/demo-noise',
+          source: 'session',
+          workspaces: [
+            { path: '/Users/you/code/demo-noise', title: 'demo-noise', sessions: 3, healthScore: 22, files: 8, bytes: 1572864, noisePercent: 78, noise: ['dist/', 'package-lock.json'] },
+            { path: '/Users/you/code/other', title: 'other-project', sessions: 1, healthScore: 91, files: 24, bytes: 204800, noisePercent: 9, noise: [] }
+          ]
+        });
+      }
       if (url === '/aiignore/allow') return record({ allowed: true });
       if (url === '/aiignore/ignore') return record({ ignored: true, rule: String((body && body.path) || '') });
       if (url === '/aiignore/unignore') return record({ removed: true });
@@ -289,6 +309,21 @@
           window.ReactLite.render(window.ReactLite.createElement(component, props), root, path);
         };
         if (definition.name === 'sidebar.right.pane.tab') mount('panel-root', 'panel');
+        if (definition.name === 'main') {
+          // The left-rail overview opens here in the real app; the preview gives
+          // it the whole conversation column so its layout can be judged.
+          const stage = document.getElementById('stage-root');
+          if (stage !== null) {
+            const props = { t: function (key) { return key; } };
+            window.ReactLite.render(window.ReactLite.createElement(component, props), stage, 'stage');
+          }
+        }
+        if (definition.name === 'sidebar.panellist') {
+          const rail = document.getElementById('rail-root');
+          if (rail !== null) {
+            window.ReactLite.render(window.ReactLite.createElement(component, null), rail, 'rail');
+          }
+        }
         if (definition.name === 'conversation.input.left') mount('composer-root', 'composer');
         if (definition.name === 'sidebar.right.pane.tab.title') {
           const root = document.getElementById('chip-root');

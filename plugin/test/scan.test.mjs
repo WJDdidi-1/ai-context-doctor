@@ -7,6 +7,13 @@ import test from 'node:test';
 
 import { apply, knownWorkspaces } from '../index.js';
 
+/*
+ * The Host half reads the user's own ~/.dsh to learn which conversation is in
+ * front (session store + workspace table). Tests must not inherit the developer's
+ * real conversations, so every test file points DSH_HOME at an empty directory.
+ */
+process.env.DSH_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-home-'));
+
 function tempWorkspace() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-scan-'));
   fs.mkdirSync(path.join(root, 'src'), { recursive: true });
