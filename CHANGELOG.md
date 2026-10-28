@@ -2,6 +2,20 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.6.0
+
+- Score the repository as four independent losses instead of one byte ratio:
+  build output (weight 40), large files (25), lockfiles (20), logs (15). A
+  category costs `weight × its share of bytes`, capped at its weight, so a
+  single 40 MB `dist/` now costs 40 points rather than ~98. `healthScore` can
+  therefore be higher than before for the same repository — this is a
+  deliberate change, and `scoreBreakdown` shows the arithmetic.
+- Add `scoreNoise()`, `noiseCategory()` and `CATEGORY_WEIGHTS` for callers that
+  want to explain a score instead of only printing it.
+- Add `lib/levels.js`: five filtering levels (`off`, `light`, `balanced`,
+  `strong`, `strict`) as data, with `DEFAULT_LEVEL = 3` and a consequence
+  sentence per level. The Harness plugin drives its slider from this.
+
 ## 0.5.0
 
 - Export `matchesAiignore()` and `parseRules()`: the guard in the Harness plugin

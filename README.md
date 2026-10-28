@@ -57,7 +57,7 @@ Run this before asking your coding agent to inspect a larger repo.
 | Line | What it means |
 | --- | --- |
 | `Scanned: 8 files, 1.50 MB` | What was actually walked. `.git/` and `node_modules/` are skipped. |
-| `AI Context Health: 22/100` | 100 minus the share of those bytes that matched a noise rule. 22 means most of what the agent would read is noise. |
+| `AI Context Health: 22/100` | Four separate losses, subtracted from 100: build output (at most 40), large files (25), lockfiles (20), logs (15). Each category costs its weight times the share of bytes it takes, so one huge `dist/` costs at most 40 points instead of dragging the score to zero. |
 | `Status:` | Just the score in words: 85+ clean, 60–84 some noise, below 60 too much. |
 | `Top context waste` | The five biggest offenders with the reason each was flagged. |
 | `Review before sharing` | Files that look like credentials or deploy scripts. **The tool does not claim they are secret** — it says look before you paste the repo into a chat. |
@@ -125,7 +125,7 @@ the other tools: your agent, your editor, your teammates.
 npx ai-context-doctor ./some-repo --json
 ```
 
-Returns `repo`, `healthScore`, `status`, `noisePercent`, `usefulPercent`, `scannedBytes`, `scannedFiles`, `topNoise`, `review`, and `suggestedAiignore` — plus `truncated: true` when a scan cap was hit.
+Returns `repo`, `healthScore`, `status`, `noisePercent`, `usefulPercent`, `scannedBytes`, `scannedFiles`, `topNoise`, `review`, `suggestedAiignore`, `scoreBreakdown` (the per-category arithmetic behind the score) and `scoreLost` — plus `truncated: true` when a scan cap was hit.
 
 With `--write` it also carries a `write` object: `path`, `created`, `added`, `written`, `dryRun`.
 

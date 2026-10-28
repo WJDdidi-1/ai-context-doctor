@@ -44,7 +44,14 @@ test('treats lockfiles, logs, and build output as noise', () => {
 
   assert.equal(report.scannedFiles, 4);
   assert.equal(report.scannedBytes, 400);
-  assert.equal(report.healthScore, 25);
+  // 400 bytes total, 100 in each category: build 40x0.25, lockfile 20x0.25,
+  // log 15x0.25 => 18.75 points lost.
+  assert.equal(report.healthScore, 81);
+  assert.equal(report.scoreLost, 18.8);
+  assert.deepEqual(
+    report.scoreBreakdown.map((item) => [item.id, item.lost]),
+    [['build', 10], ['large', 0], ['lockfile', 5], ['log', 3.8]]
+  );
   assert.equal(report.noisePercent, 75);
   assert.deepEqual(
     [...report.topNoise.map((item) => item.reason)].sort(),
