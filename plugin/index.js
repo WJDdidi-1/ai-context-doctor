@@ -267,11 +267,12 @@ export function apply(ctx, config = {}) {
   };
 
   let guardInstalled = false;
-  const installGuard = () => {
+  const installGuard = (serviceCtx) => {
     if (guardInstalled) return;
     try {
-      if (ctx.tools !== null && ctx.tools !== undefined && typeof ctx.tools.guard === 'function') {
-        ctx.tools.guard(guard);
+      const tools = serviceCtx !== null && serviceCtx !== undefined ? serviceCtx.tools : undefined;
+      if (tools !== null && tools !== undefined && typeof tools.guard === 'function') {
+        tools.guard(guard);
         guardInstalled = true;
       }
     } catch {
@@ -279,7 +280,6 @@ export function apply(ctx, config = {}) {
     }
   };
 
-  installGuard();
 
   // The browser half reads this workspace's state over plain HTTP: third-party
   // bundles cannot mint a remote namespace, and a route is the only channel the
@@ -376,10 +376,10 @@ export function apply(ctx, config = {}) {
   };
 
   let routesInstalled = false;
-  const installRoutes = () => {
+  const installRoutes = (serviceCtx) => {
     if (routesInstalled) return;
     try {
-      const server = ctx.webServer;
+      const server = serviceCtx !== null && serviceCtx !== undefined ? serviceCtx.webServer : undefined;
       if (server === null || server === undefined || typeof server.register !== 'function') return;
       server.register({ kind: 'exact', path: '/aiignore/report', handler: reportHandler });
       server.register({ kind: 'exact', path: '/aiignore/allow', handler: allowHandler });
@@ -390,14 +390,25 @@ export function apply(ctx, config = {}) {
     }
   };
 
-  installRoutes();
+  // `tools` and `webServer` mount at their own pace, and a headless profile may
+  // never have a web server at all. Deferring each installation keeps the plugin
+  // useful in both shapes instead of silently doing nothing when a service is
+  // absent at apply time.
+  const defer = (deps, callback) => {
+    try {
+      if (typeof ctx.inject === 'function') ctx.inject(deps, callback);
+    } catch {
+      // Fall through: the service may already be mounted on this context.
+    }
+  };
+  defer(['tools'], (serviceCtx) => installGuard(serviceCtx));
+  defer(['webServer'], (serviceCtx) => installRoutes(serviceCtx));
+  // Some hosts mount these before this plugin; try directly too.
+  installGuard(ctx);
+  installRoutes(ctx);
 
   ctx.on('agent/created', (payload) => {
     try {
-      // The registry may mount after this plugin; retry here, where it exists.
-      installGuard();
-      installRoutes();
-
       const agent = payload && payload.agent ? payload.agent : payload;
       const cwd = agent && agent.session && agent.session.meta && agent.session.meta.cwd;
       if (typeof cwd !== 'string' || cwd.length === 0) return;

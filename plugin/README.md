@@ -25,8 +25,9 @@ becomes noise itself.
 
 ## The panel
 
-The bundle also ships a browser half. A **Context** button sits in the composer
-dock; nothing is drawn until you click it. The panel then shows this
+The bundle also ships a browser half. A folder button sits beside the add-files
+button in the composer, labelled **Context** / **上下文** for screen readers;
+nothing is drawn until you click it. The panel then shows this
 workspace's numbers — health score, noise share, the tokens the guard kept out —
 one row per refused read with a **Read it anyway** button, and a ledger of what
 the session actually read, split into source, review (templates and deploy
@@ -40,9 +41,11 @@ Two decisions are offered per row:
   durable direction, because the file is the record: it survives restarts, shows
   up in review, and you can delete the line yourself.
 
-The panel talks to the Host half over two same-origin routes
-(`GET /aiignore/report`, `POST /aiignore/allow`). They answer for the most
-recently scanned workspace, never return file contents, and set `no-store`.
+The panel talks to the Host half over three same-origin routes
+(`GET /aiignore/report`, `POST /aiignore/allow`, `POST /aiignore/ignore`). They
+answer for the most recently scanned workspace, never return file contents, and
+set `no-store`. The Host half installs them through `ctx.inject(['webServer'])`,
+so a profile without a web server still gets the read guard — it just has no panel.
 There is no authentication beyond a same-origin check: like every
 `ctx.webServer` route, this one inherits the loopback bind of the Harness and
 must not be exposed to a network.

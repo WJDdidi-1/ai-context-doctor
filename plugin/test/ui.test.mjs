@@ -50,6 +50,7 @@ function harness() {
   const routes = new Map();
   const listeners = new Map();
   const guards = [];
+  const deferred = [];
   const ctx = {
     tools: { guard(guard) { guards.push(guard); } },
     webServer: {
@@ -60,10 +61,17 @@ function harness() {
     },
     on(name, listener) {
       listeners.set(name, listener);
+    },
+    // Mirrors cordis: a dependency that is already mounted starts the child
+    // plugin immediately, which is the path a real Harness takes when the
+    // services exist before this plugin.
+    inject(deps, callback) {
+      if (deps.every((dep) => ctx[dep] !== undefined)) callback(ctx);
+      else deferred.push({ deps, callback });
     }
   };
   apply(ctx, {});
-  return { routes, listeners, guards };
+  return { routes, listeners, guards, deferred, ctx };
 }
 
 test('a skipped read is recorded once per path and counted on repeats', () => {
@@ -210,4 +218,35 @@ test('report handler refuses non-GET and unknown workspaces answer with null', (
   const empty = fakeResponse();
   routes.get('/aiignore/report')(fakeRequest(), empty);
   assert.equal(JSON.parse(empty.body).workspace, null);
+});
+
+test('a service that mounts late still gets the routes and the guard', async () => {
+  // A headless profile has no web server; the panel must not depend on it, and a
+  // web server that appears after this plugin still gets the routes.
+  const { webServer } = { webServer: undefined };
+  const late = harness();
+  void webServer;
+
+  // Rebuild a context without services, then hand them over the way cordis does.
+  const routes = new Map();
+  const guards = [];
+  const deferred = [];
+  const ctx = {
+    on() {},
+    inject(deps, callback) {
+      deferred.push({ deps, callback });
+    }
+  };
+  apply(ctx, {});
+
+  assert.equal(deferred.length, 2, 'both services are awaited');
+  assert.equal(routes.size, 0);
+
+  ctx.tools = { guard(guard) { guards.push(guard); } };
+  ctx.webServer = { register(route) { routes.set(route.path, route.handler); return () => {}; } };
+  for (const entry of deferred) entry.callback(ctx);
+
+  assert.equal(guards.length, 1, 'the guard installs once the tool registry appears');
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/report']);
+  assert.equal(late.routes.size, 3, 'a context with both services installs eagerly');
 });

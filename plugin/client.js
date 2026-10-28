@@ -242,15 +242,32 @@ window.__ModuleLoader__.load({
       );
     }
 
+    // A folder, drawn inline so the button needs no asset request and inherits
+    // the composer's current text color in both themes.
+    function FolderIcon() {
+      return h(
+        'svg',
+        { width: 14, height: 14, viewBox: '0 0 16 16', fill: 'none', 'aria-hidden': true, style: { display: 'block' } },
+        h('path', {
+          d: 'M1.5 4.2c0-.7.6-1.2 1.2-1.2h3.1l1.3 1.5h6.2c.7 0 1.2.6 1.2 1.2v6.1c0 .7-.6 1.2-1.2 1.2H2.7c-.7 0-1.2-.6-1.2-1.2V4.2Z',
+          stroke: 'currentColor',
+          strokeWidth: 1.2,
+          strokeLinejoin: 'round'
+        })
+      );
+    }
+
     function Dock() {
       const [open, setOpen] = useState(false);
       const label = tr('button');
       return h(React.Fragment, null,
-        h('button', { type: 'button', style: styles.button, onClick: () => setOpen((value) => !value) }, label),
+        h('button', { type: 'button', style: styles.button, title: label, 'aria-label': label, onClick: () => setOpen((value) => !value) },
+          h(FolderIcon, null)
+        ),
         open
           ? h('div', { style: styles.overlay },
               h('div', { style: styles.header },
-                h('span', null),
+                h('span', null, tr('title')),
                 h('button', { type: 'button', style: styles.close, onClick: () => setOpen(false) }, '×')
               ),
               h(Report, null)
@@ -260,7 +277,7 @@ window.__ModuleLoader__.load({
     }
 
     return {
-      inject: ['slots'],
+      inject: ['slots', 'locale'],
       apply(ctx) {
         try {
           if (ctx.locale && typeof ctx.locale.register === 'function') {
@@ -271,8 +288,10 @@ window.__ModuleLoader__.load({
           // No locale service: the panel falls back to its English strings.
         }
 
-        ctx.slots.inject('conversation.composer.dock', () =>
-          ctx.slots.register({ name: 'conversation.composer.dock', id: 'dsh-aiignore:report', order: 5 }, Dock)
+        // `conversation.input.left` is the row that holds the add-files button,
+        // so the panel entry sits beside it instead of below the composer.
+        ctx.slots.inject('conversation.input.left', () =>
+          ctx.slots.register({ name: 'conversation.input.left', id: 'dsh-aiignore:report', order: 20 }, Dock)
         );
       }
     };
