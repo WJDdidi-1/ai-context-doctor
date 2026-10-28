@@ -57,6 +57,22 @@ window.__ModuleLoader__.load({
         tabFiles: 'Files',
         tabInsights: 'Insights',
         tabNote: 'Note',
+        tabStrategy: 'Strategy',
+        scoreTitle: 'Why this score',
+        scoreFormula: 'Each category can cost at most its weight. What it costs is how much of the repository it occupies.',
+        optimizeTitle: 'Make it better',
+        optimizeHint: 'Writes the suggested rules into .aiignore. Your existing lines are kept, and one click puts the file back.',
+        optimize: 'Optimize this workspace',
+        optimizeNone: 'Nothing worth adding: this workspace is already lean.',
+        optimizeFailed: 'Could not write .aiignore. Check that the folder is writable.',
+        optimized: 'Added rules:',
+        scoreNow: 'Score:',
+        undoOptimize: 'Undo',
+        strategyTitle: 'How strict should I be?',
+        strategyHint: 'Left keeps everything. Right filters harder. The recommended notch is 3.',
+        strategySave: 'Use this setting',
+        strategyWarning: 'At this strength small but real source files can be skipped. Check the blocked list after a session.',
+        strategyOff: 'At this strength nothing is filtered except your own .aiignore rules.',
         search: 'Filter files…',
         filterAll: 'All',
         filterNoise: 'Noise',
@@ -157,6 +173,22 @@ window.__ModuleLoader__.load({
         tabFiles: '文件',
         tabInsights: '分析',
         tabNote: '说明',
+        tabStrategy: '策略',
+        scoreTitle: '评分从哪来',
+        scoreFormula: '每类最多扣掉它的权重；实际扣多少，取决于它占仓库的比例。',
+        optimizeTitle: '一键优化',
+        optimizeHint: '把建议规则写进 .aiignore。你原有的行会保留，一次点击就能还原。',
+        optimize: '优化这个工作区',
+        optimizeNone: '没有需要添加的规则：这个工作区已经很干净。',
+        optimizeFailed: '无法写入 .aiignore，请检查目录写权限。',
+        optimized: '已添加规则：',
+        scoreNow: '分数：',
+        undoOptimize: '撤销',
+        strategyTitle: '筛选力度',
+        strategyHint: '往左保留更多，往右过滤更强。推荐档位是 3。',
+        strategySave: '使用这个档位',
+        strategyWarning: '这个档位可能跳过体积不大但确实有用的源文件，会话结束后请看一眼被拦列表。',
+        strategyOff: '这个档位只应用你自己写的 .aiignore 规则，其余一律放行。',
         search: '筛选文件…',
         filterAll: '全部',
         filterNoise: '噪音',
@@ -1127,6 +1159,113 @@ window.__ModuleLoader__.load({
   gap: 6px;
   padding: 10px 10px 0 12px;
 }
+
+.aicd-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0 12px;
+  border-top: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.18));
+}
+
+.aicd-opt-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aicd-opt-title {
+  font-family: var(--dsw-font-xs-strong-13, 600 13px system-ui);
+  color: var(--dsw-alias-label-primary, #f2f2f2);
+}
+
+.aicd-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.aicd-bar-name {
+  flex: none;
+  width: 72px;
+  color: var(--dsw-alias-label-secondary, rgba(242, 242, 242, 0.72));
+}
+
+.aicd-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, 0.18));
+  overflow: hidden;
+}
+
+.aicd-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--dsw-alias-state-warn-primary, #e0a33a);
+}
+
+.aicd-bar-fill[data-empty='true'] {
+  background: transparent;
+}
+
+.aicd-bar-loss {
+  flex: none;
+  width: 58px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-tertiary, rgba(242, 242, 242, 0.55));
+}
+
+.aicd-slider {
+  width: 100%;
+  margin: 2px 0;
+  accent-color: var(--dsw-alias-state-business-primary, #5b8def);
+}
+
+.aicd-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.aicd-scale-step {
+  flex: 1;
+  padding: 3px 0;
+  border: 1px solid transparent;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary, rgba(242, 242, 242, 0.55));
+  font: inherit;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.aicd-scale-step[data-active='true'] {
+  border-color: var(--dsw-alias-state-business-primary, #5b8def);
+  color: var(--dsw-alias-label-primary, #f2f2f2);
+}
+
+.aicd-level {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aicd-level-name {
+  font-family: var(--dsw-font-xxs-strong-12, 600 12px system-ui);
+  color: var(--dsw-alias-label-primary, #f2f2f2);
+}
+
+.aicd-level-note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary, rgba(242, 242, 242, 0.55));
+}
 `;
 
     //#endregion styles
@@ -1708,7 +1847,92 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function InsightsView({ data }) {
+    /** Where the score comes from, category by category. */
+    function ScoreBreakdown({ data }) {
+      const scanned = data.scanned || {};
+      const rows = Array.isArray(scanned.scoreBreakdown) ? scanned.scoreBreakdown : [];
+      const lost = typeof scanned.scoreLost === 'number' ? scanned.scoreLost : null;
+
+      return h('div', { className: 'aicd-opt' },
+        h('div', { className: 'aicd-opt-head' },
+          h('span', { className: 'aicd-opt-title' }, tr('scoreTitle')),
+          h('span', { className: 'aicd-count' }, lost === null ? '' : `−${lost}`)
+        ),
+        h('div', { className: 'aicd-note' }, tr('scoreFormula')),
+        rows.map((row) =>
+          h('div', { key: row.id, className: 'aicd-bar-row' },
+            h('span', { className: 'aicd-bar-name' }, row.label),
+            h('div', { className: 'aicd-bar' },
+              h('div', {
+                className: 'aicd-bar-fill',
+                style: { width: `${Math.min(100, Math.round((row.lost / row.weight) * 100))}%` },
+                'data-empty': row.lost === 0 ? 'true' : 'false'
+              })
+            ),
+            h('span', { className: 'aicd-bar-loss' }, `${row.lost} / ${row.weight}`)
+          )
+        )
+      );
+    }
+
+    /** One click: append the suggested rules, show the new score, keep undo. */
+    function OptimizeCard({ data, onDone }) {
+      const [busy, setBusy] = useState(false);
+      const [result, setResult] = useState(null);
+      const suggested = Array.isArray(data.suggestedAiignore) ? data.suggestedAiignore : [];
+
+      const run = () => {
+        setBusy(true);
+        fetch('/aiignore/optimize', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then((payload) => {
+            setResult(payload);
+            if (typeof onDone === 'function') onDone();
+          })
+          .catch(() => setResult({ error: true }))
+          .then(() => setBusy(false));
+      };
+
+      const undo = () => {
+        setBusy(true);
+        fetch('/aiignore/optimize/undo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+          .then(() => {
+            setResult(null);
+            if (typeof onDone === 'function') onDone();
+          })
+          .catch(() => {})
+          .then(() => setBusy(false));
+      };
+
+      const added = result !== null && Array.isArray(result.added) ? result.added : [];
+
+      return h('div', { className: 'aicd-opt' },
+        h('div', { className: 'aicd-opt-head' },
+          h('span', { className: 'aicd-opt-title' }, tr('optimizeTitle')),
+          h('span', { className: 'aicd-count' }, String(suggested.length))
+        ),
+        h('div', { className: 'aicd-note' }, tr('optimizeHint')),
+        result !== null && result.error !== true && added.length > 0
+          ? h('div', null,
+              h('div', { className: 'aicd-note', 'data-tone': 'ok' },
+                `${tr('optimized')} ${added.join(', ')}`),
+              h('div', { className: 'aicd-note' },
+                `${tr('scoreNow')} ${result.before} → ${result.after}`),
+              h('div', { className: 'aicd-btn-row' },
+                h('button', { type: 'button', className: 'aicd-btn', disabled: busy, onClick: undo }, tr('undoOptimize'))
+              )
+            )
+          : result !== null && result.error === true
+            ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('optimizeFailed'))
+            : suggested.length === 0
+              ? h('div', { className: 'aicd-note' }, tr('optimizeNone'))
+              : h('div', { className: 'aicd-btn-row' },
+                  h('button', { type: 'button', className: 'aicd-btn', 'data-variant': 'primary', disabled: busy, onClick: run }, tr('optimize'))
+                )
+      );
+    }
+
+    function InsightsView({ data, onDone }) {
       const scanned = data.scanned || {};
       const score = typeof scanned.healthScore === 'number' ? scanned.healthScore : null;
       const noise = typeof scanned.noisePercent === 'number' ? scanned.noisePercent : null;
@@ -1729,6 +1953,8 @@ window.__ModuleLoader__.load({
           card(tr('noise'), noise === null ? '—' : `${noise}%`),
           card(tr('savedLabel'), formatTokensCompact(data.savedTokens))
         ),
+        h(ScoreBreakdown, { data }),
+        h(OptimizeCard, { data, onDone }),
         h('div', { className: 'aicd-section' },
           h('span', { className: 'aicd-section-title' }, tr('blockedTitle')),
           h('span', { className: 'aicd-count' }, String(skipped.length))
@@ -1803,6 +2029,80 @@ window.__ModuleLoader__.load({
       );
     }
 
+    /**
+     * One slider for the whole policy. Each notch names what it stops and what
+     * that costs, so a stronger setting is a decision, not a mystery.
+     */
+    function StrategyCard({ data, onSaved }) {
+      const levels = Array.isArray(data.levels) ? data.levels : [];
+      const stored = typeof data.level === 'number' ? data.level : 3;
+      const [level, setLevel] = useState(stored);
+      const [status, setStatus] = useState(null);
+
+      useEffect(() => {
+        setLevel(stored);
+      }, [stored]);
+
+      const entry = levels.find((item) => item.level === level) || levels[0] || { label: '', note: '', maxBytes: 0 };
+
+      const save = () => {
+        fetch('/aiignore/policy', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ level })
+        })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then(() => {
+            setStatus('saved');
+            if (typeof onSaved === 'function') onSaved();
+          })
+          .catch(() => setStatus('failed'));
+      };
+
+      return h('div', { className: 'aicd-opt' },
+        h('div', { className: 'aicd-opt-head' },
+          h('span', { className: 'aicd-opt-title' }, tr('strategyTitle')),
+          h('span', { className: 'aicd-count' }, `${level} / 5`)
+        ),
+        h('div', { className: 'aicd-note' }, tr('strategyHint')),
+        h('input', {
+          className: 'aicd-slider',
+          type: 'range',
+          min: 1,
+          max: 5,
+          step: 1,
+          value: level,
+          'aria-label': tr('strategyTitle'),
+          onChange: (event) => {
+            setLevel(Number(event.target.value));
+            setStatus(null);
+          }
+        }),
+        h('div', { className: 'aicd-scale' },
+          levels.map((item) =>
+            h('button', {
+              key: item.level,
+              type: 'button',
+              className: 'aicd-scale-step',
+              'data-active': item.level === level ? 'true' : 'false',
+              onClick: () => { setLevel(item.level); setStatus(null); }
+            }, String(item.level))
+          )
+        ),
+        h('div', { className: 'aicd-level' },
+          h('span', { className: 'aicd-level-name' }, entry.label),
+          h('span', { className: 'aicd-level-note' }, entry.note)
+        ),
+        level >= 4 ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('strategyWarning')) : null,
+        level <= 1 ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('strategyOff')) : null,
+        h('div', { className: 'aicd-btn-row' },
+          h('button', { type: 'button', className: 'aicd-btn', 'data-variant': level === stored ? undefined : 'primary', disabled: level === stored, onClick: save }, tr('strategySave')),
+          status === 'saved' ? h('span', { className: 'aicd-note', 'data-tone': 'ok' }, tr('noteSaved')) : null,
+          status === 'failed' ? h('span', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
+        )
+      );
+    }
+
     function NoteView({ data, onSaved }) {
       const [notes, setNotes] = useState(null);
       const [status, setStatus] = useState(null);
@@ -1828,6 +2128,7 @@ window.__ModuleLoader__.load({
       };
 
       return h('div', { className: 'aicd-body' },
+        h(StrategyCard, { data, onSaved }),
         h('div', { className: 'aicd-section', style: { paddingTop: '8px' } },
           h('span', { className: 'aicd-section-title' }, tr('noteTitle'))
         ),
@@ -2205,7 +2506,7 @@ window.__ModuleLoader__.load({
       const tabs = [
         ['files', tr('tabFiles')],
         ['insights', tr('tabInsights')],
-        ['note', tr('tabNote')]
+        ['note', tr('tabStrategy')]
       ];
 
       return h('div', { className: 'aicd-panel' },
@@ -2238,7 +2539,7 @@ window.__ModuleLoader__.load({
                     lastIgnored, onUndo
                   })
                 : view === 'insights'
-                  ? h(InsightsView, { data })
+                  ? h(InsightsView, { data, onDone: reload })
                   : h(NoteView, { data, onSaved: reload }),
         postError !== null ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
       );

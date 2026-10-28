@@ -876,3 +876,110 @@
   gap: 6px;
   padding: 10px 10px 0 12px;
 }
+
+.aicd-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0 12px;
+  border-top: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.18));
+}
+
+.aicd-opt-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aicd-opt-title {
+  font-family: var(--dsw-font-xs-strong-13, 600 13px system-ui);
+  color: var(--dsw-alias-label-primary, #f2f2f2);
+}
+
+.aicd-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.aicd-bar-name {
+  flex: none;
+  width: 72px;
+  color: var(--dsw-alias-label-secondary, rgba(242, 242, 242, 0.72));
+}
+
+.aicd-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, 0.18));
+  overflow: hidden;
+}
+
+.aicd-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--dsw-alias-state-warn-primary, #e0a33a);
+}
+
+.aicd-bar-fill[data-empty='true'] {
+  background: transparent;
+}
+
+.aicd-bar-loss {
+  flex: none;
+  width: 58px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-tertiary, rgba(242, 242, 242, 0.55));
+}
+
+.aicd-slider {
+  width: 100%;
+  margin: 2px 0;
+  accent-color: var(--dsw-alias-state-business-primary, #5b8def);
+}
+
+.aicd-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.aicd-scale-step {
+  flex: 1;
+  padding: 3px 0;
+  border: 1px solid transparent;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary, rgba(242, 242, 242, 0.55));
+  font: inherit;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.aicd-scale-step[data-active='true'] {
+  border-color: var(--dsw-alias-state-business-primary, #5b8def);
+  color: var(--dsw-alias-label-primary, #f2f2f2);
+}
+
+.aicd-level {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aicd-level-name {
+  font-family: var(--dsw-font-xxs-strong-12, 600 12px system-ui);
+  color: var(--dsw-alias-label-primary, #f2f2f2);
+}
+
+.aicd-level-note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary, rgba(242, 242, 242, 0.55));
+}

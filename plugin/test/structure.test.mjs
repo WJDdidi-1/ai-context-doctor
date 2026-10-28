@@ -22,7 +22,10 @@ test('client.js declares its regions once, in reading order', () => {
 });
 
 test('each region holds a bounded amount of code', () => {
-  const bounds = { copy: 220, styles: 1000, helpers: 240, components: 200, views: 480, summary: 120, shell: 260, registration: 90 };
+  // Bound per region, not per file: copy grows with every control (two
+  // languages) and views grows with every page, but a region that doubles
+  // without a new page is drift.
+  const bounds = { copy: 300, styles: 1050, helpers: 240, components: 200, views: 640, summary: 120, shell: 260, registration: 90 };
   const lines = CLIENT.split('\n');
   let open = null;
   let start = 0;

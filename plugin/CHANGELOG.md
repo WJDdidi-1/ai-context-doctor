@@ -1,3 +1,31 @@
+## 0.18.0
+
+The score explains itself, the policy is one slider, and a suggestion can be applied.
+
+- **Following is by conversation, not by folder.** The Host half reads the first
+  zstd frame of the newest session log — a JSON header carrying the session id
+  and its `cwd` — so identity no longer depends on the workspace index. It used
+  to fall back to "the most recently updated workspace", which is why the panel
+  kept following the first folder it saw. `GET /aiignore/sessions` lists recent
+  conversations, each with its own folder.
+- **The score shows its arithmetic.** Insights draws one bar per category: what
+  it cost, out of the weight it could cost, with the total on the header and one
+  sentence for the rule. These are the numbers `scanRepository` computed; the
+  panel does not re-derive them.
+- **One click to optimize.** *Optimize this workspace* appends the suggested
+  rules to `.aiignore` (existing lines untouched), reports the score before and
+  after, and keeps the previous file for **Undo**. Both live at
+  `POST /aiignore/optimize` and `POST /aiignore/optimize/undo`.
+- **The note is no longer the whole strategy.** *Note* became *Strategy*: a
+  five-notch slider from Off to Strict, each notch stating what it stops and what
+  that costs, stored in `.aiignore.policy.json` and honoured by the read guard
+  itself (`decideRead({ level })`). The free-text note stays underneath, where it
+  belongs. Notches 4 and 5 warn that small but real source files can be skipped.
+- **New routes** — `GET /aiignore/sessions`, `GET|POST /aiignore/policy`,
+  `POST /aiignore/optimize`, `POST /aiignore/optimize/undo` (sixteen in total).
+- Requires `ai-context-doctor@^0.6.0`: weighted scoring, `scoreBreakdown`, and
+  the level table the slider shows come from the library.
+
 ## 0.17.0
 
 The panel stopped asking which folder to audit. It reads the conversation.

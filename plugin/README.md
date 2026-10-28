@@ -41,10 +41,38 @@ Three tabs inside:
   the size and the token range reading it would cost, before the agent tries.
 - **Insights** — the health score, the noise share, the tokens the guard kept
   out, the reads it refused and the reads it let through, and the files the Host
-  received this session.
-- **Note** — a message for the agent about this workspace. Saving writes
-  `.aiignore.notes.md` and pushes it to the running agent; the next session picks
-  it up on its own.
+  received this session. It also shows **why the score is what it is** (one bar
+  per category: what it cost, out of what it could cost) and a single
+  **Optimize this workspace** button.
+- **Strategy** — one slider, five notches, from *Off* to *Strict*. Each notch
+  says what it stops and what that costs, the Host stores it in
+  `.aiignore.policy.json`, and the read guard uses the same numbers, so the
+  setting is not a display preference. The recommended notch is 3. Below the
+  slider is the optional note for the agent.
+
+### Following the conversation, not a folder
+
+The panel asks the Host who the current conversation is, and the Host reads the
+session store: `<DSH_HOME>/sessions/*/session-*/session.v4.jsonl.zstd` is an
+append-only zstd file whose **first frame is a JSON header** carrying the
+session id and its `cwd`. The most recently written log is the conversation in
+front of you, and its header names the folder — no guessing from directory
+names, and no dependency on the workspace index ever having been told about that
+session. The header names the workspace; the guard, the score and the file list
+then all speak about that one folder.
+
+The folder button keeps a menu: **follow this conversation** (the default),
+**pick another folder…**, or **stop pinning** — so a choice made once is a choice
+you can take back. Every workspace this app has been used in is also listed on
+the **Context across your workspaces** page in the left rail, scored with the
+same rules.
+
+### One click, with a way back
+
+**Optimize this workspace** appends the scanner's suggestion to `.aiignore`,
+keeping the lines already there, then reports the score before and after. The
+previous file is held in memory for the session, so **Undo** puts it back byte
+for byte — and if optimize created the file, undo removes it.
 
 Two decisions per file, available from the tree, the session list and the report:
 
@@ -77,11 +105,13 @@ panel follows light and dark themes instead of shipping its own palette. Every
 control is reachable with `Tab`, and empty, loading and error states are real
 screens rather than blank space.
 
-The panel talks to the Host half over twelve same-origin routes
+The panel talks to the Host half over sixteen same-origin routes
 (`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET /aiignore/overview`,
-`GET/POST /aiignore/notes`, `GET /aiignore/upload?digest=`,
-`GET /aiignore/workspaces`, `GET /aiignore/debug`, `POST /aiignore/scan`,
-`POST /aiignore/client-report`, `POST /aiignore/allow`,
+`GET /aiignore/sessions`, `GET /aiignore/workspaces`, `GET /aiignore/debug`,
+`GET/POST /aiignore/notes`, `GET/POST /aiignore/policy`,
+`GET /aiignore/upload?digest=`, `POST /aiignore/scan`,
+`POST /aiignore/client-report`, `POST /aiignore/optimize`,
+`POST /aiignore/optimize/undo`, `POST /aiignore/allow`,
 `POST /aiignore/ignore`, `POST /aiignore/unignore`). The upload route serves a thumbnail and refuses
 anything that is not a 64-hex digest inside the attachment store; the unignore
 route removes exactly one rule line and refuses symlinks and directories. They

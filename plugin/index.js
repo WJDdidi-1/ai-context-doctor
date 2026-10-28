@@ -1,7 +1,20 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { scanRepository, classifyPath, estimateTokens, matchesAiignore, parseRules, writeAiignore } from 'ai-context-doctor';
+import zlib from 'node:zlib';
+import {
+  scanRepository,
+  classifyPath,
+  estimateTokens,
+  matchesAiignore,
+  parseRules,
+  writeAiignore,
+  levelFor,
+  levelBlocksCategory,
+  noiseCategory,
+  LEVELS,
+  DEFAULT_LEVEL
+} from 'ai-context-doctor';
 import { createWorkspaceState, recordSkip, recordRead, recordWrite, allowPath, allowAnyPath, isAllowed, buildReport } from './report.js';
 import { listDirectory } from './tree.js';
 
@@ -21,21 +34,6 @@ const DEFAULTS = {
   // a policy nobody can predict is worse than none.
   readPolicy: 'deny'
 };
-
-/**
- * The noise categories worth blocking. Templates and deployment scripts are
- * deliberately absent: they are small, and a wrong guess there loses real
- * information.
- */
-const BLOCKED_REASONS = new Set([
-  'generated build output',
-  'test coverage output',
-  'framework output',
-  'framework cache',
-  'lockfile',
-  'local log file',
-  'large file'
-]);
 
 /** Parsed `.aiignore` rules per workspace, refreshed when the file changes. */
 const ruleCache = new Map();
@@ -132,10 +130,10 @@ export function inspectRead({ root, filePath }) {
  * Pure apart from the `stat` it needs for the size rule, so it can be tested
  * without a running Harness.
  *
- * @param {{ root: string, filePath: string, policy?: string, rules?: string[] }} input
+ * @param {{ root: string, filePath: string, policy?: string, rules?: string[], level?: number }} input
  * @returns {{ block: false } | { block: true, relativePath: string, bytes: number, reason: string, rule?: string, tokens: { min: number, max: number } }}
  */
-export function decideRead({ root, filePath, policy = 'deny', rules }) {
+export function decideRead({ root, filePath, policy = 'deny', rules, level = DEFAULT_LEVEL }) {
   if (policy !== 'deny') return { block: false };
 
   const inspected = inspectRead({ root, filePath });
@@ -155,16 +153,31 @@ export function decideRead({ root, filePath, policy = 'deny', rules }) {
     };
   }
 
-  if (inspected.classified.noise === undefined) return { block: false };
-  if (!BLOCKED_REASONS.has(inspected.classified.noise.reason)) return { block: false };
+  // Then the strength the user set. One slider, one meaning: each level names
+  // what it stops and what that costs, and the same numbers drive the guard.
+  const entry = levelFor(level);
+  const noise = inspected.classified.noise;
+  if (noise !== undefined && levelBlocksCategory(entry, noiseCategory(noise.reason))) {
+    return {
+      block: true,
+      relativePath: inspected.relativePath,
+      bytes: inspected.bytes,
+      reason: noise.reason,
+      tokens: estimateTokens(inspected.bytes)
+    };
+  }
 
-  return {
-    block: true,
-    relativePath: inspected.relativePath,
-    bytes: inspected.bytes,
-    reason: inspected.classified.noise.reason,
-    tokens: estimateTokens(inspected.bytes)
-  };
+  if (Number.isFinite(entry.maxBytes) && inspected.bytes > entry.maxBytes) {
+    return {
+      block: true,
+      relativePath: inspected.relativePath,
+      bytes: inspected.bytes,
+      reason: `larger than the ${entry.label.toLowerCase()} limit (${formatBytes(entry.maxBytes)})`,
+      tokens: estimateTokens(inspected.bytes)
+    };
+  }
+
+  return { block: false };
 }
 
 /**
@@ -305,6 +318,86 @@ export function writeNotes(cwd, text) {
  * directory the conversation belongs to: rather than showing an empty screen, it
  * offers the folders the user has actually been working in.
  */
+const headerCache = new Map();
+
+/** The user's filtering strength, stored next to the rules it complements. */
+export const POLICY_FILE = '.aiignore.policy.json';
+
+/**
+ * Which strength this workspace uses. An unreadable or unknown value falls back
+ * to the recommended level instead of turning the guard off.
+ *
+ * @param {string} cwd
+ * @returns {number}
+ */
+export function readPolicy(cwd) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(path.join(cwd, POLICY_FILE), 'utf8'));
+    const level = Number(parsed.level);
+    if (LEVELS.some((entry) => entry.level === level)) return level;
+  } catch {
+    // No policy file yet, or it is not ours to read.
+  }
+  return DEFAULT_LEVEL;
+}
+
+/**
+ * Persist a strength. Returns the resolved level so the caller echoes what was
+ * stored rather than what was asked for.
+ *
+ * @param {string} cwd
+ * @param {number} level
+ * @returns {object}
+ */
+export function writePolicy(cwd, level) {
+  const entry = levelFor(level);
+  fs.writeFileSync(
+    path.join(cwd, POLICY_FILE),
+    `${JSON.stringify({ level: entry.level, key: entry.key }, null, 2)}\n`
+  );
+  return entry;
+}
+
+/**
+ * A session log opens with one zstd frame holding
+ * `{"type":"session","id":...,"cwd":...}`. Reading that header is how the Host
+ * half learns which directory a conversation belongs to — the workspace store
+ * only lists sessions that existed when it was last written, which is exactly
+ * why a conversation started afterwards fell back to the first workspace.
+ *
+ * Only the first frame is decoded: `zstdDecompressSync` stops at the frame
+ * boundary, so an 8 MB append-only log costs the same as its header.
+ */
+export function sessionHeader(dir) {
+  const log = path.join(dir, 'session.v4.jsonl.zstd');
+  let stats;
+  try {
+    stats = fs.statSync(log);
+  } catch {
+    return null;
+  }
+
+  const key = `${log}\u0000${stats.mtimeMs}\u0000${stats.size}`;
+  const cached = headerCache.get(key);
+  if (cached !== undefined) return cached;
+
+  let header;
+  try {
+    const text = zlib.zstdDecompressSync(fs.readFileSync(log)).toString('utf8');
+    const parsed = JSON.parse(text.split('\n')[0]);
+    header = {
+      id: typeof parsed.id === 'string' ? parsed.id : null,
+      cwd: typeof parsed.cwd === 'string' ? parsed.cwd : null
+    };
+  } catch {
+    return null;
+  }
+
+  if (headerCache.size > 200) headerCache.clear();
+  headerCache.set(key, header);
+  return header;
+}
+
 /** The session store: one directory per cwd, one directory per session inside. */
 export function sessionsRoot(home = dshHome()) {
   return path.join(home, 'sessions');
@@ -348,7 +441,14 @@ export function activeSession(home = dshHome()) {
           continue;
         }
       }
-      if (best === null || at > best.at) best = { id: session.name, at };
+      if (best === null || at > best.at) {
+        const header = sessionHeader(dir);
+        best = {
+          id: session.name,
+          at,
+          cwd: header !== null && typeof header.cwd === 'string' ? header.cwd : undefined
+        };
+      }
     }
   }
   return best;
@@ -382,7 +482,64 @@ export function workspaceForSession(sessionId, home = dshHome()) {
 export function activeWorkspace(home = dshHome()) {
   const session = activeSession(home);
   if (session === null) return undefined;
+  // The log's own header first: it is exact, while the workspace store has to be
+  // told about a session before it can answer for it.
+  if (typeof session.cwd === 'string' && session.cwd.length > 0) {
+    try {
+      if (fs.statSync(session.cwd).isDirectory() === true) return session.cwd;
+    } catch {
+      // Folder gone; fall through to the store.
+    }
+  }
   return workspaceForSession(session.id, home);
+}
+
+/**
+ * The conversations still on disk, newest first. The panel needs more than one:
+ * a workspace usually holds several conversations, and "analyse this chat"
+ * means the chat, not the folder.
+ */
+export function recentSessions(home = dshHome(), limit = 12) {
+  const root = sessionsRoot(home);
+  let buckets;
+  try {
+    buckets = fs.readdirSync(root, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const found = [];
+  for (const bucket of buckets) {
+    if (bucket.isDirectory() !== true) continue;
+    const bucketPath = path.join(root, bucket.name);
+    let sessions;
+    try {
+      sessions = fs.readdirSync(bucketPath, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const session of sessions) {
+      if (session.isDirectory() !== true || session.name.startsWith('session-') !== true) continue;
+      const dir = path.join(bucketPath, session.name);
+      let at = 0;
+      try {
+        at = fs.statSync(path.join(dir, 'session.v4.jsonl.zstd')).mtimeMs;
+      } catch {
+        continue;
+      }
+      const header = sessionHeader(dir);
+      found.push({
+        id: session.name,
+        at,
+        cwd: header !== null && typeof header.cwd === 'string' ? header.cwd : undefined
+      });
+    }
+  }
+
+  return found
+    .sort((left, right) => right.at - left.at)
+    .slice(0, limit)
+    .map((entry) => ({ ...entry, at: Math.round(entry.at) }));
 }
 
 export function knownWorkspaces(home = dshHome()) {
@@ -542,6 +699,60 @@ function guessType(absolute) {
   return 'file';
 }
 
+/** What the last Optimize wrote, so one click can put it back. */
+const optimizeBackup = new Map();
+
+/**
+ * One click: turn the report's suggestions into `.aiignore` and remember what was
+ * there before. The effect is real — the guard reads this file on every read, so
+ * the noise stops reaching the model immediately, not at the next restart.
+ *
+ * @param {string} cwd
+ * @param {ReturnType<typeof scanRepository>} report
+ * @returns {{ added: string[], written: boolean, saved: { min: number, max: number } }}
+ */
+export function optimizeWorkspace(cwd, report) {
+  const target = path.join(cwd, '.aiignore');
+  let previous = null;
+  try {
+    previous = fs.readFileSync(target, 'utf8');
+  } catch {
+    previous = null;
+  }
+
+  const result = writeAiignore(target, report.suggestedAiignore);
+  optimizeBackup.set(cwd, { previous, at: Date.now() });
+  ruleCache.delete(cwd);
+
+  const noise = report.tokenEstimate !== undefined && report.tokenEstimate.noise !== undefined
+    ? report.tokenEstimate.noise
+    : { min: 0, max: 0 };
+  return { added: result.added, written: result.written, saved: noise };
+}
+
+/**
+ * Put the file back exactly as it was before the last Optimize.
+ *
+ * @param {string} cwd
+ * @returns {{ undone: boolean, restored: 'previous' | 'removed' | 'none' }}
+ */
+export function undoOptimize(cwd) {
+  const backup = optimizeBackup.get(cwd);
+  if (backup === undefined) return { undone: false, restored: 'none' };
+
+  const target = path.join(cwd, '.aiignore');
+  try {
+    if (backup.previous === null) fs.unlinkSync(target);
+    else fs.writeFileSync(target, backup.previous);
+  } catch {
+    return { undone: false, restored: 'none' };
+  }
+
+  optimizeBackup.delete(cwd);
+  ruleCache.delete(cwd);
+  return { undone: true, restored: backup.previous === null ? 'removed' : 'previous' };
+}
+
 export function apply(ctx, config = {}) {
   const options = { ...DEFAULTS, ...config };
   const inspected = new Set();
@@ -581,7 +792,7 @@ export function apply(ctx, config = {}) {
       // Only the file-read tool carries a path we can judge.
       if (exec.name !== 'read') return undefined;
 
-      const decision = decideRead({ root: cwd, filePath, policy: options.readPolicy, rules: rulesFor(cwd) });
+      const decision = decideRead({ root: cwd, filePath, policy: options.readPolicy, rules: rulesFor(cwd), level: readPolicy(cwd) });
       const state = stateFor(cwd);
 
       if (decision.block === true) {
@@ -647,6 +858,9 @@ export function apply(ctx, config = {}) {
   // conversation" instead of pretending the user picked it.
   let resolvedSource = 'none';
 
+  /** The session the panel is following, when the store told us. */
+  let latestSession = null;
+
   const resolveWorkspace = () => {
     // The session store is consulted first: it is the only source that follows
     // the conversation the user is actually looking at. Registries and the last
@@ -655,6 +869,7 @@ export function apply(ctx, config = {}) {
       const automatic = activeWorkspace();
       if (automatic !== undefined) {
         resolvedSource = 'session';
+        latestSession = activeSession();
         return automatic;
       }
     } catch {
@@ -815,6 +1030,11 @@ export function apply(ctx, config = {}) {
     return sendJson(res, 200, {
       ...buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy }),
       source: resolvedSource,
+      session: resolvedSource === 'session' && latestSession !== null
+        ? { id: latestSession.id, at: latestSession.at }
+        : null,
+      level: readPolicy(latestCwd),
+      levels: LEVELS,
       uploads: recentUploads(startedAt),
       notes: readNotes(latestCwd)
     });
@@ -1121,6 +1341,76 @@ export function apply(ctx, config = {}) {
     }
   };
 
+  /** The conversations on disk, newest first, each with the directory it runs in. */
+  const sessionsHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    const active = activeSession();
+    return sendJson(res, 200, {
+      current: active === null ? null : active.id,
+      sessions: recentSessions()
+    });
+  };
+
+  /** The strength the user picked, and the numbers behind every level. */
+  const policyHandler = (req, res) => {
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    const cwd = askedCwd(req) !== undefined ? askedCwd(req) : resolveWorkspace();
+    if (cwd === undefined) return sendJson(res, 404, { error: 'no-workspace' });
+
+    if (req.method === 'GET') {
+      const level = readPolicy(cwd);
+      return sendJson(res, 200, { level, levels: LEVELS, policy: options.readPolicy });
+    }
+
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 2000) req.destroy();
+    });
+    req.on('end', () => {
+      let parsed;
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        return sendJson(res, 400, { error: 'invalid-json' });
+      }
+      try {
+        const entry = writePolicy(cwd, parsed !== null && typeof parsed === 'object' ? parsed.level : undefined);
+        return sendJson(res, 200, { level: entry.level, key: entry.key, levels: LEVELS });
+      } catch {
+        return sendJson(res, 400, { error: 'write-failed' });
+      }
+    });
+  };
+
+  /** One click: write the suggested rules, so the guard stops serving noise. */
+  const optimizeHandler = (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    const cwd = askedCwd(req) !== undefined ? askedCwd(req) : resolveWorkspace();
+    if (cwd === undefined) return sendJson(res, 404, { error: 'no-workspace' });
+    try {
+      const report = scanRepository(cwd, { maxFiles: options.maxFiles, maxBytes: options.maxBytes });
+      const result = optimizeWorkspace(cwd, report);
+      const after = scanRepository(cwd, { maxFiles: options.maxFiles, maxBytes: options.maxBytes });
+      stateFor(cwd).report = after;
+      return sendJson(res, 200, { workspace: cwd, ...result, before: report.healthScore, after: after.healthScore });
+    } catch {
+      return sendJson(res, 400, { error: 'optimize-failed' });
+    }
+  };
+
+  const undoOptimizeHandler = (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    const cwd = askedCwd(req) !== undefined ? askedCwd(req) : resolveWorkspace();
+    if (cwd === undefined) return sendJson(res, 404, { error: 'no-workspace' });
+    return sendJson(res, 200, { workspace: cwd, ...undoOptimize(cwd) });
+  };
+
   let routesInstalled = false;
   const installRoutes = (serviceCtx) => {
     if (routesInstalled) return;
@@ -1139,6 +1429,10 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/overview', handler: overviewHandler });
       server.register({ kind: 'exact', path: '/aiignore/client-report', handler: clientReportHandler });
       server.register({ kind: 'exact', path: '/aiignore/debug', handler: debugHandler });
+      server.register({ kind: 'exact', path: '/aiignore/sessions', handler: sessionsHandler });
+      server.register({ kind: 'exact', path: '/aiignore/policy', handler: policyHandler });
+      server.register({ kind: 'exact', path: '/aiignore/optimize', handler: optimizeHandler });
+      server.register({ kind: 'exact', path: '/aiignore/optimize/undo', handler: undoOptimizeHandler });
       routesInstalled = true;
     } catch {
       // No web server in this profile: the guard still works, the panel does not.
