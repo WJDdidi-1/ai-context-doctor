@@ -509,6 +509,58 @@ export function apply(ctx, config = {}) {
   // response is never cached.
   let latestCwd;
 
+  // `agent/created` is emitted on the agent's own carrier, which a bundle in a
+  // different branch of the tree never hears. Asking the registries is the
+  // channel that always exists, so the workspace is resolved on demand instead
+  // of only from an event.
+  let agentRegistry;
+  let sessionRegistry;
+
+  const cwdOf = (holder) => {
+    const meta = holder !== null && holder !== undefined && holder.session !== undefined ? holder.session.meta : undefined;
+    return typeof meta === 'object' && meta !== null && typeof meta.cwd === 'string' && meta.cwd.length > 0 ? meta.cwd : undefined;
+  };
+
+  const resolveWorkspace = () => {
+    if (typeof latestCwd === 'string' && latestCwd.length > 0) return latestCwd;
+    const pools = [];
+    try {
+      if (agentRegistry !== undefined && typeof agentRegistry.list === 'function') pools.push(agentRegistry.list());
+      if (sessionRegistry !== undefined && typeof sessionRegistry.list === 'function') pools.push(sessionRegistry.list());
+    } catch {
+      // A registry that refuses to list leaves us where we were.
+    }
+    for (const pool of pools) {
+      if (!Array.isArray(pool)) continue;
+      // Newest first: the session the user is looking at is the last one made.
+      for (let index = pool.length - 1; index >= 0; index -= 1) {
+        const cwd = cwdOf(pool[index]);
+        if (cwd !== undefined) return cwd;
+      }
+    }
+    return undefined;
+  };
+
+  /**
+   * Scan `cwd` and make it the workspace the panel talks about. Exported logic
+   * lives here so both the event and the explicit Scan button use one path.
+   */
+  const scanWorkspace = (cwd) => {
+    const report = scanRepository(cwd, { maxFiles: options.maxFiles, maxBytes: options.maxBytes });
+    latestCwd = cwd;
+    inspected.add(cwd);
+    stateFor(cwd).report = report;
+    return report;
+  };
+
+  /** Resolve and scan when needed; returns the workspace the panel should use. */
+  const ensureWorkspace = () => {
+    const cwd = resolveWorkspace();
+    if (cwd === undefined) return undefined;
+    if (cwd !== latestCwd || stateFor(cwd).report === undefined) scanWorkspace(cwd);
+    return cwd;
+  };
+
   const sendJson = (res, status, body) => {
     res.writeHead(status, {
       'content-type': 'application/json; charset=utf-8',
@@ -523,7 +575,7 @@ export function apply(ctx, config = {}) {
    */
   const treeHandler = (req, res) => {
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
-    if (latestCwd === undefined) return sendJson(res, 200, { workspace: null, entries: [] });
+    if (ensureWorkspace() === undefined) return sendJson(res, 200, { workspace: null, entries: [] });
     let dir = '';
     try {
       const url = new URL(req.url, 'http://localhost');
@@ -543,7 +595,7 @@ export function apply(ctx, config = {}) {
 
   const reportHandler = (req, res) => {
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
-    if (latestCwd === undefined) return sendJson(res, 200, { workspace: null, skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
+    if (ensureWorkspace() === undefined) return sendJson(res, 200, { workspace: null, skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
     return sendJson(res, 200, {
       ...buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy }),
       uploads: recentUploads(startedAt),
@@ -738,6 +790,30 @@ export function apply(ctx, config = {}) {
     res.end(body);
   };
 
+  /**
+   * Scan the workspace of the conversation the user is looking at. The panel
+   * offers this as a button so a session that predates the bundle — or a host
+   * that never announced it — still gets a report.
+   */
+  const scanHandler = (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+    const origin = req.headers.origin;
+    if (typeof origin === 'string' && origin.length > 0 && origin !== `http://${req.headers.host}`) {
+      return sendJson(res, 403, { error: 'cross-origin' });
+    }
+    const cwd = resolveWorkspace();
+    if (cwd === undefined) return sendJson(res, 404, { error: 'no-workspace' });
+    try {
+      // An explicit scan re-reads the tree even when this workspace was already
+      // scanned: the user pressed the button because they expect fresh numbers.
+      latestCwd = undefined;
+      const report = scanWorkspace(cwd);
+      return sendJson(res, 200, { workspace: cwd, ...report });
+    } catch {
+      return sendJson(res, 400, { error: 'scan-failed' });
+    }
+  };
+
   let routesInstalled = false;
   const installRoutes = (serviceCtx) => {
     if (routesInstalled) return;
@@ -751,6 +827,7 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/ignore', handler: ignoreHandler });
       server.register({ kind: 'exact', path: '/aiignore/upload', handler: uploadHandler });
       server.register({ kind: 'exact', path: '/aiignore/unignore', handler: unignoreHandler });
+      server.register({ kind: 'exact', path: '/aiignore/scan', handler: scanHandler });
       routesInstalled = true;
     } catch {
       // No web server in this profile: the guard still works, the panel does not.
@@ -770,6 +847,10 @@ export function apply(ctx, config = {}) {
   };
   defer(['tools'], (serviceCtx) => installGuard(serviceCtx));
   defer(['webServer'], (serviceCtx) => installRoutes(serviceCtx));
+  // The panel needs to know which directory the conversation runs in; the
+  // registries are the only channel that does not depend on event routing.
+  defer(['agents'], (serviceCtx) => { agentRegistry = serviceCtx.agents; });
+  defer(['sessions'], (serviceCtx) => { sessionRegistry = serviceCtx.sessions; });
   // Some hosts mount these before this plugin; try directly too.
   installGuard(ctx);
   installRoutes(ctx);
@@ -781,15 +862,8 @@ export function apply(ctx, config = {}) {
       if (typeof cwd !== 'string' || cwd.length === 0) return;
       if (inspected.has(cwd)) return;
 
-      const report = scanRepository(cwd, {
-        maxFiles: options.maxFiles,
-        maxBytes: options.maxBytes
-      });
-
-      inspected.add(cwd);
-      latestCwd = cwd;
+      const report = scanWorkspace(cwd);
       agents.set(cwd, agent);
-      stateFor(cwd).report = report;
 
       const notes = readNotes(cwd);
       if (notes.trim().length > 0 && typeof agent.inject === 'function') {

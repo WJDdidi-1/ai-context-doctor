@@ -55,15 +55,21 @@ Two decisions per file, available from the tree, the session list and the report
   durable direction, because the file is the record: it survives restarts, shows
   up in review, and you can delete the line yourself.
 
+The panel finds its workspace two ways: from the `agent/created` event when the
+Host delivers it, and otherwise by asking the agent and session registries which
+directory the conversation runs in — so a plugin installed into a session that
+already exists still shows a report instead of an empty panel. The empty state
+carries a **Scan this conversation** button that rescans on demand.
+
 Styling comes from the Host's design tokens (`--dsw-*`) with fallbacks, so the
 panel follows light and dark themes instead of shipping its own palette. Every
 control is reachable with `Tab`, and empty, loading and error states are real
 screens rather than blank space.
 
-The panel talks to the Host half over seven same-origin routes
+The panel talks to the Host half over eight same-origin routes
 (`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET/POST /aiignore/notes`,
-`GET /aiignore/upload?digest=`, `POST /aiignore/allow`, `POST /aiignore/ignore`,
-`POST /aiignore/unignore`). The upload route serves a thumbnail and refuses
+`GET /aiignore/upload?digest=`, `POST /aiignore/scan`, `POST /aiignore/allow`,
+`POST /aiignore/ignore`, `POST /aiignore/unignore`). The upload route serves a thumbnail and refuses
 anything that is not a 64-hex digest inside the attachment store; the unignore
 route removes exactly one rule line and refuses symlinks and directories. They
 answer for the most recently scanned workspace and set `no-store`; the only one

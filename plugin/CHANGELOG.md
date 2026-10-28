@@ -1,3 +1,23 @@
+## 0.14.0
+
+The panel now finds its workspace instead of waiting to be told about it.
+
+- **Fixed: the panel could sit on "no workspace" forever.** The workspace was
+  learned only from the `agent/created` event. A bundle can be applied on a
+  branch of the context tree that never hears that event, and a session that
+  already existed when the bundle was installed never announces itself again.
+  The Host half now also asks `ctx.agents.list()` and `ctx.sessions.list()` for
+  the newest conversation directory, so the report appears either way.
+- **Scan this conversation.** The empty panel is no longer a dead end: a button
+  rescans the current conversation's workspace on demand and re-reads the tree
+  each time, so the numbers are fresh rather than replayed.
+- **The three views are always visible.** The Files / Insights / Note tabs used
+  to disappear when no workspace had been found yet, which made the panel look
+  like one blank screen. Each view now has its own empty state under a tab bar
+  that never vanishes.
+- `POST /aiignore/scan` is the eighth route: same-origin only, answers 404 when
+  the conversation has no directory yet.
+
 ## 0.13.0
 
 The file list behaves like a file list, and a decision can be taken back.
