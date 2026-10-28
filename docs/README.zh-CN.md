@@ -95,9 +95,25 @@ npm install -g ai-context-doctor
 ai-context-doctor              # 扫描当前目录
 ai-context-doctor ../some-repo # 扫描另一个仓库
 ai-context-doctor --json       # 机器可读输出
+ai-context-doctor --write      # 把建议的规则写进 .aiignore
+ai-context-doctor --write --dry-run   # 只看会加什么，不写文件
 ai-context-doctor --help
 ai-context-doctor --version
 ```
+
+### 写入 `.aiignore`
+
+```bash
+npx ai-context-doctor --write
+```
+
+`--write` 会把报告建议的规则追加到被扫描目录的 `.aiignore`。它只追加：你已有的注释和规则原样保留，连续跑两次第二次什么都不会加。文件不存在时会新建，并带两行说明性注释。
+
+`--write --dry-run` 只打印会加什么，不写文件。
+
+它不会顺着符号链接写到别处，也拒绝把恰好叫 `.aiignore` 的目录替换掉。
+
+扫描是基于文件名和大小的启发式判断，**不读 `.aiignore`**，所以写了文件分数不会变。这个文件是写给别的工具看的：你的助手、编辑器、以及你的同事。
 
 ### JSON 输出
 
@@ -106,6 +122,8 @@ npx ai-context-doctor ./some-repo --json
 ```
 
 返回 `repo`、`healthScore`、`status`、`noisePercent`、`usefulPercent`、`scannedBytes`、`scannedFiles`、`topNoise`、`review`、`suggestedAiignore`；触发扫描上限时还会带 `truncated: true`。
+
+加上 `--write` 时会多一个 `write` 对象：`path`、`created`、`added`、`written`、`dryRun`。
 
 如果传入的路径不是可读目录，`--json` 只会输出一个 JSON 对象（不会先打印横幅），并以退出码 1 结束，CI 可以直接解析失败原因：
 

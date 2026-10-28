@@ -2,6 +2,22 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.3.0 — 2026-10-28
+
+### Added
+
+- `--write` turns the report's suggestions into `.aiignore`. It only appends:
+  existing comments and rules are preserved byte for byte, and a second run
+  adds nothing.
+- `--write --dry-run` prints what would be added without touching the file.
+- `writeAiignore()` is exported from the package for the same behaviour in code.
+
+### Fixed
+
+- An unknown option such as `--writ` was treated as a directory name and failed
+  with "not a readable directory". It now fails with the option name and a
+  pointer to `--help`.
+
 ## 0.2.2 — 2026-10-27
 
 No runtime changes. This release exists so the npm page renders the English

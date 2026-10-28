@@ -65,7 +65,7 @@ Run this before asking your coding agent to inspect a larger repo.
 
 ## What you can do with it
 
-- **Before you hand a repo to an agent** — run it, paste the suggested lines into `.aiignore` (or your agent's ignore setting), re-run, watch the score go up.
+- **Before you hand a repo to an agent** — run it, then `--write` the suggested lines into `.aiignore` instead of copying them by hand.
 - **On a repo you just cloned** — see how much of it is generated output before the agent drowns in it.
 - **In CI** — `--json` gives a stable object, so you can fail a build when context health drops.
 - **In your own tool** — `require('ai-context-doctor')` exposes the same scan as a function.
@@ -93,9 +93,31 @@ Requires Node.js 18 or newer.
 ai-context-doctor              # scan the current directory
 ai-context-doctor ../some-repo # scan another repository
 ai-context-doctor --json       # machine-readable output
+ai-context-doctor --write      # add the suggested rules to .aiignore
+ai-context-doctor --write --dry-run   # show what --write would add
 ai-context-doctor --help
 ai-context-doctor --version
 ```
+
+### Writing `.aiignore`
+
+```bash
+npx ai-context-doctor --write
+```
+
+`--write` appends the rules the report suggests to `.aiignore` in the scanned
+directory. It only appends: comments and rules you already have stay exactly as
+they are, and running it twice adds nothing the second time. If the file does
+not exist it is created with a two-line header.
+
+`--write --dry-run` prints what would be added and writes nothing.
+
+It will not follow a symbolic link, and it refuses to replace a directory that
+happens to be called `.aiignore`.
+
+The scan is a heuristic over file names and sizes — it does not read `.aiignore`
+— so the score will not change just because you wrote the file. The file is for
+the other tools: your agent, your editor, your teammates.
 
 ### JSON output
 
@@ -104,6 +126,8 @@ npx ai-context-doctor ./some-repo --json
 ```
 
 Returns `repo`, `healthScore`, `status`, `noisePercent`, `usefulPercent`, `scannedBytes`, `scannedFiles`, `topNoise`, `review`, and `suggestedAiignore` — plus `truncated: true` when a scan cap was hit.
+
+With `--write` it also carries a `write` object: `path`, `created`, `added`, `written`, `dryRun`.
 
 If the path is not a readable directory, `--json` still prints a single JSON object — never a banner — and exits with code 1, so a CI step can parse the failure:
 
@@ -123,6 +147,8 @@ const { scanRepository } = require('ai-context-doctor');
 const report = scanRepository(process.cwd());
 console.log(report.healthScore, report.topNoise);
 ```
+
+`writeAiignore(aiignorePath, suggested, { dryRun })` is the writer behind `--write`, if you want the same behaviour from code.
 
 `scanRepository(root, { maxFiles, maxBytes })` is synchronous and has no dependencies. Pass a cap for huge trees; the report then carries `truncated: true`.
 
