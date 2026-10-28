@@ -553,6 +553,44 @@ export function apply(ctx, config = {}) {
     return report;
   };
 
+  /**
+   * The panel knows which conversation it belongs to, and therefore which
+   * directory: the slot it renders in is given the session id and the sessions
+   * store. The Host half cannot always learn that on its own — a bundle can be
+   * applied on a branch that never sees `agent/created`, and the registries may
+   * hand back sessions whose `meta.cwd` is empty — so the browser is allowed to
+   * name its own workspace.
+   */
+  const askedCwd = (req) => {
+    try {
+      const url = new URL(req.url, 'http://localhost');
+      const value = url.searchParams.get('cwd');
+      if (typeof value !== 'string' || value.length === 0) return undefined;
+      if (!path.isAbsolute(value)) return undefined;
+      const stats = fs.statSync(value);
+      if (stats.isDirectory() !== true) return undefined;
+      return path.resolve(value);
+    } catch {
+      return undefined;
+    }
+  };
+
+  /** Same-origin only: these routes have no authentication of their own. */
+  const crossOrigin = (req) => {
+    const origin = req.headers.origin;
+    return typeof origin === 'string' && origin.length > 0 && origin !== `http://${req.headers.host}`;
+  };
+
+  /** Bind the panel to the workspace it names, scanning it when it is new. */
+  const bindWorkspace = (req) => {
+    const asked = askedCwd(req);
+    if (asked !== undefined) {
+      if (asked !== latestCwd) scanWorkspace(asked);
+      return asked;
+    }
+    return ensureWorkspace();
+  };
+
   /** Resolve and scan when needed; returns the workspace the panel should use. */
   const ensureWorkspace = () => {
     const cwd = resolveWorkspace();
@@ -575,7 +613,8 @@ export function apply(ctx, config = {}) {
    */
   const treeHandler = (req, res) => {
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
-    if (ensureWorkspace() === undefined) return sendJson(res, 200, { workspace: null, entries: [] });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    if (bindWorkspace(req) === undefined) return sendJson(res, 200, { workspace: null, entries: [] });
     let dir = '';
     try {
       const url = new URL(req.url, 'http://localhost');
@@ -595,7 +634,8 @@ export function apply(ctx, config = {}) {
 
   const reportHandler = (req, res) => {
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
-    if (ensureWorkspace() === undefined) return sendJson(res, 200, { workspace: null, skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    if (bindWorkspace(req) === undefined) return sendJson(res, 200, { workspace: null, skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
     return sendJson(res, 200, {
       ...buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy }),
       uploads: recentUploads(startedAt),
@@ -720,6 +760,9 @@ export function apply(ctx, config = {}) {
   };
 
   const notesHandler = (req, res) => {
+    // The note belongs to the conversation's own directory, not to whichever
+    // one was scanned last.
+    bindWorkspace(req);
     if (req.method !== 'GET' && req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
     if (latestCwd === undefined) return sendJson(res, 404, { error: 'nothing-scanned' });
     if (req.method === 'GET') return sendJson(res, 200, { notes: readNotes(latestCwd) });
@@ -797,11 +840,8 @@ export function apply(ctx, config = {}) {
    */
   const scanHandler = (req, res) => {
     if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
-    const origin = req.headers.origin;
-    if (typeof origin === 'string' && origin.length > 0 && origin !== `http://${req.headers.host}`) {
-      return sendJson(res, 403, { error: 'cross-origin' });
-    }
-    const cwd = resolveWorkspace();
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    const cwd = askedCwd(req) !== undefined ? askedCwd(req) : resolveWorkspace();
     if (cwd === undefined) return sendJson(res, 404, { error: 'no-workspace' });
     try {
       // An explicit scan re-reads the tree even when this workspace was already

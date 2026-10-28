@@ -55,11 +55,12 @@ Two decisions per file, available from the tree, the session list and the report
   durable direction, because the file is the record: it survives restarts, shows
   up in review, and you can delete the line yourself.
 
-The panel finds its workspace two ways: from the `agent/created` event when the
-Host delivers it, and otherwise by asking the agent and session registries which
-directory the conversation runs in — so a plugin installed into a session that
-already exists still shows a report instead of an empty panel. The empty state
-carries a **Scan this conversation** button that rescans on demand.
+The panel finds its workspace three ways, in this order: the directory of the
+session it is rendered in (the slot hands the body its `sessionId` and a
+`useSessions` selector, so the panel passes `?cwd=` to the Host), then the agent
+and session registries, then whatever was scanned last. Only an absolute path to
+an existing directory is accepted. The empty state carries a **Scan this
+conversation** button that rescans on demand.
 
 Styling comes from the Host's design tokens (`--dsw-*`) with fallbacks, so the
 panel follows light and dark themes instead of shipping its own palette. Every
