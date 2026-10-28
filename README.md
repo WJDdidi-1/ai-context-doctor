@@ -160,6 +160,8 @@ console.log(report.healthScore, report.topNoise);
 dsh plugin --profile web add dsh-aiignore
 ```
 
+The plugin also adds a **Context** tab to the right sidebar, opened from a folder button in the composer: it lists every file the session touched, browses the workspace with the verdict already attached, reports what the guard kept out, and carries a note you can send to the agent. It follows the Harness light and dark themes.
+
 It declares `engines.dsh: ">=0.2.0"`, and the Harness checks that range before installing. The source, its configuration and its limits are in [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
 
 ## What counts as noise
