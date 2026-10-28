@@ -58,6 +58,19 @@ export function recordRead(state, entry) {
 }
 
 /**
+ * Allow a path the file manager points at, whether or not it was ever blocked.
+ * The guard consults this before it classifies anything, so a listing row can
+ * pre-approve a file the session has not tried yet.
+ *
+ * @param {ReturnType<typeof createWorkspaceState>} state
+ * @param {string} relativePath
+ */
+export function allowAnyPath(state, relativePath) {
+  state.allowed.add(relativePath);
+  state.skipped.delete(relativePath);
+}
+
+/**
  * Allow one path for this workspace, dropping it from the skipped list.
  * Returns false when the path was never blocked, so the UI can say so.
  *

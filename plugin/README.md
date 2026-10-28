@@ -27,22 +27,24 @@ becomes noise itself.
 
 The bundle also ships a browser half. A folder button sits beside the add-files
 button in the composer, labelled **Context** / **上下文** for screen readers;
-nothing is drawn until you click it. The panel then shows this
-workspace's numbers — health score, noise share, the tokens the guard kept out —
-one row per refused read with a **Read it anyway** button, and a ledger of what
-the session actually read, split into source, review (templates and deploy
-scripts) and files you allowed yourself.
+nothing is drawn until you click it. The panel opens on this workspace's numbers
+— health score, noise share, the tokens the guard kept out — and below them a
+file manager: browse a directory at a time, see the verdict on every row before
+the agent reads anything, and decide per file. A ledger of what the session
+actually read sits in the same view.
 
-Two decisions are offered per row:
+Two decisions per file, available from the tree and from the report:
 
-- **Read it anyway** allows that file for the rest of the Host run. Reloading
-  the Harness forgets it — a temporary override should stay temporary.
+- **Read once** (the report calls it **Read it anyway**) pre-approves a path for
+  the rest of the Host run, including one the session has not tried yet.
+  Reloading the Harness forgets it — a temporary override should stay temporary.
 - **Never read it** appends the path to the workspace's `.aiignore`. That is the
   durable direction, because the file is the record: it survives restarts, shows
   up in review, and you can delete the line yourself.
 
-The panel talks to the Host half over three same-origin routes
-(`GET /aiignore/report`, `POST /aiignore/allow`, `POST /aiignore/ignore`). They
+The panel talks to the Host half over four same-origin routes
+(`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `POST /aiignore/allow`,
+`POST /aiignore/ignore`). They
 answer for the most recently scanned workspace, never return file contents, and
 set `no-store`. The Host half installs them through `ctx.inject(['webServer'])`,
 so a profile without a web server still gets the read guard — it just has no panel.

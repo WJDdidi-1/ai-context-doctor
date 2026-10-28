@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { scanRepository, classifyPath, estimateTokens, matchesAiignore, parseRules, writeAiignore } from 'ai-context-doctor';
-import { createWorkspaceState, recordSkip, recordRead, allowPath, isAllowed, buildReport } from './report.js';
+import { createWorkspaceState, recordSkip, recordRead, allowPath, allowAnyPath, isAllowed, buildReport } from './report.js';
+import { listDirectory } from './tree.js';
 
 /**
  * Values a user can override in cordis.patch.yml.
@@ -295,6 +296,30 @@ export function apply(ctx, config = {}) {
     res.end(JSON.stringify(body));
   };
 
+  /**
+   * One directory for the file manager. The query only ever names a directory
+   * inside the scanned workspace; `listDirectory` refuses anything else.
+   */
+  const treeHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (latestCwd === undefined) return sendJson(res, 200, { workspace: null, entries: [] });
+    let dir = '';
+    try {
+      const url = new URL(req.url, 'http://localhost');
+      dir = url.searchParams.get('dir') === null ? '' : url.searchParams.get('dir');
+    } catch {
+      dir = '';
+    }
+    const listing = listDirectory({
+      root: latestCwd,
+      dir,
+      rules: rulesFor(latestCwd),
+      state: stateFor(latestCwd)
+    });
+    if (listing.error !== undefined) return sendJson(res, 400, { error: listing.error });
+    return sendJson(res, 200, { workspace: latestCwd, ...listing });
+  };
+
   const reportHandler = (req, res) => {
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
     if (latestCwd === undefined) return sendJson(res, 200, { workspace: null, skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
@@ -328,8 +353,15 @@ export function apply(ctx, config = {}) {
         return sendJson(res, 400, { error: 'bad-json' });
       }
       if (typeof target !== 'string' || target.length === 0) return sendJson(res, 400, { error: 'bad-path' });
-      const allowed = allowPath(stateFor(latestCwd), target);
-      return sendJson(res, allowed ? 200 : 404, { allowed });
+
+      const state = stateFor(latestCwd);
+      // A report row is always a previously blocked path; a file-manager row may
+      // be pre-approved before the session ever tries to read it.
+      if (allowPath(state, target)) return sendJson(res, 200, { allowed: true });
+      const inspected = inspectRead({ root: latestCwd, filePath: target });
+      if (inspected.inside !== true) return sendJson(res, 400, { error: 'outside-workspace' });
+      allowAnyPath(state, inspected.relativePath);
+      return sendJson(res, 200, { allowed: true });
     });
   };
 
@@ -382,6 +414,7 @@ export function apply(ctx, config = {}) {
       const server = serviceCtx !== null && serviceCtx !== undefined ? serviceCtx.webServer : undefined;
       if (server === null || server === undefined || typeof server.register !== 'function') return;
       server.register({ kind: 'exact', path: '/aiignore/report', handler: reportHandler });
+      server.register({ kind: 'exact', path: '/aiignore/tree', handler: treeHandler });
       server.register({ kind: 'exact', path: '/aiignore/allow', handler: allowHandler });
       server.register({ kind: 'exact', path: '/aiignore/ignore', handler: ignoreHandler });
       routesInstalled = true;

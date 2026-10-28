@@ -1,6 +1,6 @@
 {
   "name": "dsh-aiignore",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Tells the agent which workspace files waste context, right when a session opens the repo.",
   "license": "MIT",
   "type": "module",
@@ -13,6 +13,7 @@
   "files": [
     "index.js",
     "report.js",
+    "tree.js",
     "client.js",
     "cordis.patch.yml",
     "locale/*.json",
