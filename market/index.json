@@ -26,8 +26,8 @@
         "zh-cn": "dsh-aiignore"
       },
       "description": {
-        "en": "Warns the agent, when a session opens a repository, that build output, lockfiles and logs will eat its context — and hands it an .aiignore that cuts them.",
-        "zh-cn": "会话打开仓库时提醒智能体：构建产物、锁文件和日志会吃掉上下文，并给出可直接使用的 .aiignore。"
+        "en": "Warns the agent about context noise when a workspace opens, and refuses reads of generated output, lockfiles, logs and huge files.",
+        "zh-cn": "打开工作区时提示上下文噪音，并拒绝读取构建产物、锁文件、日志和超大文件，同时说明这次读取本来会花掉多少 token。"
       },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
@@ -46,6 +46,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.3.0",
+          "publishTimestamp": 1793158361,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.2.1",
           "publishTimestamp": 1793090177,
