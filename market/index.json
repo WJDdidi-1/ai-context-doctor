@@ -26,8 +26,9 @@
         "zh-cn": "dsh-aiignore"
       },
       "description": {
-        "en": "Reads the conversation's own directory so it always knows which workspace to audit, lists every file the session touched, lets you pick or drop files in bulk, and carries a note you can send to the agent.",
-        "zh-cn": "直接读取当前对话的目录，始终知道该审计哪个工作区；列出会话碰过的每个文件，支持批量放行或拦下，并把一句说明带给智能体。"
+        "en": "Follows the conversation: it reads the session the app is showing, audits that folder, and ranks every workspace you have used on one page in the left rail — so nothing has to be picked before the first scan.",
+        "zh": "跟随当前对话：读取应用正在展示的会话，审计它所在目录，并把用过的所有工作区按健康度排在左侧栏的一个页面里，第一次扫描之前不需要手动选择。",
+        "zh-cn": "跟随当前对话：读取应用正在展示的会话，审计它所在目录，并把用过的所有工作区按健康度排在左侧栏的一个页面里，第一次扫描之前不需要手动选择。"
       },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
@@ -46,6 +47,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.17.0",
+          "publishTimestamp": 1793190716,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.16.0",
           "publishTimestamp": 1793187568,
