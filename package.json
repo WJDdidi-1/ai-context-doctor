@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node bin/ai-context-doctor.js",
-    "test": "node --test",
+    "test": "node scripts/run-tests.js",
     "smoke": "node scripts/smoke-test.js",
     "pack:check": "npm pack --dry-run",
     "prepublishOnly": "npm run test && npm run smoke"
