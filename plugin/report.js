@@ -11,6 +11,7 @@ export function createWorkspaceState() {
     report: undefined,
     skipped: new Map(),
     reads: new Map(),
+    writes: new Map(),
     allowed: new Set()
   };
 }
@@ -95,6 +96,29 @@ export function isAllowed(state, relativePath) {
 }
 
 /**
+ * Record a file this session created or rewrote.
+ *
+ * Separate from `reads` because the panel answers a different question about
+ * it: not "what did reading cost" but "what changed under my feet".
+ *
+ * @param {ReturnType<typeof createWorkspaceState>} state
+ * @param {{ relativePath: string, bytes: number }} entry
+ */
+export function recordWrite(state, entry) {
+  const existing = state.writes.get(entry.relativePath);
+  if (existing === undefined) {
+    state.writes.set(entry.relativePath, {
+      path: entry.relativePath,
+      bytes: entry.bytes,
+      attempts: 1
+    });
+    return;
+  }
+  existing.attempts += 1;
+  existing.bytes = Math.max(existing.bytes, entry.bytes);
+}
+
+/**
  * Sum the tokens the guard kept out of the context.
  *
  * @param {ReturnType<typeof createWorkspaceState>} state
@@ -115,6 +139,25 @@ export function savedTokens(state) {
  * @param {{ cwd: string, state: ReturnType<typeof createWorkspaceState>, policy: string }} input
  * @returns {object}
  */
+export function sessionFiles(state) {
+  const merged = new Map();
+  for (const item of state.reads.values()) {
+    merged.set(item.path, { path: item.path, bytes: item.bytes, kind: item.verdict === 'allowed' ? 'read' : item.verdict });
+  }
+  for (const item of state.writes.values()) {
+    const existing = merged.get(item.path);
+    if (existing === undefined) {
+      merged.set(item.path, { path: item.path, bytes: item.bytes, kind: 'written' });
+    } else {
+      existing.kind = 'written';
+      existing.bytes = Math.max(existing.bytes, item.bytes);
+    }
+  }
+  return [...merged.values()]
+    .map((item) => ({ ...item, tokens: estimateTokens(item.bytes) }))
+    .sort((left, right) => right.bytes - left.bytes);
+}
+
 export function buildReport({ cwd, state, policy }) {
   const report = state.report;
   const saved = savedTokens(state);
@@ -133,6 +176,8 @@ export function buildReport({ cwd, state, policy }) {
         },
     skipped: [...state.skipped.values()].map((item) => ({ ...item })),
     reads: [...state.reads.values()].map((item) => ({ ...item })),
+    writes: [...state.writes.values()].map((item) => ({ ...item })),
+    sessionFiles: sessionFiles(state),
     readTokens: estimateTokens([...state.reads.values()].reduce((sum, item) => sum + item.bytes, 0)),
     allowed: [...state.allowed],
     savedTokens: saved

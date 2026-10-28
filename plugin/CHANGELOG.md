@@ -1,3 +1,15 @@
+## 0.9.0
+
+- The folder button now opens a menu with two entries, **Files** and
+  **Insights**, instead of a single panel. Files is where you decide what may be
+  read; Insights is the report that used to be the whole panel.
+- The Files view opens with **the files this session touched** — everything the
+  agent read and everything it wrote — so the panel is useful before anything
+  has been refused. It still browses the whole workspace underneath.
+- The Host half records write and edit tool calls, so files the agent created
+  appear in that list even when no read was ever blocked.
+- The panel no longer prints its own title twice.
+
 ## 0.8.0
 
 The panel was a report. It is now a file manager: the workspace is browsable one

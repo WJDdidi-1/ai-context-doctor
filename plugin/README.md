@@ -26,14 +26,17 @@ becomes noise itself.
 ## The panel
 
 The bundle also ships a browser half. A folder button sits beside the add-files
-button in the composer, labelled **Context** / **上下文** for screen readers;
-nothing is drawn until you click it. The panel opens on this workspace's numbers
-— health score, noise share, the tokens the guard kept out — and below them a
-file manager: browse a directory at a time, see the verdict on every row before
-the agent reads anything, and decide per file. A ledger of what the session
-actually read sits in the same view.
+button in the composer, labelled **Context** / **上下文** for screen readers.
+Hovering it offers two entries, and nothing is drawn until you pick one:
 
-Two decisions per file, available from the tree and from the report:
+- **Files** / **文件管理** — the panel opens on **the files this session touched**
+  (what the agent read and what it wrote), then lets you browse the whole
+  workspace a directory at a time. Every row shows the verdict before the agent
+  reads anything, with the size and the token range reading it would cost.
+- **Insights** / **数据分析** — the health score, the noise share, the tokens the
+  guard kept out, the reads it refused and the reads it let through.
+
+Two decisions per file, available from the tree, the session list and the report:
 
 - **Read once** (the report calls it **Read it anyway**) pre-approves a path for
   the rest of the Host run, including one the session has not tried yet.

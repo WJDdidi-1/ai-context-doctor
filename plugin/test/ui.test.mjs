@@ -6,7 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { apply, decideRead, inspectRead } from '../index.js';
-import { createWorkspaceState, recordSkip, recordRead, allowPath, savedTokens, buildReport } from '../report.js';
+import { createWorkspaceState, recordSkip, recordRead, recordWrite, allowPath, savedTokens, buildReport, sessionFiles } from '../report.js';
 
 function tempWorkspace() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-ui-'));
@@ -293,4 +293,40 @@ test('the allow route can pre-approve a file the session never tried', async () 
   const report = fakeResponse();
   routes.get('/aiignore/report')(fakeRequest(), report);
   assert.ok(JSON.parse(report.body).allowed.includes('dist/app.js'));
+});
+
+test('the session file list merges reads and writes without double counting', () => {
+  const state = createWorkspaceState();
+  recordRead(state, { relativePath: 'src/app.js', bytes: 100, verdict: 'useful' });
+  recordWrite(state, { relativePath: 'src/app.js', bytes: 260 });
+  recordWrite(state, { relativePath: 'notes/plan.md', bytes: 40 });
+
+  const files = sessionFiles(state);
+  const app = files.find((item) => item.path === 'src/app.js');
+  assert.equal(files.length, 2);
+  // Written wins the label and the larger size, so the row answers "what did
+  // this session change" rather than "what did it read first".
+  assert.equal(app.kind, 'written');
+  assert.equal(app.bytes, 260);
+  assert.ok(app.tokens.min > 0);
+  assert.equal(files[0].path, 'src/app.js');
+});
+
+test('a write tool call shows up in the report even when nothing was refused', () => {
+  const { routes, listeners, guards } = harness();
+  const root = tempWorkspace();
+  const agent = { session: { meta: { cwd: root } }, inject() {} };
+  listeners.get('agent/created')({ agent });
+
+  const target = path.join(root, 'src', 'app.js');
+  const verdict = guards[0]({ name: 'write', arguments: { file_path: target }, agent });
+  assert.equal(verdict, undefined);
+
+  const response = fakeResponse();
+  routes.get('/aiignore/report')(fakeRequest(), response);
+  const payload = JSON.parse(response.body);
+  assert.equal(payload.skipped.length, 0);
+  const entry = payload.sessionFiles.find((item) => item.path === 'src/app.js');
+  assert.equal(entry.kind, 'written');
+  assert.equal(payload.writes.length, 1);
 });
