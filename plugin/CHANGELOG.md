@@ -1,3 +1,20 @@
+## 0.8.0
+
+The panel was a report. It is now a file manager: the workspace is browsable one
+directory at a time, and every row carries the scanner's verdict before the agent
+tries to read anything.
+
+- `GET /aiignore/tree?dir=` serves one directory with the same classification the
+  guard uses, so the tree and the report can never disagree. Paths outside the
+  workspace are refused with `400 outside-workspace`.
+- Folders sort first, files by size. Each row shows the verdict, its size, and for
+  files the token range reading it would cost; hidden `.git` entries are skipped.
+- Selecting a file opens a detail pane with two decisions: **Read once**
+  (pre-approves a path the session has not tried yet) and **Never read it**
+  (appends it to `.aiignore`).
+- A directory listing is capped at 200 rows and says so, so a huge folder cannot
+  stall the panel.
+
 # Changelog
 
 Notable changes to the `dsh-aiignore` plugin package. The CLI package keeps its own

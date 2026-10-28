@@ -117,7 +117,7 @@ test('the ledger separates what was read from what was refused', () => {
 
 test('report handler answers with the scanned workspace, then the allow route edits it', async () => {
   const { routes, listeners, guards } = harness();
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/report']);
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/report', '/aiignore/tree']);
 
   const root = tempWorkspace();
   const agent = { session: { meta: { cwd: root } }, inject() {} };
@@ -247,6 +247,50 @@ test('a service that mounts late still gets the routes and the guard', async () 
   for (const entry of deferred) entry.callback(ctx);
 
   assert.equal(guards.length, 1, 'the guard installs once the tool registry appears');
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/report']);
-  assert.equal(late.routes.size, 3, 'a context with both services installs eagerly');
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/report', '/aiignore/tree']);
+  assert.equal(late.routes.size, 4, 'a context with both services installs eagerly');
+});
+
+test('the tree route lists the scanned workspace, one directory at a time', () => {
+  const { routes, listeners } = harness();
+  const root = tempWorkspace();
+  listeners.get('agent/created')({ agent: { session: { meta: { cwd: root } }, inject() {} } });
+
+  const response = fakeResponse();
+  routes.get('/aiignore/tree')(fakeRequest({ url: '/aiignore/tree?dir=' }), response);
+  const listing = JSON.parse(response.body);
+  assert.equal(response.status, 200);
+  assert.equal(listing.workspace, root);
+  assert.deepEqual(listing.entries.map((entry) => entry.name).slice(0, 2), ['dist', 'src']);
+
+  const nested = fakeResponse();
+  routes.get('/aiignore/tree')(fakeRequest({ url: '/aiignore/tree?dir=src' }), nested);
+  assert.deepEqual(JSON.parse(nested.body).entries.map((entry) => entry.name), ['app.js']);
+
+  const escaped = fakeResponse();
+  routes.get('/aiignore/tree')(fakeRequest({ url: '/aiignore/tree?dir=..' }), escaped);
+  assert.equal(escaped.status, 400);
+  assert.equal(JSON.parse(escaped.body).error, 'outside-workspace');
+});
+
+test('the allow route can pre-approve a file the session never tried', async () => {
+  const { routes, listeners } = harness();
+  const root = tempWorkspace();
+  listeners.get('agent/created')({ agent: { session: { meta: { cwd: root } }, inject() {} } });
+
+  const response = fakeResponse();
+  await new Promise((resolve) => {
+    const request = fakeRequest({ method: 'POST', body: JSON.stringify({ path: 'dist/app.js' }) });
+    response.end = (body) => {
+      response.body = body;
+      resolve();
+    };
+    routes.get('/aiignore/allow')(request, response);
+  });
+  assert.equal(response.status, 200);
+  assert.equal(JSON.parse(response.body).allowed, true);
+
+  const report = fakeResponse();
+  routes.get('/aiignore/report')(fakeRequest(), report);
+  assert.ok(JSON.parse(report.body).allowed.includes('dist/app.js'));
 });
