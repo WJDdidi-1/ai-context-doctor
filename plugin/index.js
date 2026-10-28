@@ -1112,8 +1112,30 @@ export function apply(ctx, config = {}) {
    * Scan `cwd` and make it the workspace the panel talks about. Exported logic
    * lives here so both the event and the explicit Scan button use one path.
    */
+  /**
+   * One scan, with everything the user has decided applied: their own rules and
+   * the strength on the slider. `healthScore` says how noisy the folder is;
+   * `effectiveScore` says how much of that noise still reaches the model — which
+   * is the number the Optimize button has to move.
+   */
+  const scanWithPolicy = (cwd, extra = {}) => {
+    let rules = [];
+    try {
+      rules = parseRules(fs.readFileSync(path.join(cwd, '.aiignore'), 'utf8'));
+    } catch {
+      rules = [];
+    }
+    return scanRepository(cwd, {
+      maxFiles: options.maxFiles,
+      maxBytes: options.maxBytes,
+      rules,
+      level: readPolicy(cwd),
+      ...extra
+    });
+  };
+
   const scanWorkspace = (cwd) => {
-    const report = scanRepository(cwd, { maxFiles: options.maxFiles, maxBytes: options.maxBytes });
+    const report = scanWithPolicy(cwd);
     latestCwd = cwd;
     inspected.add(cwd);
     stateFor(cwd).report = report;
@@ -1179,7 +1201,7 @@ export function apply(ctx, config = {}) {
     if (cached !== undefined && Date.now() - cached.at < OVERVIEW_TTL) return cached.value;
     let report;
     try {
-      report = scanRepository(entry.path, OVERVIEW_LIMITS);
+      report = scanWithPolicy(entry.path, OVERVIEW_LIMITS);
     } catch {
       return { path: entry.path, title: entry.title, sessions: entry.sessions, error: 'unreadable' };
     }
@@ -1654,10 +1676,10 @@ export function apply(ctx, config = {}) {
       if (cwd === undefined || cwd === null) return sendJson(res, 404, { error: 'no-workspace' });
 
       try {
-        const report = scanRepository(cwd, { maxFiles: options.maxFiles, maxBytes: options.maxBytes });
+        const before = scanWithPolicy(cwd);
         const rules = conversation !== null ? conversation.suggestedAiignore : undefined;
-        const result = optimizeWorkspace(cwd, report, rules);
-        const after = scanRepository(cwd, { maxFiles: options.maxFiles, maxBytes: options.maxBytes });
+        const result = optimizeWorkspace(cwd, before, rules);
+        const after = scanWithPolicy(cwd);
         stateFor(cwd).report = after;
 
         // Proof the click did something: every noise read of this conversation,
@@ -1680,8 +1702,10 @@ export function apply(ctx, config = {}) {
           workspace: cwd,
           ...result,
           session: conversation === null ? null : conversation.id,
-          before: report.healthScore,
-          after: after.healthScore,
+          before: before.effectiveScore,
+          after: after.effectiveScore,
+          rawBefore: before.healthScore,
+          rawAfter: after.healthScore,
           blockedNow
         });
       } catch {

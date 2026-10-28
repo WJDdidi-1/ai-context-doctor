@@ -35,26 +35,32 @@ one plugin covers both.
 
 Three tabs inside:
 
+- **Chat** — the conversation in front of you, and the tab the panel opens on.
+  Its title sits in the header; the tab shows the turns, the files it read, and
+  how its tokens split across assistant / tool / user / injected context. A
+  conversation is the thing you are actually in, so it gets the first tab.
 - **Files** — opens on **the files this session touched** (what the agent read
   and what it wrote), then lets you browse the whole workspace a directory at a
-  time. Search, filter by verdict, and every row carries the scanner's verdict,
-  the size and the token range reading it would cost, before the agent tries.
-- **Chat** — the conversation in front of you: its title, its turns, the files it
-  read, what those reads cost, and one button that turns *those* reads into
-  `.aiignore` rules. This is the tab the panel opens on, because a conversation
-  is the thing you are actually in.
-- **Files** — the folder as a tree, with what the guard would say about each
-  entry, so a decision can be taken before the agent acts.
-- **Score** — the health score, the noise share, the tokens the guard kept
-  out, the reads it refused and the reads it let through, and the files the Host
-  received this session. It also shows **why the score is what it is** (one bar
-  per category: what it cost, out of what it could cost) and a single
-  **Optimize this workspace** button.
-- **Strategy** — one slider, five notches, from *Off* to *Strict*. Each notch
-  says what it stops and what that costs, the Host stores it in
-  `.aiignore.policy.json`, and the read guard uses the same numbers, so the
-  setting is not a display preference. The recommended notch is 3. Below the
-  slider is the optional note for the agent.
+  time. Search, filter by verdict — and when a filter has nothing in it, the
+  panel says which filter that was instead of looking empty.
+- **Score** — two labelled numbers and the arithmetic behind them:
+
+  | | what it counts |
+  |---|---|
+  | **This conversation** | what this chat actually read |
+  | **Still reaches the model** | what is left after your `.aiignore` rules and your strength |
+
+  Below them: one bar per noise category (what it cost, out of the weight it
+  could cost), the strength slider, and **Optimize from this conversation** —
+  which writes the rules that conversation needs, then reports the score before
+  and after plus how many of those reads the new rules now block. Undo puts the
+  file back byte for byte. At the bottom sits the optional note for the agent.
+
+- **The strength is part of the score, not a separate page.** One slider, five
+  notches, from *Off* to *Strict*. Each notch says what it stops and what that
+  costs, the Host stores it in `.aiignore.policy.json`, the read guard and the
+  scan share the same predicate, and saving a notch re-scans — so moving from 3
+  to 5 visibly changes the number instead of only the copy around it.
 
 ### Following the conversation, not a folder
 

@@ -1,3 +1,32 @@
+## 0.21.0
+
+One strength, one number that moves, and a header that says which conversation this is.
+
+- **The score now counts what actually reaches the model.** `scanRepository`
+  learned two options, `rules` and `level`: a file the user's `.aiignore`
+  covers, or one the chosen strength would refuse, is still counted in the
+  folder — but no longer counted against the score. So the report carries both
+  `healthScore` (how noisy the folder is) and `effectiveScore` (how much of that
+  noise still gets through). Before this, the Optimize button changed nothing on
+  screen, because the scan never read `.aiignore` at all.
+- **The strength lives in the Score tab, and moving it moves the number.** The
+  slider is part of the score card instead of a separate tab; saving a notch
+  re-scans with that strength, so 3 → 5 visibly hides more. The guard and the
+  scan share one predicate, so the panel cannot claim to block what the guard
+  still allows.
+- **Two labelled numbers, not two of the same number.** *This conversation* is
+  what the chat read; *Still reaches the model* is what is left after rules and
+  strength. Optimize reports its before/after on the second one and how many of
+  the conversation's reads the new rules now block.
+- **The header is the conversation's title.** The folder moved to the second
+  line next to a single "following this conversation" badge; the refresh button
+  now re-scans instead of redrawing the same data.
+- **Strategy is folded into Score.** Three tabs instead of four: Chat, Files,
+  Score. The note editor sits at the bottom of the Score tab in a user's voice —
+  the templates say what to do ("Start here", "Do not open", "Check my work")
+  and the caption says what the note is for.
+- **An empty filter says which filter it is,** and offers the way back.
+
 ## 0.19.0
 
 The unit of analysis is the conversation, not the folder.

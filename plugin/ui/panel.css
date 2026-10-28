@@ -49,6 +49,29 @@
   color: var(--dsw-alias-label-primary, currentColor);
 }
 
+.aicd-title {
+  font: var(--dsw-font-xs-strong-13, 600 13px/1.35 system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* The line under the title: where the folder is, and one badge at most. */
+.aicd-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
+  color: var(--dsw-alias-label-tertiary, currentColor);
+}
+
+.aicd-card-value[data-tone='good'] { color: var(--dsw-alias-state-success-primary, #2f7d4f); }
+.aicd-card-value[data-tone='warn'] { color: var(--dsw-alias-state-warn-primary, #a8700f); }
+.aicd-card-value[data-tone='bad'] { color: var(--dsw-alias-state-error-primary, #b23b3b); }
+
 .aicd-path {
   font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
   font-family: var(--ds-font-family-code, ui-monospace, SFMono-Regular, monospace);

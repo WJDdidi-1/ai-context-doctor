@@ -193,6 +193,20 @@
         scenario.scanned.scoreBreakdown = rows;
         scenario.scanned.scoreLost = Math.round(rows.reduce((sum, row) => sum + row.lost, 0) * 10) / 10;
       }
+      // The effective numbers exist because rules and strength hide part of the
+      // noise; the preview shows a realistic gap instead of two identical scores.
+      if (scenario.scanned.effectiveScore === undefined) {
+        const factor = name === 'noisy' ? 0.4 : 0.5;
+        scenario.scanned.effectiveBreakdown = scenario.scanned.scoreBreakdown.map((row) => ({
+          ...row,
+          lost: Math.round(row.lost * factor * 10) / 10
+        }));
+        scenario.scanned.effectiveLost = Math.round(
+          scenario.scanned.effectiveBreakdown.reduce((sum, row) => sum + row.lost, 0) * 10
+        ) / 10;
+        scenario.scanned.effectiveScore = Math.max(0, Math.round(100 - scenario.scanned.effectiveLost));
+        scenario.scanned.blockedBytes = name === 'noisy' ? 400000 : 0;
+      }
     });
 
     const TREES = {
@@ -351,15 +365,32 @@
       if (url === '/aiignore/policy') {
         const next = Number((body && body.level) || 3);
         LEVELS.forEach((entry) => { if (entry.level === next) window.__level = entry; });
+        // The real Host re-scans with the new strength, so the score moves.
+        const target = SCENARIOS[scenario];
+        if (target && target.scanned) {
+          const raw = target.scanned.healthScore;
+          const factor = [0, 0.15, 0.35, 0.55, 0.75, 0.9][next] || 0.55;
+          target.scanned.effectiveScore = Math.round(raw + (100 - raw) * factor);
+          target.scanned.effectiveBreakdown = target.scanned.scoreBreakdown.map((row) => ({
+            ...row,
+            lost: Math.round(row.lost * (1 - factor) * 10) / 10
+          }));
+          target.scanned.effectiveLost = Math.round(
+            target.scanned.effectiveBreakdown.reduce((sum, row) => sum + row.lost, 0) * 10
+          ) / 10;
+          target.scanned.level = next;
+        }
         return record({ level: next, levels: LEVELS, policy: 'deny' });
       }
       if (url === '/aiignore/optimize') {
-        const before = (window.__lastReport && window.__lastReport.scanned.healthScore) || 0;
+        // The Host reports the effective score on both sides: rules change what
+        // still reaches the model, not how noisy the folder is.
+        const before = (window.__lastReport && window.__lastReport.scanned.effectiveScore) || 0;
         return record({
           added: ['dist/', 'package-lock.json'],
           written: true,
           before: before,
-          after: 92,
+          after: Math.min(100, before + 6),
           saved: ['dist/', 'package-lock.json'],
           blockedNow: [
             { path: 'dist/bundle.js', blocked: true },
