@@ -97,3 +97,30 @@ test('uses the directory name as the repo label', () => {
   const root = makeRepo({ 'a.js': 10 });
   assert.equal(scanRepository(root).repo, path.basename(root));
 });
+
+test('reports a token range instead of one invented number', () => {
+  const root = makeRepo({ 'a.js': 4320, 'dist/b.js': 3080 });
+
+  const report = scanRepository(root);
+
+  // 3.08–4.32 bytes per token is the measured range in docs/research.
+  assert.deepEqual(report.tokenEstimate, {
+    noise: { min: 713, max: 1000 },
+    useful: { min: 1000, max: 1403 }
+  });
+});
+
+test('classifyPath is exported so the plugin blocks the same files the report flags', () => {
+  const { classifyPath } = require('../lib');
+
+  assert.deepEqual(classifyPath('dist/app.js', 10), {
+    noise: { label: 'dist/', reason: 'generated build output' },
+    suggestion: 'dist/'
+  });
+  assert.deepEqual(classifyPath('package-lock.json', 10).suggestion, 'package-lock.json');
+  assert.deepEqual(classifyPath('.env.example', 10), {
+    review: { label: '.env.example', reason: 'environment template (usually safe to share)' },
+    suggestion: null
+  });
+  assert.deepEqual(classifyPath('src/app.js', 10), { suggestion: null });
+});

@@ -72,14 +72,39 @@ Values go in the plugin's `config` row in `cordis.patch.yml`:
 | `healthThreshold` | `80` | Inject only when the workspace scores below this. `100` disables the notice without uninstalling. |
 | `maxFiles` | `20000` | Stop scanning after this many files. |
 | `maxBytes` | `268435456` | Stop scanning after this many bytes (256 MiB). |
+| `readPolicy` | `deny` | `deny` refuses `read` calls on the noisy files below; `off` only warns at session start. |
 
 The caps exist because the scan is a synchronous directory walk: without them,
 opening a huge monorepo would stall the Host.
+
+## What it refuses to read
+
+With `readPolicy: deny`, the plugin installs a tool guard that refuses `read`
+calls on the same files the notice names:
+
+| refused | why |
+| --- | --- |
+| `dist/`, `build/`, `coverage/`, `.next/`, `.turbo/` | generated output; the source is what matters |
+| `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock` | thousands of lines of resolved versions |
+| `*.log` | local run output, usually stale |
+| files over 1 MiB | a single read can consume the whole budget |
+
+The refusal is a message, not a silent failure: it names the file, its size and
+the tokens the read would have cost, so the agent can tell the user instead of
+retrying. Templates like `.env.example` and scripts with `deploy` in the path
+are **never** blocked — they are small, and a wrong guess there loses real
+information.
+
+Every refusal is recorded per workspace (`getSkippedReads`) so the UI half can
+list what this session did not open.
 
 ## Limits
 
 - The notice fires once per workspace per Host run; changing the directory in a
   session does not re-trigger it.
-- The score is a size heuristic, not a token count or a security audit.
+- The score is a size heuristic; token figures are a range from the measured
+  3.08–4.32 bytes-per-token ratio, not an exact count.
+- `bash`, `grep` and other tools that can read a file indirectly are not
+  intercepted: the guard only sees the `read` tool.
 - `.gitignore` is ignored on purpose: the point is what the agent *would* read,
   not what git tracks.
