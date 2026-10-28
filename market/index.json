@@ -26,9 +26,8 @@
         "zh-cn": "dsh-aiignore"
       },
       "description": {
-        "en": "Stops your coding agent from reading the wrong files: it scores a workspace by context noise, follows the conversation you are in, explains the score per category, filters at the strength you choose, and applies the suggested .aiignore in one click.",
-        "zh": "阻止编码代理读错文件：按上下文噪音给仓库打分，跟随你当前所在的对话，按类别解释分数，以你选择的力度过滤，并可一键写入建议的 .aiignore。",
-        "zh-cn": "跟随当前对话：读取应用正在展示的会话，审计它所在目录，并把用过的所有工作区按健康度排在左侧栏的一个页面里，第一次扫描之前不需要手动选择。"
+        "en": "Makes the conversation the unit of analysis: it reads the session the app is showing, scores what that chat actually read, explains the score per category, filters at the strength you choose, and applies the suggested .aiignore in one click.",
+        "zh-cn": "以对话为单位：读取应用当前展示的会话，针对这次对话真正读进来的文件打分，按类别解释分数，以你选择的力度过滤，并可一键写入建议的 .aiignore。"
       },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
@@ -47,6 +46,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.19.0",
+          "publishTimestamp": 1793196518,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.18.0",
           "publishTimestamp": 1793187810,
