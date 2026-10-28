@@ -31,6 +31,8 @@ button in the composer; clicking it opens the **right sidebar** on the
 sidebar services the same button opens the panel as a floating card instead, so
 one plugin covers both.
 
+![The Files tab, light theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
+
 Three tabs inside:
 
 - **Files** — opens on **the files this session touched** (what the agent read
@@ -71,6 +73,8 @@ so a profile without a web server still gets the read guard — it just has no p
 There is no authentication beyond a same-origin check: like every
 `ctx.webServer` route, this one inherits the loopback bind of the Harness and
 must not be exposed to a network.
+
+![The Insights tab, dark theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-insights-dark.png)
 
 ### Looking at the panel without a Harness
 
