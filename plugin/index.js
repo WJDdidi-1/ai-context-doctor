@@ -299,6 +299,48 @@ export function writeNotes(cwd, text) {
  * @param {string} [home]
  * @returns {Array<{ name: string, bytes: number, type: string, receivedAt: number }>}
  */
+/**
+ * Every workspace the app already knows about, read from the same store the
+ * workspace switcher uses. The panel uses this when it cannot work out which
+ * directory the conversation belongs to: rather than showing an empty screen, it
+ * offers the folders the user has actually been working in.
+ */
+export function knownWorkspaces(home = dshHome()) {
+  const file = path.join(home, 'storages', 'workspace.json');
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return [];
+  }
+  const table = parsed !== null && typeof parsed === 'object' && parsed.tables !== undefined && parsed.tables !== null
+    ? parsed.tables.workspaces
+    : undefined;
+  if (table === null || typeof table !== 'object') return [];
+  const seen = new Set();
+  const found = [];
+  for (const entry of Object.values(table)) {
+    if (entry === null || typeof entry !== 'object') continue;
+    const dir = typeof entry.path === 'string' ? entry.path : undefined;
+    if (dir === undefined || seen.has(dir)) continue;
+    let isDirectory = false;
+    try {
+      isDirectory = fs.statSync(dir).isDirectory();
+    } catch {
+      isDirectory = false;
+    }
+    if (!isDirectory) continue;
+    seen.add(dir);
+    found.push({
+      path: dir,
+      title: typeof entry.title === 'string' && entry.title.length > 0 ? entry.title : path.basename(dir),
+      sessions: Array.isArray(entry.sessionIds) ? entry.sessionIds.length : 0
+    });
+  }
+  // Most-used first: that is the one the user is most likely looking for.
+  return found.sort((left, right) => right.sessions - left.sessions || left.title.localeCompare(right.title));
+}
+
 export function recentUploads(since, home = dshHome()) {
   const root = path.join(home, 'attachments', 'v1', 'objects');
   const found = [];
@@ -834,6 +876,79 @@ export function apply(ctx, config = {}) {
   };
 
   /**
+   * The folders this app has been used in. The panel shows them when it has no
+   * workspace of its own, so "no workspace selected" is a choice instead of a
+   * dead end.
+   */
+  const workspacesHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    let list = [];
+    try {
+      list = knownWorkspaces();
+    } catch {
+      list = [];
+    }
+    return sendJson(res, 200, {
+      current: typeof latestCwd === 'string' ? latestCwd : null,
+      workspaces: list
+    });
+  };
+
+  /** What the browser half could see, so a mismatch is diagnosable. */
+  let clientReport = null;
+
+  const clientReportHandler = (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    let raw = '';
+    req.on('data', (chunk) => {
+      if (raw.length > 4000) return;
+      raw += chunk;
+    });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(raw);
+        clientReport = {
+          at: new Date().toISOString(),
+          keys: Array.isArray(payload.keys) ? payload.keys.slice(0, 40).map(String) : [],
+          sessionId: typeof payload.sessionId === 'string' ? payload.sessionId.slice(0, 120) : null,
+          hasUseSessions: payload.hasUseSessions === true,
+          cwd: typeof payload.cwd === 'string' ? payload.cwd.slice(0, 400) : null
+        };
+      } catch {
+        clientReport = { at: new Date().toISOString(), error: 'bad-payload' };
+      }
+      return sendJson(res, 200, { received: true });
+    });
+  };
+
+  const debugHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    return sendJson(res, 200, {
+      workspace: typeof latestCwd === 'string' ? latestCwd : null,
+      resolved: (() => {
+        try {
+          return resolveWorkspace() || null;
+        } catch {
+          return null;
+        }
+      })(),
+      hasAgents: agentRegistry !== undefined,
+      hasSessions: sessionRegistry !== undefined,
+      client: clientReport,
+      workspaces: (() => {
+        try {
+          return knownWorkspaces().length;
+        } catch {
+          return 0;
+        }
+      })()
+    });
+  };
+
+  /**
    * Scan the workspace of the conversation the user is looking at. The panel
    * offers this as a button so a session that predates the bundle — or a host
    * that never announced it — still gets a report.
@@ -868,6 +983,9 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/upload', handler: uploadHandler });
       server.register({ kind: 'exact', path: '/aiignore/unignore', handler: unignoreHandler });
       server.register({ kind: 'exact', path: '/aiignore/scan', handler: scanHandler });
+      server.register({ kind: 'exact', path: '/aiignore/workspaces', handler: workspacesHandler });
+      server.register({ kind: 'exact', path: '/aiignore/client-report', handler: clientReportHandler });
+      server.register({ kind: 'exact', path: '/aiignore/debug', handler: debugHandler });
       routesInstalled = true;
     } catch {
       // No web server in this profile: the guard still works, the panel does not.

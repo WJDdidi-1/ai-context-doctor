@@ -219,9 +219,18 @@
       const data = SCENARIOS[scenario];
       if (data === null) return record({ error: 'boom' }, 500);
 
+      const scannedCwd = url.match(/[?&]cwd=([^&]+)/);
+      if (url.indexOf('/aiignore/scan') === 0 && scannedCwd !== null) {
+        bound = decodeURIComponent(scannedCwd[1]);
+      }
       if (url.indexOf('/aiignore/report') === 0) {
-        window.__lastReport = data;
-        return record(data);
+        // `?nocwd=1` models the real failure: the panel has no session, so it
+        // asks without a cwd and the Host has nothing to answer with.
+        const blind = location.search.indexOf('nocwd') !== -1 && bound === null && url.indexOf('cwd=') === -1;
+        const workspace = bound === null ? data.workspace : bound;
+        const answer = blind ? Object.assign({}, data, { workspace: null, policy: null }) : Object.assign({}, data, { workspace: workspace });
+        window.__lastReport = answer;
+        return record(answer);
       }
 
       if (url.indexOf('/aiignore/tree') === 0) {
@@ -239,6 +248,16 @@
         window.__lastReport = scanned;
         return record(scanned);
       }
+      if (url.indexOf('/aiignore/workspaces') === 0) {
+        return record({
+          current: null,
+          workspaces: [
+            { path: '/Users/you/code/demo-noise', title: 'demo-noise', sessions: 3 },
+            { path: '/Users/you/code/other', title: 'other-project', sessions: 1 }
+          ]
+        });
+      }
+      if (url.indexOf('/aiignore/client-report') === 0) return record({ received: true });
       if (url === '/aiignore/allow') return record({ allowed: true });
       if (url === '/aiignore/ignore') return record({ ignored: true, rule: String((body && body.path) || '') });
       if (url === '/aiignore/unignore') return record({ removed: true });
@@ -248,6 +267,7 @@
 
     // ---- mock host: services, slots, locale -----------------------------
     const dicts = {};
+    let bound = null;
     let language = 'en';
 
     const slots = {
@@ -256,12 +276,16 @@
         const mount = function (id, path) {
           const root = document.getElementById(id);
           if (root === null) return;
-          const props = {
-            sessionId: 'preview-session',
-            useSessions: function (select) {
-              return select({ byId: { 'preview-session': { cwd: '/Users/you/code/demo-noise' } } });
-            }
-          };
+          // `?nocwd=1` drops the session props, which is exactly the state the
+          // real Host put the panel in — the picker has to carry it from there.
+          const props = location.search.indexOf('nocwd') !== -1
+            ? {}
+            : {
+                sessionId: 'preview-session',
+                useSessions: function (select) {
+                  return select({ byId: { 'preview-session': { cwd: '/Users/you/code/demo-noise' } } });
+                }
+              };
           window.ReactLite.render(window.ReactLite.createElement(component, props), root, path);
         };
         if (definition.name === 'sidebar.right.pane.tab') mount('panel-root', 'panel');

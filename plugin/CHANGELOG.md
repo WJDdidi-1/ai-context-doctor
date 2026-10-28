@@ -1,3 +1,16 @@
+## 0.16.0
+
+- **The panel can no longer dead-end.** When it cannot tell which folder the
+  conversation runs in — the case that left 0.14.0 and 0.15.0 showing "No
+  workspace yet" — it now lists the folders this app has actually been used in
+  and opening one scans it. `GET /aiignore/workspaces` reads them from the app's
+  own workspace store.
+- **A mismatch leaves evidence.** `POST /aiignore/client-report` records what the
+  Host handed the panel (which props, whether a session came with them);
+  `GET /aiignore/debug` reads it back next to the Host's own state, so the next
+  disagreement is one request away instead of a round of guessing.
+- The header no longer repeats "No workspace yet"; the body says it once.
+
 ## 0.15.0
 
 The panel now tells the Host which conversation it belongs to.

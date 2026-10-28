@@ -573,6 +573,53 @@
   color: var(--dsw-alias-label-tertiary, currentColor);
 }
 
+.aicd-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 12px;
+}
+
+.aicd-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.2));
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: var(--dsw-alias-bg-layer-1, transparent);
+  color: var(--dsw-alias-label-primary, #f2f2f2);
+  font: inherit;
+  font-size: var(--dsw-font-xxs-12, 12px);
+  text-align: left;
+  cursor: pointer;
+}
+
+.aicd-pick-row:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+  border-color: var(--dsw-alias-border-l3, rgba(127, 127, 127, 0.3));
+}
+
+.aicd-pick-row:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.aicd-pick-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-pick-meta {
+  margin-left: auto;
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.9));
+  font-size: var(--dsw-font-xxxs-11, 11px);
+}
+
 .aicd-empty-icon {
   display: inline-flex;
   color: var(--dsw-alias-label-caption, currentColor);
