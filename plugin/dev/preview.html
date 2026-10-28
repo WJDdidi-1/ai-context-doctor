@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="light">
 <head>
+    <script>window.__errors = []; window.addEventListener('error', (e) => window.__errors.push('error: ' + String(e.message))); window.addEventListener('unhandledrejection', (e) => window.__errors.push('rejection: ' + String(e.reason && e.reason.stack || e.reason))); const __ce = console.error; console.error = (...a) => { window.__errors.push(a.map(String).join(' ')); __ce(...a); };</script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>AI context panel — preview</title>
@@ -131,8 +132,9 @@
         ],
         savedTokens: TOK(973158),
         uploads: [
-          { name: 'f4ff838c', bytes: 18026, type: 'webp', receivedAt: now - 12 * 60000 },
-          { name: '9c2e1ab4', bytes: 20480, type: 'pdf', receivedAt: now - 3 * 60000 }
+          { name: 'f4ff838c', digest: 'f4ff838c' + '0'.repeat(56), bytes: 18026, type: 'png', receivedAt: now - 12 * 60000 },
+          { name: '9c2e1ab4', digest: '9c2e1ab4' + '0'.repeat(56), bytes: 20480, type: 'pdf', receivedAt: now - 3 * 3600000 },
+          { name: '11ab7d02', digest: '11ab7d02' + '0'.repeat(56), bytes: 4096, type: 'png', receivedAt: now - 26 * 3600000 }
         ],
         notes: 'Prefer lib/ over legacy/. Never read dist/.'
       },
@@ -182,6 +184,21 @@
 
     let scenario = 'noisy';
     const calls = [];
+
+    // Thumbnails are real <img> requests, which the mock fetch cannot answer:
+    // rewrite them to one inline gradient so the preview shows what the panel
+    // will look like with images present.
+    (function stubThumbnails() {
+      const gradient = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAJ0lEQVR4nGNg4JfTtfGOyqxon7Z0y+FLD0+ggQo0wDCqYVTD8NUAALb8sJCsDR8gAAAAAElFTkSuQmCC';
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+      Object.defineProperty(HTMLImageElement.prototype, 'src', {
+        configurable: true,
+        get() { return descriptor.get.call(this); },
+        set(value) {
+          descriptor.set.call(this, String(value).indexOf('/aiignore/upload') === 0 ? gradient : value);
+        }
+      });
+    })();
 
     window.fetch = function (url, init) {
       const method = (init && init.method) || 'GET';

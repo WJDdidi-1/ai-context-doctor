@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { apply, decideRead, inspectRead, readNotes, writeNotes, recentUploads, NOTES_FILE } from '../index.js';
+import { apply, decideRead, inspectRead, readNotes, writeNotes, recentUploads, uploadFile, NOTES_FILE } from '../index.js';
 import { createWorkspaceState, recordSkip, recordRead, recordWrite, allowPath, savedTokens, buildReport, sessionFiles } from '../report.js';
 
 function tempWorkspace() {
@@ -21,8 +21,12 @@ function fakeResponse() {
   return {
     status: 0,
     body: '',
+    headers: {},
     writeHead(status) {
       this.status = status;
+    },
+    setHeader(name, value) {
+      this.headers[name.toLowerCase()] = value;
     },
     end(body) {
       this.body = body;
@@ -117,7 +121,7 @@ test('the ledger separates what was read from what was refused', () => {
 
 test('report handler answers with the scanned workspace, then the allow route edits it', async () => {
   const { routes, listeners, guards } = harness();
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/notes', '/aiignore/report', '/aiignore/tree']);
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/notes', '/aiignore/report', '/aiignore/tree', '/aiignore/upload']);
 
   const root = tempWorkspace();
   const agent = { session: { meta: { cwd: root } }, inject() {} };
@@ -247,8 +251,8 @@ test('a service that mounts late still gets the routes and the guard', async () 
   for (const entry of deferred) entry.callback(ctx);
 
   assert.equal(guards.length, 1, 'the guard installs once the tool registry appears');
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/notes', '/aiignore/report', '/aiignore/tree']);
-  assert.equal(late.routes.size, 5, 'a context with both services installs eagerly');
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/notes', '/aiignore/report', '/aiignore/tree', '/aiignore/upload']);
+  assert.equal(late.routes.size, 6, 'a context with both services installs eagerly');
 });
 
 test('the tree route lists the scanned workspace, one directory at a time', () => {
@@ -394,4 +398,43 @@ test('a note left in the workspace reaches the next session without a click', ()
   listeners.get('agent/created')({ agent });
   const notes = injected.find((item) => /Stripe/.test(item.content[0].text));
   assert.ok(notes, 'the note should be injected at session start');
+});
+
+test('the upload route only serves images, and only behind a real digest', async () => {
+  const { routes } = harness();
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-route-'));
+  const digest = 'd'.repeat(64);
+  const directory = path.join(home, 'attachments', 'v1', 'objects', digest.slice(0, 2));
+  fs.mkdirSync(directory, { recursive: true });
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(64, 3)]);
+  fs.writeFileSync(path.join(directory, digest), png);
+
+  const previous = process.env.DSH_HOME;
+  process.env.DSH_HOME = home;
+  try {
+    const ok = fakeResponse();
+    routes.get('/aiignore/upload')(fakeRequest({ url: `/aiignore/upload?digest=${digest}` }), ok);
+    assert.equal(ok.statusCode, 200);
+    assert.equal(ok.headers['content-type'], 'image/png');
+    assert.equal(ok.headers['x-content-type-options'], 'nosniff');
+    assert.equal(ok.body.length, png.length);
+
+    const missing = fakeResponse();
+    routes.get('/aiignore/upload')(fakeRequest({ url: `/aiignore/upload?digest=${'e'.repeat(64)}` }), missing);
+    assert.equal(missing.status, 404);
+
+    const traversal = fakeResponse();
+    routes.get('/aiignore/upload')(fakeRequest({ url: '/aiignore/upload?digest=../../etc/passwd' }), traversal);
+    assert.equal(traversal.status, 404);
+  } finally {
+    if (previous === undefined) delete process.env.DSH_HOME;
+    else process.env.DSH_HOME = previous;
+  }
+});
+
+test('the upload route refuses a non-GET request', () => {
+  const { routes } = harness();
+  const response = fakeResponse();
+  routes.get('/aiignore/upload')(fakeRequest({ method: 'POST' }), response);
+  assert.equal(response.status, 405);
 });

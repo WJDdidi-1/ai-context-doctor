@@ -33,6 +33,14 @@ window.__ModuleLoader__.load({
       }
     };
 
+    //#region copy
+    /** One click inserts a sentence the user would otherwise retype every session. */
+    const TEMPLATES = [
+      { id: 'entry', labelKey: 'templateEntryLabel', key: 'templateEntry' },
+      { id: 'avoid', labelKey: 'templateAvoidLabel', key: 'templateAvoid' },
+      { id: 'tests', labelKey: 'templateTestsLabel', key: 'templateTests' }
+    ];
+
     const COPY = {
       en: {
         entry: 'AI context',
@@ -90,6 +98,16 @@ window.__ModuleLoader__.load({
         uploadsTitle: 'Received this session',
         uploadsNone: 'Drop a file into the composer and it appears here.',
         uploadsNote: 'Uploads are stored by content digest, so only the digest and size survive.',
+        timelineToday: 'Today',
+        timelineYesterday: 'Yesterday',
+        exportReport: 'Export report (.md)',
+        templatesTitle: 'Insert a starting point',
+        templateEntryLabel: 'Entry point',
+        templateEntry: 'The entry point is src/index.js; start there before reading anything else.',
+        templateAvoidLabel: 'What to skip',
+        templateAvoid: 'Do not read dist/, build output, lockfiles or logs — they are generated or redundant.',
+        templateTestsLabel: 'How to check',
+        templateTests: 'Run `npm test` before changing behaviour; it is the fastest signal in this repo.',
         noteTitle: 'A note for the agent',
         noteHint: 'Saved to .aiignore.notes.md in this workspace, and sent to the agent right away.',
         notePlaceholder: 'e.g. Prefer lib/ over legacy/. Never read dist/.',
@@ -159,6 +177,16 @@ window.__ModuleLoader__.load({
         uploadsTitle: '本次会话收到',
         uploadsNone: '拖一个文件到输入框，它就会出现在这里。',
         uploadsNote: '上传按内容摘要存储，因此只保留摘要与大小。',
+        timelineToday: '今天',
+        timelineYesterday: '昨天',
+        exportReport: '导出报告（.md）',
+        templatesTitle: '插入一个开头',
+        templateEntryLabel: '入口文件',
+        templateEntry: '入口文件是 src/index.js，先读它，再读别的。',
+        templateAvoidLabel: '别读什么',
+        templateAvoid: '不要读 dist/、构建产物、锁文件和日志——它们是生成的或重复的。',
+        templateTestsLabel: '怎么验证',
+        templateTests: '改行为前先跑 `npm test`，这是这个仓库里最快的信号。',
         noteTitle: '给 AI 的说明',
         noteHint: '保存到本工作区的 .aiignore.notes.md，并立即发送给 AI。',
         notePlaceholder: '例如：优先用 lib/，不要用 legacy/；永远不要读 dist/。',
@@ -175,6 +203,9 @@ window.__ModuleLoader__.load({
     };
 
     // Single source of truth: this text must match ui/panel.css byte for byte.
+    //#endregion copy
+
+    //#region styles
     const CSS = String.raw`/*
  * The panel's whole look. Every value comes from the host's design tokens
  * (--dsw-*), so light and dark themes, font-size preferences and radius
@@ -632,6 +663,30 @@ window.__ModuleLoader__.load({
   padding: 4px;
 }
 
+/* ---------- upload timeline ---------- */
+
+.aicd-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.aicd-group-label {
+  padding: 8px 10px 2px;
+  font: var(--dsw-font-xxxs-11-strong, 500 11px/1.4 var(--dsw-font-family-sans, sans-serif));
+  color: var(--dsw-alias-label-tertiary, rgba(127, 127, 127, 0.9));
+  letter-spacing: 0.03em;
+}
+
+.aicd-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--dsw-radius-xs, 4px);
+  object-fit: cover;
+  border: 1px solid var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.2));
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.08));
+}
+
 /* ---------- detail / note ---------- */
 
 .aicd-detail {
@@ -835,6 +890,10 @@ window.__ModuleLoader__.load({
 }
 `;
 
+    //#endregion styles
+
+    //#region helpers
+    /** Icons and the small pure functions every view shares. */
     const ICONS = {
       folder: 'M1.6 4.1c0-.6.5-1.1 1.1-1.1h3l1.3 1.4h6.3c.6 0 1.1.5 1.1 1.1v6.4c0 .6-.5 1.1-1.1 1.1H2.7c-.6 0-1.1-.5-1.1-1.1V4.1Z',
       file: 'M4.4 2.2h4.9l2.9 2.9v8.7H4.4V2.2Zm4.9 0v2.9h2.9',
@@ -889,6 +948,78 @@ window.__ModuleLoader__.load({
     }
 
     /** Same range, but short enough for a stat card: 243k–304k. */
+    /** Images can be shown as thumbnails; everything else keeps its icon. */
+    const IMAGE_TYPES = new Set(['png', 'jpeg', 'webp', 'gif']);
+
+    /** Uploads are grouped the way people remember them: by day. */
+    function dayLabel(timestamp, now = Date.now()) {
+      const start = new Date(timestamp);
+      const today = new Date(now);
+      const dayOf = (date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      if (dayOf(start) === dayOf(today)) return tr('timelineToday');
+      if (dayOf(start) === dayOf(new Date(now - 86400000))) return tr('timelineYesterday');
+      return start.toISOString().slice(0, 10);
+    }
+
+    /** Uploads grouped by day, newest first — a timeline rather than a flat count. */
+    function uploadGroups(uploads) {
+      const groups = [];
+      for (const item of uploads) {
+        const label = dayLabel(item.receivedAt);
+        const last = groups[groups.length - 1];
+        if (last !== undefined && last.label === label) last.items.push(item);
+        else groups.push({ label, items: [item] });
+      }
+      return groups;
+    }
+
+    /** The report as Markdown, so it can outlive this window. */
+    function reportMarkdown(data) {
+      const scanned = data.scanned || {};
+      const lines = ['# AI context report', ''];
+      if (typeof data.workspace === 'string') lines.push(`- Workspace: \`${data.workspace}\``);
+      if (typeof scanned.healthScore === 'number') lines.push(`- Health: ${scanned.healthScore}/100`);
+      if (typeof scanned.noisePercent === 'number') lines.push(`- Noise: ${scanned.noisePercent}%`);
+      if (typeof scanned.scannedFiles === 'number') {
+        lines.push(`- Scanned: ${scanned.scannedFiles} files, ${formatBytes(scanned.scannedBytes || 0)}`);
+      }
+      const saved = data.savedTokens;
+      if (saved && typeof saved.bytes === 'number') {
+        lines.push(`- Kept out: ${formatBytes(saved.bytes)} (about ${formatTokensCompact(saved)} tokens)`);
+      }
+      const section = (title, items, format) => {
+        if (!items || items.length === 0) return;
+        lines.push('', `## ${title}`, '');
+        for (const item of items) lines.push(`- ${format(item)}`);
+      };
+      section('Refused reads', data.skipped, (item) => `\`${item.path}\` — ${item.reason} (${formatBytes(item.bytes)})`);
+      section('Read into context', data.reads, (item) => `\`${item.path}\` — ${item.verdict} (${formatBytes(item.bytes)})`);
+      section('Files touched this session', data.sessionFiles, (item) => `\`${item.path}\` — ${formatBytes(item.bytes)}`);
+      section('Uploads', data.uploads, (item) => `${item.type} ${item.name} (${formatBytes(item.bytes)})`);
+      if (typeof data.notes === 'string' && data.notes.trim().length > 0) {
+        lines.push('', '## Note for the agent', '', data.notes.trim());
+      }
+      lines.push('');
+      return lines.join('\n');
+    }
+
+    function downloadReport(data, onDone) {
+      try {
+        const blob = new Blob([reportMarkdown(data)], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `ai-context-report-${new Date().toISOString().slice(0, 10)}.md`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(url);
+        if (onDone) onDone(null);
+      } catch (error) {
+        if (onDone) onDone(error);
+      }
+    }
+
     function formatTokensCompact(range) {
       if (range === undefined || range === null || typeof range.min !== 'number') return '—';
       const short = (value) => (value >= 10000 ? `${Math.round(value / 1000)}k` : value.toLocaleString());
@@ -920,6 +1051,9 @@ window.__ModuleLoader__.load({
       return 'good';
     }
 
+    //#endregion helpers
+
+    //#region components
     let stylesInjected = false;
     function injectStyles(doc) {
       if (stylesInjected || doc === undefined || doc === null) return;
@@ -936,7 +1070,7 @@ window.__ModuleLoader__.load({
     }
 
     /** One interactive row; every list in the panel uses it. */
-    function Row({ icon, name, meta, dot, badge, selected, onClick, title }) {
+    function Row({ icon, lead, name, meta, dot, badge, selected, onClick, title }) {
       return h(
         'button',
         {
@@ -946,7 +1080,9 @@ window.__ModuleLoader__.load({
           title: title || name,
           onClick
         },
-        icon === undefined ? null : h('span', { className: 'aicd-row-icon' }, h(Icon, { name: icon, size: 14 })),
+        lead !== undefined && lead !== null
+          ? h('span', { className: 'aicd-row-icon' }, lead)
+          : icon === undefined ? null : h('span', { className: 'aicd-row-icon' }, h(Icon, { name: icon, size: 14 })),
         dot === undefined ? null : h('span', { className: 'aicd-dot', 'data-status': dot }),
         h('span', { className: 'aicd-row-name' }, h('code', null, name)),
         badge === undefined || badge === null || badge.length === 0
@@ -1066,6 +1202,9 @@ window.__ModuleLoader__.load({
       );
     }
 
+    //#endregion components
+
+    //#region views
     function FilesView({ data, tree, at, setAt, pending, onAllow, onIgnore }) {
       const [query, setQuery] = useState('');
       const [filter, setFilter] = useState('all');
@@ -1270,17 +1409,38 @@ window.__ModuleLoader__.load({
         ),
         uploads.length === 0
           ? h('div', { className: 'aicd-note' }, tr('uploadsNone'))
-          : uploads.map((item) =>
-              h(Row, {
-                key: `${item.name}-${item.receivedAt}`,
-                icon: 'upload',
-                name: `${item.type} · ${item.name}`,
-                meta: `${formatBytes(item.bytes)} · ${formatTime(item.receivedAt)}`
-              })
+          : uploadGroups(uploads).map((group) =>
+              h('div', { key: group.label, className: 'aicd-group' },
+                h('div', { className: 'aicd-group-label' }, group.label),
+                group.items.map((item) =>
+                  h(Row, {
+                    key: `${item.digest || item.name}-${item.receivedAt}`,
+                    lead: IMAGE_TYPES.has(item.type)
+                      ? h('img', {
+                          className: 'aicd-thumb',
+                          src: `/aiignore/upload?digest=${encodeURIComponent(item.digest || '')}`,
+                          alt: '',
+                          loading: 'lazy',
+                          onError: (event) => { event.target.style.display = 'none'; }
+                        })
+                      : undefined,
+                    icon: 'upload',
+                    name: `${item.type} · ${item.name}`,
+                    meta: `${formatBytes(item.bytes)} · ${formatTime(item.receivedAt)}`
+                  })
+                )
+              )
             ),
         h('div', { className: 'aicd-note' }, tr('uploadsNote')),
         h('div', { className: 'aicd-note' }, tr('policyDeny')),
-        h('div', { className: 'aicd-note' }, tr('tokensHint'))
+        h('div', { className: 'aicd-note' }, tr('tokensHint')),
+        h('div', { className: 'aicd-btn-row' },
+          h('button', {
+            type: 'button',
+            className: 'aicd-btn',
+            onClick: () => downloadReport(data, (error) => { if (error) console.warn('report export failed', error); })
+          }, tr('exportReport'))
+        )
       );
     }
 
@@ -1312,6 +1472,21 @@ window.__ModuleLoader__.load({
         h('div', { className: 'aicd-section', style: { paddingTop: '8px' } },
           h('span', { className: 'aicd-section-title' }, tr('noteTitle'))
         ),
+        h('div', { className: 'aicd-chips', role: 'group', 'aria-label': tr('templatesTitle') },
+          TEMPLATES.map((template) =>
+            h('button', {
+              key: template.id,
+              type: 'button',
+              className: 'aicd-chip',
+              onClick: () => {
+                const snippet = tr(template.key);
+                const next = value.trim().length === 0 ? snippet : `${value.replace(/\s+$/, '')}\n\n${snippet}`;
+                setNotes(next.slice(0, 4000));
+                setStatus(null);
+              }
+            }, tr(template.labelKey))
+          )
+        ),
         h('textarea', {
           className: 'aicd-textarea',
           rows: 6,
@@ -1336,6 +1511,9 @@ window.__ModuleLoader__.load({
     }
 
     /** The panel: one header, three views, one report. */
+    //#endregion views
+
+    //#region shell
     function Panel() {
       const { data, error, at, setAt, tree, reload, reloadTree } = useReport();
       const [view, setView] = useState('files');
@@ -1527,6 +1705,9 @@ window.__ModuleLoader__.load({
 
     return {
       inject: ['slots', 'locale'],
+    //#endregion shell
+
+    //#region registration
       apply(ctx) {
         injectStyles(typeof document === 'undefined' ? undefined : document);
 
@@ -1585,5 +1766,7 @@ window.__ModuleLoader__.load({
         }
       }
     };
+
+    //#endregion registration
   }
 });

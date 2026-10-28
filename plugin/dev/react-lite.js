@@ -217,7 +217,14 @@
       while (root.container.firstChild) root.container.removeChild(root.container.firstChild);
       currentPath = root.path;
       hookIndex = 0;
-      root.container.appendChild(renderNode(root.vnode, root.path));
+      try {
+        root.container.appendChild(renderNode(root.vnode, root.path));
+      } catch (error) {
+        // A throw mid-render used to leave every root blank with no clue why;
+        // keep the message where the preview page can show it.
+        window.__renderError = error;
+        console.error(error);
+      }
     });
     const queued = effects.slice();
     queued.forEach(function (effect) {

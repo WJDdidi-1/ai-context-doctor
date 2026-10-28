@@ -455,6 +455,30 @@
   padding: 4px;
 }
 
+/* ---------- upload timeline ---------- */
+
+.aicd-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.aicd-group-label {
+  padding: 8px 10px 2px;
+  font: var(--dsw-font-xxxs-11-strong, 500 11px/1.4 var(--dsw-font-family-sans, sans-serif));
+  color: var(--dsw-alias-label-tertiary, rgba(127, 127, 127, 0.9));
+  letter-spacing: 0.03em;
+}
+
+.aicd-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--dsw-radius-xs, 4px);
+  object-fit: cover;
+  border: 1px solid var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.2));
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.08));
+}
+
 /* ---------- detail / note ---------- */
 
 .aicd-detail {
