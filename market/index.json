@@ -26,8 +26,8 @@
         "zh-cn": "dsh-aiignore"
       },
       "description": {
-        "en": "Warns the agent about context noise when a workspace opens, and refuses reads of generated output, lockfiles, logs and huge files.",
-        "zh-cn": "打开工作区时提示上下文噪音，并拒绝读取构建产物、锁文件、日志和超大文件，同时说明这次读取本来会花掉多少 token。"
+        "en": "Warns the agent about context noise when a workspace opens, refuses reads of generated output, lockfiles, logs and huge files, and lets you browse the workspace to decide file by file.",
+        "zh-cn": "打开工作区时提示上下文噪音，拒绝读取构建产物、锁文件、日志和超大文件，并可浏览工作区逐个文件做决定。"
       },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
@@ -46,6 +46,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.8.0",
+          "publishTimestamp": 1793168738,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.7.0",
           "publishTimestamp": 1793167178,
