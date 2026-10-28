@@ -69,6 +69,12 @@ window.__ModuleLoader__.load({
         chatRulesWritten: 'Rules written',
         chatBlocked: 'reads now blocked',
         chatPick: 'Conversation',
+        scoreConv: 'This conversation',
+        scoreFolder: 'Reaches the model',
+        scoreTwoHint: 'Left is what this conversation read. Right is what is left after your rules and your strength — that is the number Optimize moves.',
+        scoreRaw: 'without your rules the same folder scores',
+        rescan: 'Scan again',
+        noteWhy: 'The agent reads this before it starts working. Use it to say what matters here, in your own words.',
         chatFollow: 'Follow the open conversation',
         chatEmpty: 'No conversation data yet.',
         chatComposition: 'What this conversation spent tokens on',
@@ -78,6 +84,8 @@ window.__ModuleLoader__.load({
         optimizeTitle: 'Make it better',
         optimizeHint: 'Writes the suggested rules into .aiignore. Your existing lines are kept, and one click puts the file back.',
         optimize: 'Optimize this workspace',
+        optimizeConversation: 'Optimize from this conversation',
+        optimizeConversationHint: 'Writes the rules this conversation needs: the noise it read stays out next time. Your own lines are kept, and one click puts the file back.',
         optimizeNone: 'Nothing worth adding: this workspace is already lean.',
         optimizeFailed: 'Could not write .aiignore. Check that the folder is writable.',
         optimized: 'Added rules:',
@@ -155,12 +163,12 @@ window.__ModuleLoader__.load({
         timelineYesterday: 'Yesterday',
         exportReport: 'Export report (.md)',
         templatesTitle: 'Insert a starting point',
-        templateEntryLabel: 'Entry point',
-        templateEntry: 'The entry point is src/index.js; start there before reading anything else.',
-        templateAvoidLabel: 'What to skip',
-        templateAvoid: 'Do not read dist/, build output, lockfiles or logs — they are generated or redundant.',
-        templateTestsLabel: 'How to check',
-        templateTests: 'Run `npm test` before changing behaviour; it is the fastest signal in this repo.',
+        templateEntryLabel: 'Start here',
+        templateEntry: 'Start from src/index.js. Everything else can wait until I ask.',
+        templateAvoidLabel: 'Do not open',
+        templateAvoid: 'Do not open dist/, build output, lockfiles or logs. If you think you need one, ask me first.',
+        templateTestsLabel: 'Check my work',
+        templateTests: 'After any change, run `npm test`. It is the fastest way to know you did not break something.',
         noteTitle: 'A note for the agent',
         noteHint: 'Saved to .aiignore.notes.md in this workspace, and sent to the agent right away.',
         notePlaceholder: 'e.g. Prefer lib/ over legacy/. Never read dist/.',
@@ -200,6 +208,12 @@ window.__ModuleLoader__.load({
         chatRulesWritten: '已写入规则',
         chatBlocked: '条读入现在会被拦截',
         chatPick: '对话',
+        scoreConv: '本对话',
+        scoreFolder: '还会进模型',
+        scoreTwoHint: '左边是这个对话真读进去的；右边是你写的规则和筛选力度之后还剩多少会进模型——优化要推动的就是右边这个数。',
+        scoreRaw: '不应用你的规则时，同一个文件夹是',
+        rescan: '重新扫描',
+        noteWhy: 'AI 每次开始干活前都会先读这段话。用它说明「这个仓库里什么重要」，用你自己的话就行。',
         chatFollow: '跟随当前打开的对话',
         chatEmpty: '还没有对话数据。',
         chatComposition: '这个对话的 token 花在哪',
@@ -209,6 +223,8 @@ window.__ModuleLoader__.load({
         optimizeTitle: '一键优化',
         optimizeHint: '把建议规则写进 .aiignore。你原有的行会保留，一次点击就能还原。',
         optimize: '优化这个工作区',
+        optimizeConversation: '按这个对话优化',
+        optimizeConversationHint: '把这个对话读到的噪音写成规则，下次就不进了。你原有的行会保留，一次点击就能还原。',
         optimizeNone: '没有需要添加的规则：这个工作区已经很干净。',
         optimizeFailed: '无法写入 .aiignore，请检查目录写权限。',
         optimized: '已添加规则：',
@@ -286,12 +302,12 @@ window.__ModuleLoader__.load({
         timelineYesterday: '昨天',
         exportReport: '导出报告（.md）',
         templatesTitle: '插入一个开头',
-        templateEntryLabel: '入口文件',
-        templateEntry: '入口文件是 src/index.js，先读它，再读别的。',
-        templateAvoidLabel: '别读什么',
-        templateAvoid: '不要读 dist/、构建产物、锁文件和日志——它们是生成的或重复的。',
-        templateTestsLabel: '怎么验证',
-        templateTests: '改行为前先跑 `npm test`，这是这个仓库里最快的信号。',
+        templateEntryLabel: '从这里开始',
+        templateEntry: '先看 src/index.js，其它等我问再说。',
+        templateAvoidLabel: '别打开这些',
+        templateAvoid: '不要打开 dist/、构建产物、锁文件和日志。真需要就先问我。',
+        templateTestsLabel: '帮我验证',
+        templateTests: '改完代码跑一遍 `npm test`，这是最快的验证方式。',
         noteTitle: '给 AI 的说明',
         noteHint: '保存到本工作区的 .aiignore.notes.md，并立即发送给 AI。',
         notePlaceholder: '例如：优先用 lib/，不要用 legacy/；永远不要读 dist/。',
@@ -361,6 +377,29 @@ window.__ModuleLoader__.load({
   font: var(--dsw-font-xs-strong-13, 500 13px/20px system-ui);
   color: var(--dsw-alias-label-primary, currentColor);
 }
+
+.aicd-title {
+  font: var(--dsw-font-xs-strong-13, 600 13px/1.35 system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* The line under the title: where the folder is, and one badge at most. */
+.aicd-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
+  color: var(--dsw-alias-label-tertiary, currentColor);
+}
+
+.aicd-card-value[data-tone='good'] { color: var(--dsw-alias-state-success-primary, #2f7d4f); }
+.aicd-card-value[data-tone='warn'] { color: var(--dsw-alias-state-warn-primary, #a8700f); }
+.aicd-card-value[data-tone='bad'] { color: var(--dsw-alias-state-error-primary, #b23b3b); }
 
 .aicd-path {
   font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
@@ -1992,10 +2031,23 @@ window.__ModuleLoader__.load({
           tree === null
             ? h(Skeleton, null)
             : entries.length === 0
+              // An empty filter is not an empty folder: say which filter, and
+              // give the way back in one click.
               ? h(Empty, {
-                  icon: 'folder',
-                  title: query !== '' || filter !== 'all' ? tr('noMatch') : tr('emptyDir'),
-                  hint: at === '' ? data.workspace : undefined
+                  icon: filter === 'all' ? 'folder' : 'search',
+                  title: query !== ''
+                    ? tr('noMatch')
+                    : filter === 'all'
+                      ? tr('emptyDir')
+                      : `${tr('noMatch')} ${(filters.find(([id]) => id === filter) || ['', ''])[1]}`,
+                  hint: at === '' ? data.workspace : undefined,
+                  action: filter === 'all' && query === ''
+                    ? null
+                    : h('button', {
+                        type: 'button',
+                        className: 'aicd-btn',
+                        onClick: () => { setFilter('all'); setQuery(''); }
+                      }, tr('filterAll'))
                 })
               : h('div', null,
                   entries.map((entry) =>
@@ -2032,8 +2084,12 @@ window.__ModuleLoader__.load({
     /** Where the score comes from, category by category. */
     function ScoreBreakdown({ data }) {
       const scanned = data.scanned || {};
-      const rows = Array.isArray(scanned.scoreBreakdown) ? scanned.scoreBreakdown : [];
-      const lost = typeof scanned.scoreLost === 'number' ? scanned.scoreLost : null;
+      const rows = Array.isArray(scanned.effectiveBreakdown)
+        ? scanned.effectiveBreakdown
+        : (Array.isArray(scanned.scoreBreakdown) ? scanned.scoreBreakdown : []);
+      const lost = typeof scanned.effectiveLost === 'number'
+        ? scanned.effectiveLost
+        : (typeof scanned.scoreLost === 'number' ? scanned.scoreLost : null);
 
       return h('div', { className: 'aicd-opt' },
         h('div', { className: 'aicd-opt-head' },
@@ -2058,14 +2114,22 @@ window.__ModuleLoader__.load({
     }
 
     /** One click: append the suggested rules, show the new score, keep undo. */
-    function OptimizeCard({ data, onDone }) {
+    function OptimizeCard({ data, conv, onDone }) {
       const [busy, setBusy] = useState(false);
       const [result, setResult] = useState(null);
-      const suggested = Array.isArray(data.suggestedAiignore) ? data.suggestedAiignore : [];
+      const convRules = conv !== null && conv !== undefined && Array.isArray(conv.suggestedAiignore) ? conv.suggestedAiignore : [];
+      const suggested = convRules.length > 0
+        ? convRules
+        : (Array.isArray(data.suggestedAiignore) ? data.suggestedAiignore : []);
+      const session = conv !== null && conv !== undefined && typeof conv.id === 'string' ? conv.id : null;
 
       const run = () => {
         setBusy(true);
-        fetch('/aiignore/optimize', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+        fetch('/aiignore/optimize', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(session === null ? {} : { session })
+        })
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => {
             setResult(payload);
@@ -2087,19 +2151,26 @@ window.__ModuleLoader__.load({
       };
 
       const added = result !== null && Array.isArray(result.added) ? result.added : [];
+      const stillBlocked = result !== null && Array.isArray(result.blockedNow)
+        ? result.blockedNow.filter((item) => item.blocked === true).length
+        : 0;
 
       return h('div', { className: 'aicd-opt' },
         h('div', { className: 'aicd-opt-head' },
           h('span', { className: 'aicd-opt-title' }, tr('optimizeTitle')),
           h('span', { className: 'aicd-count' }, String(suggested.length))
         ),
-        h('div', { className: 'aicd-note' }, tr('optimizeHint')),
+        h('div', { className: 'aicd-note' }, session === null ? tr('optimizeHint') : tr('optimizeConversationHint')),
         result !== null && result.error !== true && added.length > 0
           ? h('div', null,
               h('div', { className: 'aicd-note', 'data-tone': 'ok' },
                 `${tr('optimized')} ${added.join(', ')}`),
-              h('div', { className: 'aicd-note' },
+              h('div', { className: 'aicd-note', 'data-tone': 'ok' },
                 `${tr('scoreNow')} ${result.before} → ${result.after}`),
+              result.blockedNow === undefined || result.blockedNow.length === 0
+                ? null
+                : h('div', { className: 'aicd-note' },
+                    `${stillBlocked} / ${result.blockedNow.length} ${tr('chatBlocked')}`),
               h('div', { className: 'aicd-btn-row' },
                 h('button', { type: 'button', className: 'aicd-btn', disabled: busy, onClick: undo }, tr('undoOptimize'))
               )
@@ -2109,105 +2180,44 @@ window.__ModuleLoader__.load({
             : suggested.length === 0
               ? h('div', { className: 'aicd-note' }, tr('optimizeNone'))
               : h('div', { className: 'aicd-btn-row' },
-                  h('button', { type: 'button', className: 'aicd-btn', 'data-variant': 'primary', disabled: busy, onClick: run }, tr('optimize'))
+                  h('button', { type: 'button', className: 'aicd-btn', 'data-variant': 'primary', disabled: busy, onClick: run },
+                    session === null ? tr('optimize') : tr('optimizeConversation'))
                 )
       );
     }
 
-    function InsightsView({ data, onDone }) {
+    /**
+     * The Score tab: two labelled numbers, why they are what they are, the
+     * strength that decides how much reaches the model, and one button that
+     * turns the conversation's reads into rules you can take back.
+     */
+    function InsightsView({ data, conv, onDone, onRescan }) {
       const scanned = data.scanned || {};
-      const score = typeof scanned.healthScore === 'number' ? scanned.healthScore : null;
-      const noise = typeof scanned.noisePercent === 'number' ? scanned.noisePercent : null;
+      const effective = typeof scanned.effectiveScore === 'number'
+        ? scanned.effectiveScore
+        : (typeof scanned.healthScore === 'number' ? scanned.healthScore : null);
+      const raw = typeof scanned.healthScore === 'number' ? scanned.healthScore : null;
+      const convScore = conv !== null && conv !== undefined && typeof conv.score === 'number' ? conv.score : null;
 
-      const card = (label, value) =>
+      const card = (label, value, tone) =>
         h('div', { className: 'aicd-card' },
-          h('span', { className: 'aicd-card-value' }, value),
+          h('span', { className: 'aicd-card-value', 'data-tone': tone === undefined ? undefined : tone }, value),
           h('span', { className: 'aicd-card-label' }, label)
         );
 
-      const skipped = data.skipped || [];
-      const reads = data.reads || [];
-      const uploads = data.uploads || [];
-
       return h('div', { className: 'aicd-body' },
         h('div', { className: 'aicd-cards' },
-          card(tr('score'), score === null ? '—' : String(score)),
-          card(tr('noise'), noise === null ? '—' : `${noise}%`),
-          card(tr('savedLabel'), formatTokensCompact(data.savedTokens))
+          card(tr('scoreConv'), convScore === null ? '—' : String(convScore), convScore === null ? undefined : toneFor(convScore)),
+          card(tr('scoreFolder'), effective === null ? '—' : String(effective), effective === null ? undefined : toneFor(effective))
         ),
+        h('div', { className: 'aicd-note' }, tr('scoreTwoHint')),
+        raw !== null && effective !== null && raw !== effective
+          ? h('div', { className: 'aicd-note' }, `${tr('scoreRaw')} ${raw}.`)
+          : null,
         h(ScoreBreakdown, { data }),
-        h(OptimizeCard, { data, onDone }),
-        h('div', { className: 'aicd-section' },
-          h('span', { className: 'aicd-section-title' }, tr('blockedTitle')),
-          h('span', { className: 'aicd-count' }, String(skipped.length))
-        ),
-        skipped.length === 0
-          ? h('div', { className: 'aicd-note' }, tr('blockedNone'))
-          : skipped.map((item) =>
-              h(Row, {
-                key: item.path,
-                icon: 'lock',
-                name: item.path,
-                badge: [{ text: item.reason, tone: 'noise' }],
-                meta: `${formatBytes(item.bytes)} · ${item.attempts}×`
-              })
-            ),
-        h('div', { className: 'aicd-section' },
-          h('span', { className: 'aicd-section-title' }, tr('readsTitle')),
-          h('span', { className: 'aicd-count' }, String(reads.length))
-        ),
-        reads.length === 0
-          ? h('div', { className: 'aicd-note' }, tr('readsNone'))
-          : reads.map((item) =>
-              h(Row, {
-                key: item.path,
-                icon: 'file',
-                name: item.path,
-                badge: [{
-                  text: item.verdict === 'review' ? tr('badgeReview') : item.verdict === 'allowed' ? tr('verdictAllowed') : tr('badgeSource'),
-                  tone: 'neutral'
-                }],
-                meta: formatBytes(item.bytes)
-              })
-            ),
-        h('div', { className: 'aicd-section' },
-          h('span', { className: 'aicd-section-title' }, tr('uploadsTitle')),
-          h('span', { className: 'aicd-count' }, String(uploads.length))
-        ),
-        uploads.length === 0
-          ? h('div', { className: 'aicd-note' }, tr('uploadsNone'))
-          : uploadGroups(uploads).map((group) =>
-              h('div', { key: group.label, className: 'aicd-group' },
-                h('div', { className: 'aicd-group-label' }, group.label),
-                group.items.map((item) =>
-                  h(Row, {
-                    key: `${item.digest || item.name}-${item.receivedAt}`,
-                    lead: IMAGE_TYPES.has(item.type)
-                      ? h('img', {
-                          className: 'aicd-thumb',
-                          src: `/aiignore/upload?digest=${encodeURIComponent(item.digest || '')}`,
-                          alt: '',
-                          loading: 'lazy',
-                          onError: (event) => { event.target.style.display = 'none'; }
-                        })
-                      : undefined,
-                    icon: 'upload',
-                    name: `${item.type} · ${item.name}`,
-                    meta: `${formatBytes(item.bytes)} · ${formatTime(item.receivedAt)}`
-                  })
-                )
-              )
-            ),
-        h('div', { className: 'aicd-note' }, tr('uploadsNote')),
-        h('div', { className: 'aicd-note' }, tr('policyDeny')),
-        h('div', { className: 'aicd-note' }, tr('tokensHint')),
-        h('div', { className: 'aicd-btn-row' },
-          h('button', {
-            type: 'button',
-            className: 'aicd-btn',
-            onClick: () => downloadReport(data, (error) => { if (error) console.warn('report export failed', error); })
-          }, tr('exportReport'))
-        )
+        h(StrategyCard, { data, onSaved: onRescan }),
+        h(OptimizeCard, { data, conv, onDone }),
+        h(NoteView, { data, onSaved: onDone })
       );
     }
 
@@ -2309,9 +2319,8 @@ window.__ModuleLoader__.load({
           .catch(() => setStatus('failed'));
       };
 
-      return h('div', { className: 'aicd-body' },
-        h(StrategyCard, { data, onSaved }),
-        h('div', { className: 'aicd-section', style: { paddingTop: '8px' } },
+      return h('div', { className: 'aicd-section', style: { paddingTop: '12px' } },
+        h('div', { className: 'aicd-section' },
           h('span', { className: 'aicd-section-title' }, tr('noteTitle'))
         ),
         h('div', { className: 'aicd-chips', role: 'group', 'aria-label': tr('templatesTitle') },
@@ -2344,6 +2353,7 @@ window.__ModuleLoader__.load({
           h('button', { type: 'button', className: 'aicd-btn', 'data-variant': 'primary', onClick: save }, tr('noteSave')),
           h('span', { className: 'aicd-count', style: { marginLeft: 'auto' } }, `${length} / 4000`)
         ),
+        h('div', { className: 'aicd-note' }, tr('noteWhy')),
         h('div', { className: 'aicd-note' }, tr('noteHint')),
         status === 'saved' ? h('div', { className: 'aicd-note', 'data-tone': 'ok' }, tr('noteSaved')) : null,
         status === 'too-long' ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteTooLong')) : null,
@@ -2362,28 +2372,6 @@ window.__ModuleLoader__.load({
      * into `.aiignore` rules — with the before/after score right there.
      */
     function ChatView({ conv, error, pinnedSession, onPin }) {
-      const [pending, setPending] = useState(null);
-      const [result, setResult] = useState(null);
-      const [failed, setFailed] = useState(false);
-
-      const optimize = () => {
-        if (conv === null || pending !== null) return;
-        setPending('optimize');
-        setFailed(false);
-        fetch('/aiignore/optimize', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ session: conv.id })
-        })
-          .then((response) => response.json())
-          .then((payload) => {
-            if (payload === null || typeof payload !== 'object' || payload.error !== undefined) setFailed(true);
-            else setResult(payload);
-          })
-          .catch(() => setFailed(true))
-          .finally(() => setPending(null));
-      };
-
       if (error !== null) {
         return h('div', { className: 'aicd-body', 'data-center': 'true' },
           h(Empty, { icon: 'warn', title: tr('errorTitle'), hint: tr('chatEmpty') }));
@@ -2400,19 +2388,11 @@ window.__ModuleLoader__.load({
       const total = parts.reduce((sum, [, value]) => sum + value, 0);
       const blocked = Array.isArray(conv.noise) ? conv.noise : [];
       const reads = Array.isArray(conv.reads) ? conv.reads.slice(0, 6) : [];
-      const blockedNow = result === null || Array.isArray(result.blockedNow) !== true
-        ? []
-        : result.blockedNow.filter((item) => item.blocked === true).length;
 
       return h('div', { className: 'aicd-body' },
         h('div', { className: 'aicd-chat' },
-          h('div', { className: 'aicd-chat-title', title: conv.title || conv.cwd || '' }, conv.title || tr('chatTitle')),
           h('div', { className: 'aicd-chat-meta' },
             `${conv.turns || 0} ${tr('chatTurns')} · ${bytesShort(conv.readBytes)} ${tr('chatRead')} · ${conv.readFiles || 0} ${tr('chatFiles')}`),
-
-          h('div', { className: 'aicd-chat-score' },
-            h('span', { className: 'aicd-score', 'data-tone': toneFor(conv.score) }, String(conv.score === undefined ? '—' : conv.score)),
-            h('span', { className: 'aicd-caption' }, tr('chatScore'))),
 
           h('div', { className: 'aicd-section-title' }, tr('chatComposition')),
           h('div', { className: 'aicd-comp', role: 'img', 'aria-label': tr('chatComposition') },
@@ -2450,26 +2430,6 @@ window.__ModuleLoader__.load({
                   meta: bytesShort(item.bytes)
                 })))
             : null,
-
-          h('div', { className: 'aicd-chat-actions' },
-            h('button', {
-              type: 'button',
-              className: 'aicd-btn',
-              'data-variant': 'primary',
-              disabled: pending !== null ? 'true' : undefined,
-              onClick: optimize
-            }, pending === 'optimize' ? tr('working') : tr('chatOptimize')),
-            failed === true ? h('span', { className: 'aicd-note', 'data-tone': 'bad' }, tr('optimizeFailed')) : null),
-
-          result === null
-            ? null
-            : h('div', { className: 'aicd-opt' },
-                h('div', { className: 'aicd-note', 'data-tone': 'ok' },
-                  `${tr('chatRulesWritten')}: ${Array.isArray(result.added) ? result.added.length : 0}`),
-                h('div', { className: 'aicd-note' },
-                  `${tr('scoreNow')} ${result.before} → ${result.after}`),
-                h('div', { className: 'aicd-note', 'data-tone': blockedNow > 0 ? 'ok' : undefined },
-                  `${blockedNow} / ${Array.isArray(result.blockedNow) ? result.blockedNow.length : 0} ${tr('chatBlocked')}`)),
 
           h('div', { className: 'aicd-section' },
             h('div', { className: 'aicd-section-title' }, tr('chatPick')),
@@ -2625,78 +2585,67 @@ window.__ModuleLoader__.load({
     }
 
     /** The panel header: where you are, whether it follows the conversation, and the few actions. */
-    function PanelHead({ data, pinned, menu, setMenu, follow, setChoosing, setPinned, reload, reloadTree, view, setView, tabs, score, scanned }) {
+    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, conv, view, setView, tabs }) {
+      const workspace = data === null ? null : data.workspace;
+      const title = conv !== null && conv !== undefined && typeof conv.title === 'string' && conv.title.length > 0
+        ? conv.title
+        : (workspace === null || workspace === undefined ? tr('tabTitle') : shortPath(workspace));
+      const following = workspace !== null && workspace !== undefined && pinned === null;
+
       return (
         h('div', { className: 'aicd-head' },
-              h('div', { className: 'aicd-head-main' },
-                h('div', { className: 'aicd-head-text' },
-                  h('span', { className: 'aicd-path', title: data === null ? '' : (data.workspace || '') },
-                    data === null ? tr('loading') : (data.workspace === null || data.workspace === undefined
-                      // No workspace: the body says so once, with the picker. Repeating it
-                      // in the header just reads like a stutter.
-                      ? ''
-                      : shortPath(data.workspace))
-                  )
-                ),
-                // "Following" is a promise about behaviour, not about which internal
-            // source answered: as long as nothing is pinned, the panel is showing
-            // the conversation's own folder.
-            data !== null && data.workspace !== null && data.workspace !== undefined && pinned === null
-                  ? h('span', { className: 'aicd-follow', title: tr('follow') }, tr('followOn'))
-                  : null,
-                h('button', {
-                  type: 'button',
-                  className: 'aicd-iconbtn',
-                  title: tr('chooseFolder'),
-                  'aria-label': tr('chooseFolder'),
-                  'aria-expanded': menu === true ? 'true' : 'false',
-                  onClick: () => setMenu(menu !== true)
-                }, h(Icon, { name: 'folder', size: 14 })),
-                h('button', {
-                  type: 'button',
-                  className: 'aicd-iconbtn',
-                  title: tr('refresh'),
-                  'aria-label': tr('refresh'),
-                  onClick: () => { reload(); reloadTree(); }
-                }, h(Icon, { name: 'refresh', size: 14 })),
-                menu === true
-                  ? h('div', { className: 'aicd-menu', role: 'menu' },
-                      h('button', {
+          h('div', { className: 'aicd-head-main' },
+            h('div', { className: 'aicd-head-text' },
+              h('span', { className: 'aicd-title', title: title }, title),
+              h('span', { className: 'aicd-sub' },
+                workspace === null || workspace === undefined ? '' : shortPath(workspace),
+                following ? h('span', { className: 'aicd-follow', title: tr('follow') }, tr('followOn')) : null
+              )
+            ),
+            h('button', {
+              type: 'button',
+              className: 'aicd-iconbtn',
+              title: tr('chooseFolder'),
+              'aria-label': tr('chooseFolder'),
+              'aria-expanded': menu === true ? 'true' : 'false',
+              onClick: () => setMenu(menu !== true)
+            }, h(Icon, { name: 'folder', size: 14 })),
+            h('button', {
+              type: 'button',
+              className: 'aicd-iconbtn',
+              title: tr('rescan'),
+              'aria-label': tr('rescan'),
+              onClick: rescan
+            }, h(Icon, { name: 'refresh', size: 14 })),
+            menu === true
+              ? h('div', { className: 'aicd-menu', role: 'menu' },
+                  h('button', {
+                    type: 'button',
+                    role: 'menuitem',
+                    className: 'aicd-menu-item',
+                    'aria-disabled': following ? 'true' : undefined,
+                    onClick: follow
+                  }, tr('follow')),
+                  h('button', {
+                    type: 'button',
+                    role: 'menuitem',
+                    className: 'aicd-menu-item',
+                    onClick: choose
+                  }, tr('chooseFolder')),
+                  pinned === null
+                    ? null
+                    : h('button', {
                         type: 'button',
                         role: 'menuitem',
                         className: 'aicd-menu-item',
-                        'aria-disabled': pinned === null ? 'true' : undefined,
-                        onClick: follow
-                      }, tr('follow')),
-                      h('button', {
-                        type: 'button',
-                        role: 'menuitem',
-                        className: 'aicd-menu-item',
-                        onClick: () => { setChoosing(true); setMenu(false); }
-                      }, tr('chooseFolder')),
-                      pinned === null
-                        ? null
-                        : h('button', {
-                            type: 'button',
-                            role: 'menuitem',
-                            className: 'aicd-menu-item',
-                            onClick: () => { setPinned(null); setChoosing(false); setMenu(false); reload(); reloadTree(); }
-                          }, tr('clearChoice'))
-                    )
-                  : null
-              ),
-              data !== null && score !== null && data.workspace !== null && data.workspace !== undefined
-                ? h('div', { className: 'aicd-summary' },
-                    h('span', { className: 'aicd-score', 'data-tone': toneFor(score) }, String(score)),
-                    h('span', { className: 'aicd-caption' }, `${tr('score')} · ${tr('scoreHint')}`),
-                    h('span', { className: 'aicd-summary-spacer' }),
-                    h('span', { className: 'aicd-caption' },
-                      `${tr('noise')} ${typeof scanned.noisePercent === 'number' ? `${scanned.noisePercent}%` : '—'}`)
-                  )
-                : null,
-              data === null
-                ? null
-                : h('div', { className: 'aicd-tabs', role: 'tablist' },
+                        onClick: () => { setPinned(null); setMenu(false); }
+                      }, tr('clearChoice'))
+                )
+              : null
+          ),
+          data === null
+            ? null
+            : h('div', { className: 'aicd-tabs', role: 'tablist' },
                 tabs.map(([id, label]) =>
                   h('button', {
                     key: id,
@@ -2743,6 +2692,11 @@ window.__ModuleLoader__.load({
           })
           .catch(() => setScanError(true))
           .finally(() => setPending(null));
+      };
+
+      const choose = () => {
+        setChoosing(true);
+        setMenu(false);
       };
 
       const follow = () => {
@@ -2825,14 +2779,22 @@ window.__ModuleLoader__.load({
       const tabs = [
         ['chat', tr('tabChat')],
         ['files', tr('tabFiles')],
-        ['insights', tr('tabInsights')],
-        ['note', tr('tabStrategy')]
+        ['insights', tr('tabInsights')]
       ];
+
+      // Refresh has to mean something: re-read the folder *and* the conversation,
+      // so the numbers on screen are read again rather than redrawn.
+      const rescan = () => {
+        const target = typeof cwd === 'string' && cwd.length > 0 ? `/aiignore/scan?cwd=${encodeURIComponent(cwd)}` : '/aiignore/scan';
+        fetch(target, { method: 'POST', headers: { 'content-type': 'application/json' } })
+          .catch(() => {})
+          .then(() => { reload(); reloadTree(); });
+      };
 
       return h('div', { className: 'aicd-panel' },
         h(PanelHead, {
-          data, pinned, menu, setMenu, follow, setChoosing, setPinned, reload, reloadTree,
-          view, setView, tabs, score, scanned
+          data, pinned, menu, setMenu, follow, setChoosing, setPinned, rescan, conv,
+          view, setView, tabs, choose
         }),
         error !== null
           ? h('div', { className: 'aicd-body', 'data-center': 'true' },
@@ -2862,9 +2824,7 @@ window.__ModuleLoader__.load({
                     data, tree, at, setAt, pending, onAllow, onIgnore,
                     lastIgnored, onUndo
                   })
-                  : view === 'insights'
-                    ? h(InsightsView, { data, onDone: reload })
-                    : h(NoteView, { data, onSaved: reload }),
+                  : h(InsightsView, { data, conv, onDone: reload, onRescan: rescan }),
         postError !== null ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
       );
     }
