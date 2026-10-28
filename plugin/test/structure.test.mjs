@@ -11,7 +11,7 @@ import test from 'node:test';
  */
 const CLIENT = fs.readFileSync(path.join(import.meta.dirname, '..', 'client.js'), 'utf8');
 
-const EXPECTED = ['copy', 'styles', 'helpers', 'components', 'views', 'summary', 'shell', 'registration'];
+const EXPECTED = ['copy', 'styles', 'helpers', 'components', 'views', 'chat', 'summary', 'shell', 'registration'];
 
 test('client.js declares its regions once, in reading order', () => {
   const opened = [...CLIENT.matchAll(/\/\/#region (\S+)/g)].map((match) => match[1]);
@@ -25,7 +25,7 @@ test('each region holds a bounded amount of code', () => {
   // Bound per region, not per file: copy grows with every control (two
   // languages) and views grows with every page, but a region that doubles
   // without a new page is drift.
-  const bounds = { copy: 300, styles: 1050, helpers: 240, components: 200, views: 640, summary: 120, shell: 260, registration: 90 };
+  const bounds = { copy: 320, styles: 1120, helpers: 280, components: 200, views: 600, chat: 200, summary: 120, shell: 300, registration: 90 };
   const lines = CLIENT.split('\n');
   let open = null;
   let start = 0;

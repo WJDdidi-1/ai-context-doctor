@@ -1,3 +1,28 @@
+## 0.19.0
+
+The unit of analysis is the conversation, not the folder.
+
+- **A Chat tab, and it comes first.** The panel reads the app's own session
+  projection (`storages/session_projcache/sessions/<id>.json`) instead of
+  guessing from folder scans: the conversation's title, its folder, how many
+  turns it has run, how many files it read, and how those bytes split across
+  assistant / tool / user / injected context. The score is computed from what
+  *this conversation* read — `scoreNoise` over the bytes it pulled in — so a
+  chat that never touched a build artefact scores 100 even in a noisy repo.
+- **Switching conversations is a control, not a guess.** The tab carries a
+  conversation picker built from `GET /aiignore/sessions`; `GET
+  /aiignore/conversation?session=` answers for any of them. Choosing *Follow the
+  open conversation* hands the decision back to the Host half.
+- **Optimize is scoped to the conversation, and it re-scores.** *Optimize this
+  conversation* sends `{ session }`, writes the rules derived from that
+  conversation's noise reads, then reports the workspace score before/after and
+  — the check that matters — how many of those reads the new rules would now
+  block. Undo still lives in the Score tab.
+- **Insights is now Score.** The tab is the workspace score, its arithmetic, and
+  the guard's record; calling it *Insights* made it sound like a different
+  subject from the number it explains.
+- Seventeen same-origin routes (was sixteen).
+
 ## 0.18.0
 
 The score explains itself, the policy is one slider, and a suggestion can be applied.

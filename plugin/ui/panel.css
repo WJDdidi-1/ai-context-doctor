@@ -983,3 +983,108 @@
   line-height: 1.5;
   color: var(--dsw-alias-label-tertiary, rgba(242, 242, 242, 0.55));
 }
+
+/* The Chat tab: one conversation, and what it cost. */
+.aicd-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-x: hidden;
+}
+
+.aicd-chat .aicd-row {
+  max-width: 100%;
+}
+
+.aicd-chat .aicd-row-name {
+  min-width: 0;
+}
+
+.aicd-chat-title {
+  font: var(--dsw-font-xs-strong-13, 600 13px/1.4 sans-serif);
+  color: var(--dsw-alias-label-primary, inherit);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-chat-meta {
+  font: var(--dsw-font-xxxs-11, 11px/1.4 sans-serif);
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.9));
+}
+
+.aicd-chat-score {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.aicd-comp {
+  display: flex;
+  height: 8px;
+  border-radius: var(--dsw-radius-xs, 4px);
+  overflow: hidden;
+  background: var(--dsw-alias-bg-skeleton, rgba(127, 127, 127, 0.18));
+}
+
+.aicd-comp-seg {
+  display: block;
+  height: 100%;
+}
+
+.aicd-comp-seg[data-seg='assistant'],
+.aicd-swatch[data-seg='assistant'] {
+  background: var(--dsw-alias-state-idle-primary, #9a9a9a);
+}
+
+.aicd-comp-seg[data-seg='tool'],
+.aicd-swatch[data-seg='tool'] {
+  background: var(--dsw-alias-state-business-primary, #6f9fe0);
+}
+
+.aicd-comp-seg[data-seg='user'],
+.aicd-swatch[data-seg='user'] {
+  background: var(--dsw-alias-state-success-primary, #4ea36b);
+}
+
+.aicd-comp-seg[data-seg='inject'],
+.aicd-swatch[data-seg='inject'] {
+  background: var(--dsw-alias-state-warn-primary, #e0a33a);
+}
+
+.aicd-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font: var(--dsw-font-xxxs-11, 11px/1.4 sans-serif);
+  color: var(--dsw-alias-label-tertiary, rgba(127, 127, 127, 0.9));
+}
+
+.aicd-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.aicd-swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.aicd-chat-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aicd-select {
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.3));
+  background: var(--dsw-alias-bg-layer-1, transparent);
+  color: var(--dsw-alias-label-secondary, inherit);
+  font: var(--dsw-font-xxs-12, 12px/1.4 sans-serif);
+}

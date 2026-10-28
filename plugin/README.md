@@ -39,7 +39,13 @@ Three tabs inside:
   and what it wrote), then lets you browse the whole workspace a directory at a
   time. Search, filter by verdict, and every row carries the scanner's verdict,
   the size and the token range reading it would cost, before the agent tries.
-- **Insights** — the health score, the noise share, the tokens the guard kept
+- **Chat** — the conversation in front of you: its title, its turns, the files it
+  read, what those reads cost, and one button that turns *those* reads into
+  `.aiignore` rules. This is the tab the panel opens on, because a conversation
+  is the thing you are actually in.
+- **Files** — the folder as a tree, with what the guard would say about each
+  entry, so a decision can be taken before the agent acts.
+- **Score** — the health score, the noise share, the tokens the guard kept
   out, the reads it refused and the reads it let through, and the files the Host
   received this session. It also shows **why the score is what it is** (one bar
   per category: what it cost, out of what it could cost) and a single
@@ -105,7 +111,7 @@ panel follows light and dark themes instead of shipping its own palette. Every
 control is reachable with `Tab`, and empty, loading and error states are real
 screens rather than blank space.
 
-The panel talks to the Host half over sixteen same-origin routes
+The panel talks to the Host half over seventeen same-origin routes
 (`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET /aiignore/overview`,
 `GET /aiignore/sessions`, `GET /aiignore/workspaces`, `GET /aiignore/debug`,
 `GET/POST /aiignore/notes`, `GET/POST /aiignore/policy`,

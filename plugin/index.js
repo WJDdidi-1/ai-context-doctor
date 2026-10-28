@@ -11,6 +11,7 @@ import {
   writeAiignore,
   levelFor,
   levelBlocksCategory,
+  scoreNoise,
   noiseCategory,
   LEVELS,
   DEFAULT_LEVEL
@@ -398,6 +399,190 @@ export function sessionHeader(dir) {
   return header;
 }
 
+/**
+ * The app keeps one projection file per conversation, and it is where the
+ * conversation's own facts live: its title, its directory, what it spent, and
+ * every file operation it performed. Reading it is how "this conversation"
+ * becomes a thing this plugin can answer about, instead of "this folder".
+ */
+export function projectionPath(sessionId, home = dshHome()) {
+  if (typeof sessionId !== 'string' || !/^session-[0-9a-f][0-9a-f-]{6,}$/.test(sessionId)) return null;
+  return path.join(home, 'storages', 'session_projcache', 'sessions', `${sessionId}.json`);
+}
+
+/**
+ * The parts of a conversation projection that mean something here.
+ *
+ * @param {string} sessionId
+ * @param {string} [home]
+ * @returns {object|null}
+ */
+export function readProjection(sessionId, home = dshHome()) {
+  const file = projectionPath(sessionId, home);
+  if (file === null) return null;
+
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
+
+  const record = parsed !== null && typeof parsed === 'object' ? parsed.record : undefined;
+  if (record === undefined || typeof record !== 'object') return null;
+  const rows = typeof record.rows === 'object' && record.rows !== null ? record.rows : {};
+  const value = (row) => (rows[row] !== undefined && rows[row] !== null ? rows[row].val : undefined);
+
+  const timeline = value('contextTimeline') || {};
+  const stats = value('sessionStats') || {};
+  const breakdown = value('contextBreakdown') || {};
+
+  return {
+    id: sessionId,
+    title: typeof value('title') === 'string' ? value('title') : '',
+    cwd: record.identity !== undefined && typeof record.identity.cwd === 'string' ? record.identity.cwd : undefined,
+    turns: typeof stats.turns === 'number' ? stats.turns : 0,
+    steps: typeof stats.steps === 'number' ? stats.steps : 0,
+    sums: typeof timeline.sums === 'object' && timeline.sums !== null ? timeline.sums : {},
+    systemTokens: typeof timeline.systemTokens === 'number' ? timeline.systemTokens : 0,
+    toolsTokens: typeof timeline.toolsTokens === 'number' ? timeline.toolsTokens : 0,
+    contextWindow: typeof timeline.contextWindow === 'number' ? timeline.contextWindow : 0,
+    surfaceTokens: typeof breakdown.surfaceTokens === 'number' ? breakdown.surfaceTokens : 0,
+    fileOps: Array.isArray(timeline.fileOps) ? timeline.fileOps : []
+  };
+}
+
+/** Aggregate the raw operations into one row per path. */
+function filesFromOps(ops, cwd) {
+  const byPath = new Map();
+
+  for (const op of ops) {
+    if (op === null || typeof op !== 'object' || typeof op.path !== 'string') continue;
+    const entry = byPath.get(op.path) || {
+      path: op.path,
+      reads: 0,
+      writes: 0,
+      added: 0,
+      removed: 0,
+      lastAt: 0,
+      failed: false
+    };
+    if (op.kind === 'write') entry.writes += 1;
+    else entry.reads += 1;
+    entry.added += typeof op.added === 'number' ? op.added : 0;
+    entry.removed += typeof op.removed === 'number' ? op.removed : 0;
+    entry.lastAt = Math.max(entry.lastAt, typeof op.time === 'number' ? op.time : 0);
+    entry.failed = entry.failed || op.err === true;
+    byPath.set(op.path, entry);
+  }
+
+  const rows = [];
+  for (const entry of byPath.values()) {
+    let relative = null;
+    if (typeof cwd === 'string' && cwd.length > 0) {
+      const rel = path.relative(cwd, entry.path);
+      if (rel.length > 0 && rel.startsWith('..') === false && path.isAbsolute(rel) === false) relative = rel;
+    }
+    let bytes = 0;
+    try {
+      const stats = fs.statSync(entry.path);
+      if (stats.isFile()) bytes = stats.size;
+    } catch {
+      // Deleted, or outside anything we can read: size stays 0.
+    }
+    const classified = relative === null ? undefined : classifyPath(relative, bytes);
+    const noise = classified !== undefined && classified.noise !== undefined ? classified.noise : undefined;
+    rows.push({
+      path: entry.path,
+      relativePath: relative,
+      reads: entry.reads,
+      writes: entry.writes,
+      added: entry.added,
+      removed: entry.removed,
+      lastAt: entry.lastAt,
+      failed: entry.failed,
+      bytes,
+      reason: noise !== undefined ? noise.reason : undefined,
+      category: noise !== undefined ? noiseCategory(noise.reason) : undefined
+    });
+  }
+
+  return rows.sort((left, right) => right.bytes - left.bytes || left.path.localeCompare(right.path));
+}
+
+/** Rules that would have kept these files out, one per directory that earns it. */
+function rulesForFiles(files) {
+  const rules = [];
+  const seenDirs = new Set();
+
+  for (const file of files) {
+    if (file.relativePath === null || file.reason === undefined) continue;
+    const parts = file.relativePath.split('/');
+    if (parts.length > 1) {
+      const dir = `${parts[0]}/`;
+      if (seenDirs.has(dir) === false) {
+        seenDirs.add(dir);
+        rules.push(dir);
+      }
+      continue;
+    }
+    if (rules.includes(file.relativePath) === false) rules.push(file.relativePath);
+  }
+
+  return rules.slice(0, 20);
+}
+
+/**
+ * What this conversation cost, and how much of it was noise.
+ *
+ * The score is the same arithmetic the workspace uses — four weighted losses —
+ * but the denominator is what this conversation actually pulled in, so it
+ * answers a different question: "was *this* conversation noisy?", not "is this
+ * repository tidy?".
+ *
+ * @param {string} sessionId
+ * @param {{ home?: string }} [options]
+ * @returns {object|null}
+ */
+export function conversationReport(sessionId, options = {}) {
+  const home = typeof options.home === 'string' ? options.home : dshHome();
+  const projection = readProjection(sessionId, home);
+  if (projection === null) return null;
+
+  const files = filesFromOps(projection.fileOps, projection.cwd);
+  const read = files.filter((file) => file.reads > 0);
+  const readBytes = read.reduce((sum, file) => sum + file.bytes, 0);
+  const noiseFiles = read.filter((file) => file.reason !== undefined && file.category !== undefined);
+  const scored = scoreNoise(noiseFiles.map((file) => ({ bytes: file.bytes, reason: file.reason })), readBytes);
+
+  return {
+    id: projection.id,
+    title: projection.title,
+    cwd: projection.cwd,
+    turns: projection.turns,
+    steps: projection.steps,
+    contextWindow: projection.contextWindow,
+    surfaceTokens: projection.surfaceTokens,
+    systemTokens: projection.systemTokens,
+    toolsTokens: projection.toolsTokens,
+    tokens: projection.sums,
+    readFiles: read.length,
+    writtenFiles: files.filter((file) => file.writes > 0).length,
+    readBytes,
+    noiseBytes: noiseFiles.reduce((sum, file) => sum + file.bytes, 0),
+    score: scored.score,
+    scoreLost: scored.lost,
+    scoreBreakdown: scored.breakdown,
+    noise: noiseFiles.slice(0, 8).map((file) => ({
+      path: file.relativePath === null ? file.path : file.relativePath,
+      relativePath: file.relativePath,
+      bytes: file.bytes,
+      reason: file.reason
+    })),
+    suggestedAiignore: rulesForFiles(noiseFiles)
+  };
+}
+
 /** The session store: one directory per cwd, one directory per session inside. */
 export function sessionsRoot(home = dshHome()) {
   return path.join(home, 'sessions');
@@ -439,6 +624,17 @@ export function activeSession(home = dshHome()) {
           at = fs.statSync(dir).mtimeMs;
         } catch {
           continue;
+        }
+      }
+      // Opening a conversation rewrites its projection file, so that time is the
+      // second freshness signal: a conversation the user just switched to beats
+      // one that merely had a turn earlier.
+      const projection = projectionPath(session.name, home);
+      if (projection !== null) {
+        try {
+          at = Math.max(at, fs.statSync(projection).mtimeMs);
+        } catch {
+          // No projection yet: the log time stands alone.
         }
       }
       if (best === null || at > best.at) {
@@ -526,6 +722,16 @@ export function recentSessions(home = dshHome(), limit = 12) {
         at = fs.statSync(path.join(dir, 'session.v4.jsonl.zstd')).mtimeMs;
       } catch {
         continue;
+      }
+      // Opening a conversation rewrites its projection, which is a better
+      // "this is the one in front of you" signal than the log alone.
+      const projection = projectionPath(session.name, home);
+      if (projection !== null) {
+        try {
+          at = Math.max(at, fs.statSync(projection).mtimeMs);
+        } catch {
+          // no projection yet: the log timestamp stands.
+        }
       }
       const header = sessionHeader(dir);
       found.push({
@@ -709,9 +915,10 @@ const optimizeBackup = new Map();
  *
  * @param {string} cwd
  * @param {ReturnType<typeof scanRepository>} report
+ * @param {string[]} [rules] Rules to write instead of the workspace's own suggestions.
  * @returns {{ added: string[], written: boolean, saved: { min: number, max: number } }}
  */
-export function optimizeWorkspace(cwd, report) {
+export function optimizeWorkspace(cwd, report, rules) {
   const target = path.join(cwd, '.aiignore');
   let previous = null;
   try {
@@ -720,7 +927,8 @@ export function optimizeWorkspace(cwd, report) {
     previous = null;
   }
 
-  const result = writeAiignore(target, report.suggestedAiignore);
+  const wanted = Array.isArray(rules) && rules.length > 0 ? rules : report.suggestedAiignore;
+  const result = writeAiignore(target, wanted);
   optimizeBackup.set(cwd, { previous, at: Date.now() });
   ruleCache.delete(cwd);
 
@@ -1352,6 +1560,27 @@ export function apply(ctx, config = {}) {
     });
   };
 
+  /**
+   * One conversation, by id. Without an id it answers about the conversation
+   * the panel is following, which is what the "This conversation" tab wants.
+   */
+  const conversationHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+
+    const asked = new URL(req.url, 'http://localhost').searchParams.get('session');
+    let id = asked;
+    if (id === null || id.length === 0) {
+      const active = activeSession();
+      id = active === null ? null : active.id;
+    }
+    if (id === null) return sendJson(res, 404, { error: 'no-conversation' });
+
+    const report = conversationReport(id);
+    if (report === null) return sendJson(res, 404, { error: 'no-projection', session: id });
+    return sendJson(res, 200, { ...report, available: recentSessions().map((entry) => ({ id: entry.id, at: entry.at, cwd: entry.cwd })) });
+  };
+
   /** The strength the user picked, and the numbers behind every level. */
   const policyHandler = (req, res) => {
     if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
@@ -1386,21 +1615,79 @@ export function apply(ctx, config = {}) {
     });
   };
 
-  /** One click: write the suggested rules, so the guard stops serving noise. */
+  /**
+   * One click: write the suggested rules, so the guard stops serving noise.
+   *
+   * With `{ "session": "session-..." }` the rules come from that conversation's
+   * own reads instead of the whole workspace, and the answer reports which of
+   * those reads would now be blocked — an optimisation the user can check.
+   */
   const optimizeHandler = (req, res) => {
     if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
     if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
-    const cwd = askedCwd(req) !== undefined ? askedCwd(req) : resolveWorkspace();
-    if (cwd === undefined) return sendJson(res, 404, { error: 'no-workspace' });
-    try {
-      const report = scanRepository(cwd, { maxFiles: options.maxFiles, maxBytes: options.maxBytes });
-      const result = optimizeWorkspace(cwd, report);
-      const after = scanRepository(cwd, { maxFiles: options.maxFiles, maxBytes: options.maxBytes });
-      stateFor(cwd).report = after;
-      return sendJson(res, 200, { workspace: cwd, ...result, before: report.healthScore, after: after.healthScore });
-    } catch {
-      return sendJson(res, 400, { error: 'optimize-failed' });
-    }
+
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 20000) req.destroy();
+    });
+    req.on('end', () => {
+      let parsed = {};
+      if (body.trim().length > 0) {
+        try {
+          parsed = JSON.parse(body);
+        } catch {
+          return sendJson(res, 400, { error: 'invalid-json' });
+        }
+      }
+
+      const asked = parsed !== null && typeof parsed === 'object' && typeof parsed.session === 'string' ? parsed.session : null;
+      let conversation = null;
+      if (asked !== null) {
+        conversation = conversationReport(asked);
+        if (conversation === null) return sendJson(res, 404, { error: 'no-projection', session: asked });
+      }
+
+      const cwd = askedCwd(req) !== undefined
+        ? askedCwd(req)
+        : (conversation !== null && conversation.cwd !== null ? conversation.cwd : resolveWorkspace());
+      if (cwd === undefined || cwd === null) return sendJson(res, 404, { error: 'no-workspace' });
+
+      try {
+        const report = scanRepository(cwd, { maxFiles: options.maxFiles, maxBytes: options.maxBytes });
+        const rules = conversation !== null ? conversation.suggestedAiignore : undefined;
+        const result = optimizeWorkspace(cwd, report, rules);
+        const after = scanRepository(cwd, { maxFiles: options.maxFiles, maxBytes: options.maxBytes });
+        stateFor(cwd).report = after;
+
+        // Proof the click did something: every noise read of this conversation,
+        // tested against the rules that now exist on disk.
+        const blockedNow = [];
+        if (conversation !== null) {
+          let written = [];
+          try {
+            written = parseRules(fs.readFileSync(path.join(cwd, '.aiignore'), 'utf8'));
+          } catch {
+            written = [];
+          }
+          for (const item of conversation.noise) {
+            const relative = item.relativePath;
+            blockedNow.push({ path: relative, blocked: relative !== undefined && matchesAiignore(written, relative) !== null });
+          }
+        }
+
+        return sendJson(res, 200, {
+          workspace: cwd,
+          ...result,
+          session: conversation === null ? null : conversation.id,
+          before: report.healthScore,
+          after: after.healthScore,
+          blockedNow
+        });
+      } catch {
+        return sendJson(res, 400, { error: 'optimize-failed' });
+      }
+    });
   };
 
   const undoOptimizeHandler = (req, res) => {
@@ -1430,6 +1717,7 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/client-report', handler: clientReportHandler });
       server.register({ kind: 'exact', path: '/aiignore/debug', handler: debugHandler });
       server.register({ kind: 'exact', path: '/aiignore/sessions', handler: sessionsHandler });
+      server.register({ kind: 'exact', path: '/aiignore/conversation', handler: conversationHandler });
       server.register({ kind: 'exact', path: '/aiignore/policy', handler: policyHandler });
       server.register({ kind: 'exact', path: '/aiignore/optimize', handler: optimizeHandler });
       server.register({ kind: 'exact', path: '/aiignore/optimize/undo', handler: undoOptimizeHandler });
