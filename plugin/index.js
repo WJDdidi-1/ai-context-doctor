@@ -363,6 +363,45 @@ export function uploadFile(digest, home = dshHome()) {
 const IMAGE_TYPES = new Set(['png', 'jpeg', 'webp', 'gif']);
 const IMAGE_LIMIT = 12 * 1024 * 1024;
 
+/**
+ * Take one rule back out of `.aiignore`.
+ *
+ * Deliberate limits: it only removes a line that matches the rule exactly, it
+ * never removes comments or the generated header, and it refuses a symlink or a
+ * non-file. The result is the file the user had before the rule was added.
+ *
+ * @param {string} cwd
+ * @param {string} rule
+ * @returns {{ removed: boolean }}
+ */
+export function removeAiignoreRule(cwd, rule) {
+  const file = path.join(cwd, '.aiignore');
+  if (typeof rule !== 'string' || rule.trim() === '') return { removed: false };
+  if (!fs.existsSync(file)) return { removed: false };
+  let stats;
+  try {
+    stats = fs.lstatSync(file);
+  } catch {
+    return { removed: false };
+  }
+  if (stats.isSymbolicLink() || !stats.isFile()) return { removed: false };
+
+  let text;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    return { removed: false };
+  }
+
+  const lines = text.split(/\r?\n/);
+  const kept = lines.filter((line) => line.trim() !== rule.trim());
+  if (kept.length === lines.length) return { removed: false };
+
+  const body = kept.join('\n').replace(/\s+$/, '');
+  fs.writeFileSync(file, body === '' ? '' : `${body}\n`, 'utf8');
+  return { removed: true };
+}
+
 function guessType(absolute) {
   try {
     const handle = fs.openSync(absolute, 'r');
@@ -593,6 +632,41 @@ export function apply(ctx, config = {}) {
     });
   };
 
+  const unignoreHandler = (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+    const origin = req.headers.origin;
+    if (typeof origin === 'string' && origin.length > 0 && origin !== `http://${req.headers.host}`) {
+      return sendJson(res, 403, { error: 'cross-origin' });
+    }
+    if (latestCwd === undefined) return sendJson(res, 404, { error: 'nothing-scanned' });
+
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 4096) req.destroy();
+    });
+    req.on('end', () => {
+      let target;
+      try {
+        target = JSON.parse(body).path;
+      } catch {
+        return sendJson(res, 400, { error: 'bad-json' });
+      }
+      if (typeof target !== 'string' || target.length === 0) return sendJson(res, 400, { error: 'bad-path' });
+
+      const inspected = inspectRead({ root: latestCwd, filePath: target });
+      if (inspected.inside !== true) return sendJson(res, 400, { error: 'outside-workspace' });
+
+      try {
+        const result = removeAiignoreRule(latestCwd, inspected.relativePath);
+        ruleCache.delete(latestCwd);
+        return sendJson(res, 200, { removed: result.removed, rule: inspected.relativePath });
+      } catch {
+        return sendJson(res, 500, { error: 'write-failed' });
+      }
+    });
+  };
+
   const notesHandler = (req, res) => {
     if (req.method !== 'GET' && req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
     if (latestCwd === undefined) return sendJson(res, 404, { error: 'nothing-scanned' });
@@ -676,6 +750,7 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/allow', handler: allowHandler });
       server.register({ kind: 'exact', path: '/aiignore/ignore', handler: ignoreHandler });
       server.register({ kind: 'exact', path: '/aiignore/upload', handler: uploadHandler });
+      server.register({ kind: 'exact', path: '/aiignore/unignore', handler: unignoreHandler });
       routesInstalled = true;
     } catch {
       // No web server in this profile: the guard still works, the panel does not.

@@ -202,6 +202,12 @@
 
     window.fetch = function (url, init) {
       const method = (init && init.method) || 'GET';
+      let body = null;
+      try {
+        body = init && init.body ? JSON.parse(init.body) : null;
+      } catch {
+        body = null;
+      }
       calls.push(method + ' ' + url);
       const record = (body, status) =>
         Promise.resolve({
@@ -223,7 +229,8 @@
         return record(TREES[dir] || { dir, parent: '', total: 0, truncated: false, entries: [] });
       }
       if (url === '/aiignore/allow') return record({ allowed: true });
-      if (url === '/aiignore/ignore') return record({ ignored: true });
+      if (url === '/aiignore/ignore') return record({ ignored: true, rule: String((body && body.path) || '') });
+      if (url === '/aiignore/unignore') return record({ removed: true });
       if (url === '/aiignore/notes') return record({ written: true, removed: false });
       return record({ error: 'unknown route' }, 404);
     };

@@ -98,6 +98,12 @@ window.__ModuleLoader__.load({
         uploadsTitle: 'Received this session',
         uploadsNone: 'Drop a file into the composer and it appears here.',
         uploadsNote: 'Uploads are stored by content digest, so only the digest and size survive.',
+        sortSize: 'Largest first',
+        sortName: 'Name',
+        batchIgnore: 'Never read {n} files',
+        batchClear: 'Clear',
+        undoHint: 'Added to .aiignore.',
+        undoAction: 'Undo',
         timelineToday: 'Today',
         timelineYesterday: 'Yesterday',
         exportReport: 'Export report (.md)',
@@ -177,6 +183,12 @@ window.__ModuleLoader__.load({
         uploadsTitle: '本次会话收到',
         uploadsNone: '拖一个文件到输入框，它就会出现在这里。',
         uploadsNote: '上传按内容摘要存储，因此只保留摘要与大小。',
+        sortSize: '按大小',
+        sortName: '按名称',
+        batchIgnore: '批量不再读取（{n}）',
+        batchClear: '清除选择',
+        undoHint: '已写入 .aiignore。',
+        undoAction: '撤销',
         timelineToday: '今天',
         timelineYesterday: '昨天',
         exportReport: '导出报告（.md）',
@@ -1205,10 +1217,13 @@ window.__ModuleLoader__.load({
     //#endregion components
 
     //#region views
-    function FilesView({ data, tree, at, setAt, pending, onAllow, onIgnore }) {
+    function FilesView({ data, tree, at, setAt, pending, onAllow, onIgnore, lastIgnored, onUndo }) {
       const [query, setQuery] = useState('');
       const [filter, setFilter] = useState('all');
       const [selected, setSelected] = useState(null);
+      const [picked, setPicked] = useState([]);
+      const [anchor, setAnchor] = useState(null);
+      const [sort, setSort] = useState('size');
 
       const matches = (entry) => {
         if (query !== '' && !entry.path.toLowerCase().includes(query.toLowerCase())) return false;
@@ -1218,9 +1233,47 @@ window.__ModuleLoader__.load({
         return true;
       };
 
-      const clearSelection = () => setSelected(null);
+      const clearSelection = () => {
+        setSelected(null);
+        setPicked([]);
+        setAnchor(null);
+      };
+
+      /** Click, Cmd/Ctrl-click and Shift-click, the way a file list behaves. */
+      const pick = (path, event) => {
+        const additive = event !== undefined && event !== null && (event.metaKey === true || event.ctrlKey === true);
+        const range = event !== undefined && event !== null && event.shiftKey === true;
+        if (range && anchor !== null) {
+          const paths = visiblePaths();
+          const from = paths.indexOf(anchor);
+          const to = paths.indexOf(path);
+          if (from !== -1 && to !== -1) {
+            const [start, end] = from <= to ? [from, to] : [to, from];
+            setPicked(paths.slice(start, end + 1));
+            return;
+          }
+        }
+        if (additive) {
+          setPicked(picked.includes(path) ? picked.filter((item) => item !== path) : [...picked, path]);
+          setAnchor(path);
+          return;
+        }
+        setPicked([path]);
+        setAnchor(path);
+      };
+
+      const visiblePaths = () => sortedEntries().filter((entry) => entry.type !== 'dir').map((entry) => entry.path);
+
+      const sortedEntries = () => {
+        const list = (tree === null ? [] : tree.entries || []).filter(matches).slice();
+        return list.sort((left, right) => {
+          if ((left.type === 'dir') !== (right.type === 'dir')) return left.type === 'dir' ? -1 : 1;
+          if (sort === 'name') return String(left.name).localeCompare(String(right.name));
+          return (right.bytes || 0) - (left.bytes || 0);
+        });
+      };
       const sessionFiles = (data.sessionFiles || []).filter(matches).slice(0, 8);
-      const entries = (tree === null ? [] : tree.entries || []).filter(matches);
+      const entries = sortedEntries();
       const total = tree === null ? 0 : (tree.total === undefined ? (tree.entries || []).length : tree.total);
 
       const filters = [
@@ -1283,6 +1336,59 @@ window.__ModuleLoader__.load({
             h('span', { className: 'aicd-count' }, tr('filesCount').replace('{n}', String(total)))
           )
         ),
+        h('div', { className: 'aicd-chips', style: { padding: '0 4px 6px' } },
+          h('button', {
+            key: 'size',
+            type: 'button',
+            className: 'aicd-chip',
+            'data-active': sort === 'size' ? 'true' : 'false',
+            onClick: () => setSort('size')
+          }, tr('sortSize')),
+          h('button', {
+            key: 'name',
+            type: 'button',
+            className: 'aicd-chip',
+            'data-active': sort === 'name' ? 'true' : 'false',
+            onClick: () => setSort('name')
+          }, tr('sortName')),
+          picked.length > 1
+            ? h('button', {
+                key: 'batch',
+                type: 'button',
+                className: 'aicd-chip',
+                'data-active': 'true',
+                onClick: () => {
+                  const targets = picked.slice();
+                  const step = (index) => {
+                    if (index >= targets.length) {
+                      setPicked([]);
+                      return;
+                    }
+                    onIgnore(targets[index], () => step(index + 1));
+                  };
+                  step(0);
+                }
+              }, tr('batchIgnore').replace('{n}', String(picked.length)))
+            : null,
+          picked.length > 1
+            ? h('button', {
+                key: 'clear',
+                type: 'button',
+                className: 'aicd-chip',
+                onClick: () => setPicked([])
+              }, tr('batchClear'))
+            : null
+        ),
+        lastIgnored === null || lastIgnored === undefined
+          ? null
+          : h('div', { className: 'aicd-note', 'data-tone': 'ok' },
+              h('span', null, `${tr('undoHint')} `),
+              h('button', {
+                type: 'button',
+                className: 'aicd-chip',
+                onClick: () => onUndo(lastIgnored)
+              }, tr('undoAction'))
+            ),
         h('div', { className: 'aicd-body' },
           sessionFiles.length === 0 && (query !== '' || filter !== 'all')
             ? null
@@ -1326,13 +1432,14 @@ window.__ModuleLoader__.load({
                       name: entry.name,
                       badge: entry.type === 'dir' ? undefined : rowBadges(entry),
                       meta: entry.type === 'dir' ? '›' : formatBytes(entry.bytes),
-                      selected: selected !== null && selected.path === entry.path,
-                      onClick: () => {
+                      selected: picked.includes(entry.path) || (selected !== null && selected.path === entry.path),
+                      onClick: (event) => {
                         if (entry.type === 'dir') {
                           setAt(entry.path);
                           clearSelection();
                         } else {
                           setSelected(entry);
+                          pick(entry.path, event);
                         }
                       }
                     })
@@ -1519,6 +1626,7 @@ window.__ModuleLoader__.load({
       const [view, setView] = useState('files');
       const [pending, setPending] = useState(null);
       const [postError, setPostError] = useState(null);
+      const [lastIgnored, setLastIgnored] = useState(null);
 
       const post = (route, target, done) => {
         setPending(target);
@@ -1544,7 +1652,19 @@ window.__ModuleLoader__.load({
       });
       const onIgnore = (target, after) => post('/aiignore/ignore', target, (payload) => {
         const ok = payload.ignored === true;
-        if (ok && after !== undefined) after();
+        if (ok) {
+          // Keep the rule we just wrote, so the panel can take it back out.
+          setLastIgnored(payload.rule || target);
+          if (after !== undefined) after();
+        }
+        return ok;
+      });
+      const onUndo = (target, after) => post('/aiignore/unignore', target, (payload) => {
+        const ok = payload.removed === true;
+        if (ok) {
+          setLastIgnored(null);
+          if (after !== undefined) after();
+        }
         return ok;
       });
 
@@ -1619,7 +1739,10 @@ window.__ModuleLoader__.load({
                   h(Empty, { icon: 'spark', title: tr('emptyTitle'), hint: tr('emptyHint') })
                 )
               : view === 'files'
-                ? h(FilesView, { data, tree, at, setAt, pending, onAllow, onIgnore })
+                ? h(FilesView, {
+                    data, tree, at, setAt, pending, onAllow, onIgnore,
+                    lastIgnored, onUndo
+                  })
                 : view === 'insights'
                   ? h(InsightsView, { data })
                   : h(NoteView, { data, onSaved: reload }),
