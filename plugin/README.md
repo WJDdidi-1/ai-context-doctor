@@ -32,10 +32,13 @@ one row per refused read with a **Read it anyway** button, and a ledger of what
 the session actually read, split into source, review (templates and deploy
 scripts) and files you allowed yourself.
 
-Allowing a file applies to that file only, for the rest of the Host run: the
-next read goes through and nothing else changes. Reloading the Harness forgets
-it, which is the honest default — a permanent allowlist belongs in `.aiignore`,
-where you can review it in git.
+Two decisions are offered per row:
+
+- **Read it anyway** allows that file for the rest of the Host run. Reloading
+  the Harness forgets it — a temporary override should stay temporary.
+- **Never read it** appends the path to the workspace's `.aiignore`. That is the
+  durable direction, because the file is the record: it survives restarts, shows
+  up in review, and you can delete the line yourself.
 
 The panel talks to the Host half over two same-origin routes
 (`GET /aiignore/report`, `POST /aiignore/allow`). They answer for the most
@@ -97,6 +100,10 @@ Values go in the plugin's `config` row in `cordis.patch.yml`:
 
 The caps exist because the scan is a synchronous directory walk: without them,
 opening a huge monorepo would stall the Host.
+
+The guard also refuses anything the workspace's own `.aiignore` lists, including
+files the size heuristic considers clean. A hand-written rule beats the
+heuristic, and editing the file takes effect on the next read.
 
 ## What it refuses to read
 
