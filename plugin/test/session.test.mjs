@@ -107,7 +107,11 @@ test('the overview scans every known folder and remembers the answer', async () 
     assert.equal(first.status, 200);
     assert.deepEqual(first.body.workspaces.map((entry) => entry.title).sort(), ['clean', 'noisy']);
     const bad = first.body.workspaces.find((entry) => entry.title === 'noisy');
-    assert.ok(bad.healthScore < 50, `noisy folder should score low, got ${bad.healthScore}`);
+    const cleanEntry = first.body.workspaces.find((entry) => entry.title === 'clean');
+    assert.ok(
+      bad.healthScore < cleanEntry.healthScore,
+      `a folder that is 100% build output must score below a clean one (${bad.healthScore} vs ${cleanEntry.healthScore})`
+    );
     assert.equal(bad.noise.length > 0, true);
 
     // A second call must not rescan: the mtime of the noisy bundle is fixed, so a

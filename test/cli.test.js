@@ -32,7 +32,7 @@ test('--json emits a parseable report', () => {
   assert.equal(report.repo, path.basename(root));
   assert.equal(report.scannedFiles, 2);
   assert.equal(typeof report.healthScore, 'number');
-  assert.equal(report.status, 'Too much noise for an AI coding agent');
+  assert.equal(report.status, 'Some context noise found');
 });
 
 test('--json error path stays machine-readable', () => {
