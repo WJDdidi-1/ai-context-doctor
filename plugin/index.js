@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { scanRepository, classifyPath, estimateTokens } from 'ai-context-doctor';
-import { createWorkspaceState, recordSkip, allowPath, isAllowed, buildReport } from './report.js';
+import { createWorkspaceState, recordSkip, recordRead, allowPath, isAllowed, buildReport } from './report.js';
 
 /**
  * Values a user can override in cordis.patch.yml.
@@ -76,6 +76,37 @@ export function resetSkipLog() {
 }
 
 /**
+ * Describe one read: where the file sits, how big it is, and how the classifier
+ * saw it. `inside: false` means the path is not ours to judge.
+ *
+ * @param {{ root: string, filePath: string }} input
+ * @returns {{ inside: false } | { inside: true, relativePath: string, bytes: number, classified: { noise?: object, review?: object } }}
+ */
+export function inspectRead({ root, filePath }) {
+  if (typeof root !== 'string' || typeof filePath !== 'string') return { inside: false };
+
+  const absolute = path.resolve(root, filePath);
+  const relative = path.relative(root, absolute);
+  if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {
+    // Outside the workspace: not ours to judge.
+    return { inside: false };
+  }
+
+  let size = 0;
+  try {
+    const stats = fs.statSync(absolute);
+    if (!stats.isFile()) return { inside: false };
+    size = stats.size;
+  } catch {
+    // Missing file: let the read tool report that in its own words.
+    return { inside: false };
+  }
+
+  const normalized = relative.split(path.sep).join('/');
+  return { inside: true, relativePath: normalized, bytes: size, classified: classifyPath(normalized, size) };
+}
+
+/**
  * Decide whether one read should be refused.
  *
  * Pure apart from the `stat` it needs for the size rule, so it can be tested
@@ -86,37 +117,18 @@ export function resetSkipLog() {
  */
 export function decideRead({ root, filePath, policy = 'deny' }) {
   if (policy !== 'deny') return { block: false };
-  if (typeof root !== 'string' || typeof filePath !== 'string') return { block: false };
 
-  const absolute = path.resolve(root, filePath);
-  const relative = path.relative(root, absolute);
-  if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {
-    // Outside the workspace: not ours to judge.
-    return { block: false };
-  }
-
-  let size = 0;
-  try {
-    const stats = fs.statSync(absolute);
-    if (!stats.isFile()) return { block: false };
-    size = stats.size;
-  } catch {
-    // Missing file: let the read tool report that in its own words.
-    return { block: false };
-  }
-
-  const normalized = relative.split(path.sep).join('/');
-  const classified = classifyPath(normalized, size);
-  if (classified.noise === undefined || !BLOCKED_REASONS.has(classified.noise.reason)) {
-    return { block: false };
-  }
+  const inspected = inspectRead({ root, filePath });
+  if (inspected.inside !== true) return { block: false };
+  if (inspected.classified.noise === undefined) return { block: false };
+  if (!BLOCKED_REASONS.has(inspected.classified.noise.reason)) return { block: false };
 
   return {
     block: true,
-    relativePath: normalized,
-    bytes: size,
-    reason: classified.noise.reason,
-    tokens: estimateTokens(size)
+    relativePath: inspected.relativePath,
+    bytes: inspected.bytes,
+    reason: inspected.classified.noise.reason,
+    tokens: estimateTokens(inspected.bytes)
   };
 }
 
@@ -193,12 +205,28 @@ export function apply(ctx, config = {}) {
       if (typeof cwd !== 'string' || cwd.length === 0) return undefined;
 
       const decision = decideRead({ root: cwd, filePath, policy: options.readPolicy });
-      if (decision.block !== true) return undefined;
-
       const state = stateFor(cwd);
-      if (isAllowed(state, decision.relativePath)) return undefined;
-      recordSkip(state, decision);
-      return formatDenial(decision);
+
+      if (decision.block === true) {
+        if (isAllowed(state, decision.relativePath)) {
+          recordRead(state, { relativePath: decision.relativePath, bytes: decision.bytes, verdict: 'allowed' });
+          return undefined;
+        }
+        recordSkip(state, decision);
+        return formatDenial(decision);
+      }
+
+      // Not refused: still worth counting, so the panel can show what this
+      // session actually spent instead of only what it saved.
+      const inspected = inspectRead({ root: cwd, filePath });
+      if (inspected.inside === true) {
+        recordRead(state, {
+          relativePath: inspected.relativePath,
+          bytes: inspected.bytes,
+          verdict: inspected.classified.review === undefined ? 'useful' : 'review'
+        });
+      }
+      return undefined;
     } catch {
       // A guard that throws would break every tool call in the session.
       return undefined;

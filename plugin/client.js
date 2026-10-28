@@ -37,6 +37,13 @@ window.__ModuleLoader__.load({
         saved: 'Kept out of context',
         skippedTitle: 'Reads that were skipped',
         skippedNone: 'Nothing skipped yet.',
+        readsTitle: 'Read into this session',
+        readsNone: 'Nothing read yet.',
+        readsSpent: 'spent',
+        verdictUseful: 'source',
+        verdictReview: 'review',
+        verdictAllowed: 'you allowed it',
+        more: 'more',
         allow: 'Read it anyway',
         allowFailed: 'Could not allow this file.',
         allowedNow: 'Allowed — the next read goes through.',
@@ -56,6 +63,13 @@ window.__ModuleLoader__.load({
         saved: '已挡在上下文之外',
         skippedTitle: '被拦下的读取',
         skippedNone: '暂时没有拦截记录。',
+        readsTitle: '已读入本次会话',
+        readsNone: '还没有读取记录。',
+        readsSpent: '已用',
+        verdictUseful: '源码',
+        verdictReview: '需留意',
+        verdictAllowed: '你放行的',
+        more: '更多',
         allow: '仍要读取',
         allowFailed: '无法放行这个文件。',
         allowedNow: '已放行——下次读取会正常进行。',
@@ -182,6 +196,16 @@ window.__ModuleLoader__.load({
         )
       );
 
+      const reads = (data.reads || []).slice().sort((a, b) => b.bytes - a.bytes);
+      const visible = reads.slice(0, 8);
+      const hidden = reads.length - visible.length;
+      const readRows = visible.map((item) =>
+        h('div', { key: item.path, style: styles.row },
+          h('div', { style: styles.path }, item.path),
+          h('div', { style: styles.meta }, `${formatBytes(item.bytes)} · ${t(`verdict${item.verdict.charAt(0).toUpperCase()}${item.verdict.slice(1)}`)}`)
+        )
+      );
+
       return h('div', null,
         h('div', { style: styles.title }, t('title')),
         h('div', { style: styles.meta }, data.workspace),
@@ -192,6 +216,9 @@ window.__ModuleLoader__.load({
         ),
         h('div', { style: styles.label }, t('skippedTitle')),
         rows.length > 0 ? rows : h('div', { style: styles.meta }, t('skippedNone')),
+        h('div', { style: { ...styles.label, marginTop: '14px' } }, `${t('readsTitle')} · ${reads.length} · ${t('readsSpent')} ${formatTokens(data.readTokens)}`),
+        readRows.length > 0 ? readRows : h('div', { style: styles.meta }, t('readsNone')),
+        hidden > 0 ? h('div', { style: styles.meta }, `+${hidden} ${t('more')}`) : null,
         h('div', { style: styles.note }, data.policy === 'deny' ? t('policyDeny') : t('policyOff')),
         h('div', { style: styles.note }, t('tokensHint'))
       );
