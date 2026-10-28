@@ -34,7 +34,9 @@ Hovering it offers two entries, and nothing is drawn until you pick one:
   workspace a directory at a time. Every row shows the verdict before the agent
   reads anything, with the size and the token range reading it would cost.
 - **Insights** / **数据分析** — the health score, the noise share, the tokens the
-  guard kept out, the reads it refused and the reads it let through.
+  guard kept out, the reads it refused and the reads it let through; the files
+  the Host received this session; and a note field that writes
+  `.aiignore.notes.md` and pushes it to the running agent.
 
 Two decisions per file, available from the tree, the session list and the report:
 

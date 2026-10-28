@@ -38,6 +38,14 @@ window.__ModuleLoader__.load({
         kindUseful: 'source',
         kindReview: 'review',
         allFiles: 'Browse the workspace',
+        uploadsTitle: 'Files received this session',
+        uploadsNone: 'No uploads yet — drop a file into the composer and it appears here.',
+        uploadsNote: 'The Host stores uploads by content digest, so only the digest and size survive.',
+        notesTitle: 'A note for the agent',
+        notesHint: 'Saved to .aiignore.notes.md in this workspace, and sent to the agent now.',
+        notesSave: 'Save and send',
+        notesSaved: 'Saved. The agent has it.',
+        notesTooLong: 'Too long — keep it under 4000 characters.',
         close: 'Close',
         loading: 'Reading this workspace…',
         empty: 'No workspace scanned in this session yet.',
@@ -89,6 +97,14 @@ window.__ModuleLoader__.load({
         kindUseful: '源码',
         kindReview: '需留意',
         allFiles: '浏览工作区',
+        uploadsTitle: '本次会话收到的文件',
+        uploadsNone: '还没有上传——拖一个文件到输入框就会出现在这里。',
+        uploadsNote: '宿主按内容摘要存储上传，因此只剩下摘要和大小。',
+        notesTitle: '给 AI 的说明',
+        notesHint: '保存到本工作区的 .aiignore.notes.md，并立即发送给 AI。',
+        notesSave: '保存并发送',
+        notesSaved: '已保存，AI 已收到。',
+        notesTooLong: '太长了——请控制在 4000 字以内。',
         close: '关闭',
         loading: '正在读取工作区…',
         empty: '本次会话还没有扫描任何工作区。',
@@ -201,7 +217,8 @@ window.__ModuleLoader__.load({
       note: { opacity: 0.6, fontSize: '11px', marginTop: '12px' },
       menu: { position: 'absolute', bottom: '34px', left: 0, zIndex: 1001, minWidth: '132px', padding: '4px', borderRadius: '10px', border: '1px solid rgba(127,127,127,0.35)', background: 'var(--panel-background, #1b1b1f)', color: 'var(--panel-foreground, #f2f2f2)', boxShadow: '0 8px 20px rgba(0,0,0,0.35)' },
       menuItem: { display: 'block', width: '100%', padding: '6px 10px', border: 'none', borderRadius: '6px', background: 'transparent', color: 'inherit', font: 'inherit', fontSize: '12px', textAlign: 'left', cursor: 'pointer' },
-      sectionTitle: { fontWeight: 600, fontSize: '12px', marginTop: '4px' }
+      sectionTitle: { fontWeight: 600, fontSize: '12px', marginTop: '4px' },
+      textarea: { width: '100%', boxSizing: 'border-box', marginTop: '6px', padding: '6px 8px', borderRadius: '8px', border: '1px solid rgba(127,127,127,0.35)', background: 'transparent', color: 'inherit', font: 'inherit', fontSize: '12px', resize: 'vertical' }
     };
 
     function Report({ view }) {
@@ -211,6 +228,8 @@ window.__ModuleLoader__.load({
       const [selected, setSelected] = useState(null);
       const [error, setError] = useState(null);
       const [pending, setPending] = useState(null);
+      const [notes, setNotes] = useState(null);
+      const [noteState, setNoteState] = useState(null);
       const t = tr;
 
       const loadSummary = useCallback(() => {
@@ -219,9 +238,26 @@ window.__ModuleLoader__.load({
           .then((payload) => {
             setData(payload);
             setError(null);
+            setNotes((current) => (current === null ? (typeof payload.notes === 'string' ? payload.notes : '') : current));
           })
           .catch((reason) => setError(reason));
       }, []);
+
+      const saveNotes = () => {
+        const text = notes === null ? '' : notes;
+        if (text.length > 4000) {
+          setNoteState('too-long');
+          return;
+        }
+        fetch('/aiignore/notes', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ text })
+        })
+          .then((response) => response.json())
+          .then((payload) => setNoteState(payload.written === true ? 'saved' : 'failed'))
+          .catch(() => setNoteState('failed'));
+      };
 
       const loadTree = useCallback((dir) => {
         fetch(`/aiignore/tree?dir=${encodeURIComponent(dir)}`, { headers: { accept: 'application/json' } })
@@ -324,7 +360,31 @@ window.__ModuleLoader__.load({
           skippedRows.length > 0 ? skippedRows : h('div', { style: styles.meta }, t('skippedNone')),
           h('div', { style: styles.sectionTitle }, t('readsTitle')),
           readRows.length > 0 ? readRows : h('div', { style: styles.meta }, t('readsNone')),
-          h('div', { style: styles.note }, data.policy === 'deny' ? t('policyDeny') : t('policyOff')),
+          h('div', { style: styles.sectionTitle }, t('uploadsTitle')),
+          (data.uploads || []).length > 0
+            ? data.uploads.map((item) =>
+                h('div', { key: `${item.name}-${item.receivedAt}`, style: styles.row },
+                  h('div', { style: styles.path }, `${item.type} · ${item.name}`),
+                  h('div', { style: styles.meta }, `${formatBytes(item.bytes)} · ${new Date(item.receivedAt).toLocaleTimeString()}`)
+                )
+              )
+            : h('div', { style: styles.meta }, t('uploadsNone')),
+          h('div', { style: styles.note }, t('uploadsNote')),
+          h('div', { style: styles.sectionTitle }, t('notesTitle')),
+          h('textarea', {
+            style: styles.textarea,
+            rows: 5,
+            value: notes === null ? (typeof data.notes === 'string' ? data.notes : '') : notes,
+            placeholder: t('notesHint'),
+            onChange: (event) => {
+              setNotes(event.target.value);
+              setNoteState(null);
+            }
+          }),
+          h('button', { type: 'button', style: styles.action, onClick: saveNotes }, t('notesSave')),
+          noteState === 'saved' ? h('div', { style: styles.meta }, t('notesSaved')) : null,
+          noteState === 'too-long' ? h('div', { style: styles.meta }, t('notesTooLong')) : null,
+          h('div', { style: styles.note }, t('policyDeny')),
           h('div', { style: styles.note }, t('tokensHint'))
         );
       }

@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { apply, decideRead, inspectRead } from '../index.js';
+import { apply, decideRead, inspectRead, readNotes, writeNotes, recentUploads, NOTES_FILE } from '../index.js';
 import { createWorkspaceState, recordSkip, recordRead, recordWrite, allowPath, savedTokens, buildReport, sessionFiles } from '../report.js';
 
 function tempWorkspace() {
@@ -117,7 +117,7 @@ test('the ledger separates what was read from what was refused', () => {
 
 test('report handler answers with the scanned workspace, then the allow route edits it', async () => {
   const { routes, listeners, guards } = harness();
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/report', '/aiignore/tree']);
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/notes', '/aiignore/report', '/aiignore/tree']);
 
   const root = tempWorkspace();
   const agent = { session: { meta: { cwd: root } }, inject() {} };
@@ -247,8 +247,8 @@ test('a service that mounts late still gets the routes and the guard', async () 
   for (const entry of deferred) entry.callback(ctx);
 
   assert.equal(guards.length, 1, 'the guard installs once the tool registry appears');
-  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/report', '/aiignore/tree']);
-  assert.equal(late.routes.size, 4, 'a context with both services installs eagerly');
+  assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/ignore', '/aiignore/notes', '/aiignore/report', '/aiignore/tree']);
+  assert.equal(late.routes.size, 5, 'a context with both services installs eagerly');
 });
 
 test('the tree route lists the scanned workspace, one directory at a time', () => {
@@ -329,4 +329,69 @@ test('a write tool call shows up in the report even when nothing was refused', (
   const entry = payload.sessionFiles.find((item) => item.path === 'src/app.js');
   assert.equal(entry.kind, 'written');
   assert.equal(payload.writes.length, 1);
+});
+
+test('a note round-trips through the workspace, and an empty note deletes the file', () => {
+  const root = tempWorkspace();
+  assert.equal(readNotes(root), '');
+
+  writeNotes(root, 'Prefer the docs/ folder over src/ when explaining APIs.');
+  assert.match(readNotes(root), /Prefer the docs/);
+  assert.ok(fs.existsSync(path.join(root, NOTES_FILE)));
+
+  writeNotes(root, '   ');
+  assert.equal(readNotes(root), '');
+  assert.equal(fs.existsSync(path.join(root, NOTES_FILE)), false);
+});
+
+test('the note route saves the text and pushes it to the running agent', async () => {
+  const { routes, listeners } = harness();
+  const root = tempWorkspace();
+  const injected = [];
+  const agent = { session: { meta: { cwd: root } }, inject: (payload) => injected.push(payload) };
+  listeners.get('agent/created')({ agent });
+  injected.length = 0;
+
+  const response = fakeResponse();
+  routes.get('/aiignore/notes')(fakeRequest({ method: 'POST', url: '/aiignore/notes', body: JSON.stringify({ text: 'Say hello in Chinese.' }) }), response);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+
+  assert.equal(JSON.parse(response.body).injected, true);
+  assert.match(readNotes(root), /Say hello in Chinese/);
+  assert.equal(injected.length, 1);
+  assert.match(injected[0].content[0].text, /Say hello in Chinese/);
+
+  const read = fakeResponse();
+  routes.get('/aiignore/notes')(fakeRequest({ method: 'GET', url: '/aiignore/notes' }), read);
+  assert.match(JSON.parse(read.body).notes, /Say hello in Chinese/);
+});
+
+test('uploads are filtered by arrival time and typed from their magic bytes', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'aiignore-home-'));
+  const bucket = path.join(home, 'attachments', 'v1', 'objects', 'ab');
+  fs.mkdirSync(bucket, { recursive: true });
+  const png = path.join(bucket, 'ab'.repeat(32));
+  fs.writeFileSync(png, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4]));
+  const old = path.join(bucket, 'cd'.repeat(32));
+  fs.writeFileSync(old, Buffer.from([0x25, 0x50, 0x44, 0x46, 1, 2, 3, 4]));
+  const past = new Date(Date.now() - 3600_000);
+  fs.utimesSync(old, past, past);
+
+  const uploads = recentUploads(Date.now() - 60_000, home);
+  assert.equal(uploads.length, 1);
+  assert.equal(uploads[0].type, 'png');
+  assert.equal(uploads[0].bytes, 12);
+  assert.equal(uploads[0].name.length, 8);
+});
+
+test('a note left in the workspace reaches the next session without a click', () => {
+  const { listeners } = harness();
+  const root = tempWorkspace();
+  writeNotes(root, 'This repo talks to Stripe; never print keys.');
+  const injected = [];
+  const agent = { session: { meta: { cwd: root } }, inject: (payload) => injected.push(payload) };
+
+  listeners.get('agent/created')({ agent });
+  const notes = injected.find((item) => /Stripe/.test(item.content[0].text));
+  assert.ok(notes, 'the note should be injected at session start');
 });
