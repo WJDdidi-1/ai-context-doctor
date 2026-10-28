@@ -1188,7 +1188,11 @@ export function apply(ctx, config = {}) {
         }
       }
 
-      if (report.healthScore >= options.healthThreshold) return;
+      // Speak up when the score is low, or when there is something concrete to
+      // suggest. A single lockfile can leave the score near 80 and still be the
+      // one thing worth telling the agent to skip.
+      const hasSuggestions = Array.isArray(report.suggestedAiignore) && report.suggestedAiignore.length > 0;
+      if (report.healthScore >= options.healthThreshold && hasSuggestions !== true) return;
       if (typeof agent.inject !== 'function') return;
 
       agent.inject({
