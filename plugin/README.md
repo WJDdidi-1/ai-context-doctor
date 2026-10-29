@@ -111,12 +111,20 @@ store cannot answer, the panel falls back to the directory the slot hands it
 (`?cwd=`), then to the agent and session registries, then to whatever was
 scanned last. Only an absolute path to an existing directory is accepted.
 
-The aggregate view lives in the left rail, under New Session: **Context across
-your workspaces** scans every folder this app has been used in, ranks them
-worst-first by the score your rules leave behind, and can act without opening
-any of them — **Scan again** refreshes, **Apply rules** writes that folder's
-suggestions, **Open the panel** jumps to the conversation view. It is served by
-`GET /aiignore/overview` and cached for five minutes.
+The aggregate view lives in the left rail, under New Session: **AIignore** lists
+every conversation this app has run, worst first, and can act without opening
+any of them. Each row shows the conversation's title, folder, turns, files read
+and size; the score on the left is the one your rules and strength leave behind,
+with the pre-rule number trailing behind it when the two differ, and a
+`N kept out` badge once a clean-up covers something. **Scan again** refreshes,
+**Clean up N** writes that conversation's suggestions, **Open the panel** jumps
+to it. It is served by `GET /aiignore/conversations` (nineteen routes in total).
+
+Both numbers are computed from the session projection, never from a guess: the
+conversation score is what that chat was actually handed, and the effective
+score re-runs the same decision the guard uses — rules, then strength — so a
+conversation that read `dist/` before you had a rule shows `74` and `100`
+afterwards, with the file named under **No longer reaching the model**.
 
 Styling comes from the Host's design tokens (`--dsw-*`) with fallbacks, so the
 panel follows light and dark themes instead of shipping its own palette. Every

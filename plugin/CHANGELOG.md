@@ -1,3 +1,21 @@
+## 0.23.1
+
+The left-rail page can now show that a clean-up worked, not just that it ran.
+
+- **A conversation has two scores.** `conversationReport` already scored what a
+  chat was handed; it now also re-runs the guard's own decision — your `.aiignore`
+  rules first, then your strength — over those same reads. History never moves;
+  the number that can move is the one your rules leave behind. `effectiveScore`,
+  `effectiveBreakdown`, `covered` and `coveredBytes` are returned, and
+  `conversationIndex` carries them, so the left page ranks and displays the
+  surviving score.
+- **A row proves it happened.** After **Clean up N**, the row's score goes
+  `74 → 100` and gains a `N kept out` badge, with the pre-rule score trailing in
+  the meta line. No second place to look.
+- **README caught up.** The left-rail section still described the old
+  workspace-overview page; it now documents the conversation index, both scores
+  and the route behind it.
+
 ## 0.23.0
 
 The panel stops calling itself by the wrong name, Optimize proves what it did,

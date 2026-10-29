@@ -544,6 +544,14 @@ function rulesForFiles(files) {
  * @param {{ home?: string }} [options]
  * @returns {object|null}
  */
+function rulesIn(cwd) {
+  try {
+    return parseRules(fs.readFileSync(path.join(cwd, '.aiignore'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
 export function conversationReport(sessionId, options = {}) {
   const home = typeof options.home === 'string' ? options.home : dshHome();
   const projection = readProjection(sessionId, home);
@@ -554,6 +562,29 @@ export function conversationReport(sessionId, options = {}) {
   const readBytes = read.reduce((sum, file) => sum + file.bytes, 0);
   const noiseFiles = read.filter((file) => file.reason !== undefined && file.category !== undefined);
   const scored = scoreNoise(noiseFiles.map((file) => ({ bytes: file.bytes, reason: file.reason })), readBytes);
+
+  // What the conversation read is history; what your rules would still let through
+  // is the only number that can change when you press Optimize. Same decision
+  // path as the guard, so the two never disagree.
+  const level = readPolicy(projection.cwd);
+  const rules = rulesIn(projection.cwd);
+  const covered = [];
+  const stillNoise = [];
+  for (const file of noiseFiles) {
+    const relative = file.relativePath === null ? file.path : file.relativePath;
+    const verdict = decideRead({
+      root: projection.cwd,
+      filePath: file.path,
+      rules,
+      level
+    });
+    if (verdict.block === true) {
+      covered.push({ path: relative, bytes: file.bytes, reason: verdict.reason });
+    } else {
+      stillNoise.push({ bytes: file.bytes, reason: file.reason });
+    }
+  }
+  const effective = scoreNoise(stillNoise, readBytes);
 
   return {
     id: projection.id,
@@ -573,6 +604,11 @@ export function conversationReport(sessionId, options = {}) {
     score: scored.score,
     scoreLost: scored.lost,
     scoreBreakdown: scored.breakdown,
+    effectiveScore: effective.score,
+    effectiveLost: effective.lost,
+    effectiveBreakdown: effective.breakdown,
+    covered: covered.slice(0, 8),
+    coveredBytes: covered.reduce((sum, file) => sum + file.bytes, 0),
     noise: noiseFiles.slice(0, 8).map((file) => ({
       path: file.relativePath === null ? file.path : file.relativePath,
       relativePath: file.relativePath,
@@ -733,6 +769,8 @@ export function conversationIndex(options = {}) {
       readFiles: report.readFiles,
       readBytes: report.readBytes,
       score: report.score,
+      effectiveScore: report.effectiveScore,
+      covered: report.covered.length,
       noise: report.noise.length,
       at: Math.round(at)
     });

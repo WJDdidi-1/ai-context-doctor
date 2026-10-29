@@ -109,6 +109,35 @@ test('noise reads are named, cost score, and become the suggested rules', () => 
   assert.deepEqual(report.suggestedAiignore, ['dist/']);
 });
 
+test('what a rule keeps out is scored separately from what the conversation read', () => {
+  const { home, workspace } = makeHome();
+  fs.mkdirSync(path.join(workspace, 'dist'), { recursive: true });
+  fs.writeFileSync(path.join(workspace, 'dist', 'bundle.js'), 'x'.repeat(4000));
+  writeProjection(home, SESSION, {
+    cwd: workspace,
+    title: 'Wandered into dist',
+    fileOps: [
+      { seq: 1, kind: 'read', tool: 'read', err: false, added: 0, removed: 0, path: path.join(workspace, 'dist', 'bundle.js'), time: 10 }
+    ]
+  });
+
+  // Strength off: nothing would be stopped, so both numbers agree.
+  fs.writeFileSync(path.join(workspace, '.aiignore.policy.json'), JSON.stringify({ level: 1, key: 'off' }));
+  const off = conversationReport(SESSION, { home });
+  assert.equal(off.effectiveScore, off.score, 'with the guard off, what was read is what gets through');
+  assert.equal(off.covered.length, 0);
+
+  // A rule written afterwards cannot change history — but it changes this number,
+  // which is the one Optimize is supposed to move.
+  fs.writeFileSync(path.join(workspace, '.aiignore'), 'dist/\n');
+  const after = conversationReport(SESSION, { home });
+  assert.equal(after.score, off.score, 'the reads already happened');
+  assert.equal(after.effectiveScore, 100);
+  assert.equal(after.coveredBytes, 4000);
+  assert.deepEqual(after.covered.map((entry) => entry.path), ['dist/bundle.js']);
+  assert.equal(after.covered[0].reason, 'listed in .aiignore');
+});
+
 test('reads outside the folder are counted but never treated as project noise', () => {
   const { home, workspace } = makeHome();
   const outside = path.join(home, 'elsewhere', 'notes.log');

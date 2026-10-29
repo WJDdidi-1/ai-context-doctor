@@ -114,6 +114,37 @@
     const now = Date.now();
     const TOK = (bytes) => ({ min: Math.round(bytes / 4), max: Math.round(bytes / 3.2), bytes });
 
+    const conversationRows = [
+      {
+        id: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50',
+        title: 'Make the panel follow this conversation',
+        cwd: '/Users/you/code/demo-noise',
+        turns: 12,
+        tokens: 1219286,
+        readFiles: 48,
+        readBytes: 457486,
+        score: 74,
+        effectiveScore: 74,
+        covered: 0,
+        noise: 3,
+        at: 1793237207000
+      },
+      {
+        id: 'session-5e22-4390-9aeb-1a9f1e8cde50-x',
+        title: 'Clean up the release workflow',
+        cwd: '/Users/you/code/other-project',
+        turns: 31,
+        tokens: 300000,
+        readFiles: 22,
+        readBytes: 118000,
+        score: 96,
+        effectiveScore: 96,
+        covered: 0,
+        noise: 0,
+        at: 1793230000000
+      }
+    ];
+
     const SCENARIOS = {
       noisy: {
         workspace: '/Users/you/code/demo-noise',
@@ -325,35 +356,7 @@
         });
       }
       if (url.indexOf('/aiignore/conversations') === 0) {
-        return record({
-          current: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50',
-          conversations: [
-            {
-              id: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50',
-              title: 'Make the panel follow this conversation',
-              cwd: '/Users/you/code/demo-noise',
-              turns: 12,
-              tokens: 1219286,
-              readFiles: 48,
-              readBytes: 457486,
-              score: 74,
-              noise: 3,
-              at: 1793237207000
-            },
-            {
-              id: 'session-5e22-4390-9aeb-1a9f1e8cde50-x',
-              title: 'Clean up the release workflow',
-              cwd: '/Users/you/code/other-project',
-              turns: 31,
-              tokens: 640000,
-              readFiles: 22,
-              readBytes: 120400,
-              score: 96,
-              noise: 0,
-              at: 1793230000000
-            }
-          ]
-        });
+        return record({ current: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50', conversations: conversationRows });
       }
       if (url.indexOf('/aiignore/conversation') === 0) {
         return record({
@@ -434,6 +437,16 @@
         return record({ level: next, levels: LEVELS, policy: 'deny' });
       }
       if (url === '/aiignore/optimize') {
+        const asked = body === null || body === undefined ? {} : body;
+        if (typeof asked.session === 'string') {
+          const row = conversationRows.find((entry) => entry.id === asked.session);
+          if (row !== undefined) {
+            row.covered = row.noise;
+            row.noise = 0;
+            row.effectiveScore = 100;
+          }
+        }
+
         // The Host reports the effective score on both sides: rules change what
         // still reaches the model, not how noisy the folder is.
         const named = body && typeof body.cwd === 'string' ? body.cwd : null;
