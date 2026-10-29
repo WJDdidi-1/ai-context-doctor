@@ -1243,3 +1243,38 @@
   gap: 6px;
   flex: none;
 }
+
+.aicd-toast {
+  margin: 0 12px 6px;
+  padding: 5px 8px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, 0.1));
+  color: var(--dsw-alias-label-secondary, inherit);
+  font: var(--dsw-font-xxxs-11, 11px/14px inherit);
+}
+
+.aicd-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: var(--dsw-radius-md, 12px);
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.06));
+}
+
+.aicd-result-score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.aicd-covered {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aicd-covered .aicd-row {
+  cursor: default;
+}

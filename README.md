@@ -160,9 +160,9 @@ console.log(report.healthScore, report.topNoise);
 dsh plugin --profile web add dsh-aiignore
 ```
 
-The plugin also adds a **Context budget** tab to the right sidebar, opened from a folder button in the composer. It answers three questions in that order: what this conversation actually fed the model, what is left after your rules and your strength, and what one click would change. Under the score sit the arithmetic behind it, the strength slider, a table that scores all five notches before you pick one, and an optimize button that names the rules it will write and reports the score before and after. It follows the Harness light and dark themes.
+The plugin also adds a **AIignore** tab to the right sidebar, opened from a folder button in the composer. It answers three questions in that order: what this conversation actually fed the model, what is left after your rules and your strength, and what one click would change. Under the score sit the arithmetic behind it (folded away), five strength buttons that each show what they would score on your repository, and an optimize button that names the rules it will write, then reports the new score and the files that stopped reaching the model. It follows the Harness light and dark themes.
 
-![The Context budget tab in the right sidebar](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
+![The AIignore tab in the right sidebar](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
 
 It declares `engines.dsh: ">=0.2.0"`, and the Harness checks that range before installing. The source, its configuration and its limits are in [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
 

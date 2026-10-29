@@ -172,7 +172,18 @@ export function buildReport({ cwd, state, policy }) {
           bytes: report.scannedBytes,
           healthScore: report.healthScore,
           noisePercent: report.noisePercent,
-          tokenEstimate: report.tokenEstimate
+          tokenEstimate: report.tokenEstimate,
+          // The panel shows two numbers: how noisy the folder is, and how much
+          // of that noise still reaches the model once rules and strength are
+          // applied. Dropping these here is what once made Optimize look inert.
+          effectiveScore: report.effectiveScore,
+          effectiveLost: report.effectiveLost,
+          effectiveBreakdown: report.effectiveBreakdown,
+          blockedBytes: report.blockedBytes,
+          blocked: report.blocked,
+          topNoise: report.topNoise,
+          suggestedAiignore: report.suggestedAiignore,
+          truncated: report.truncated === true
         },
     skipped: [...state.skipped.values()].map((item) => ({ ...item })),
     reads: [...state.reads.values()].map((item) => ({ ...item })),

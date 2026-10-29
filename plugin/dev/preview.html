@@ -188,6 +188,9 @@
       if (!Array.isArray(scenario.suggestedAiignore)) {
         scenario.suggestedAiignore = name === 'noisy' ? ['dist/', 'package-lock.json'] : [];
       }
+      // The real report carries the suggestion inside `scanned`, next to the
+      // effective score it explains.
+      scenario.scanned.suggestedAiignore = scenario.suggestedAiignore;
       if (!scenario.scanned.scoreBreakdown) {
         const rows = name === 'noisy' ? BREAKDOWN_NOISY : BREAKDOWN_CLEAN;
         scenario.scanned.scoreBreakdown = rows;
@@ -321,6 +324,37 @@
           ]
         });
       }
+      if (url.indexOf('/aiignore/conversations') === 0) {
+        return record({
+          current: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50',
+          conversations: [
+            {
+              id: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50',
+              title: 'Make the panel follow this conversation',
+              cwd: '/Users/you/code/demo-noise',
+              turns: 12,
+              tokens: 1219286,
+              readFiles: 48,
+              readBytes: 457486,
+              score: 74,
+              noise: 3,
+              at: 1793237207000
+            },
+            {
+              id: 'session-5e22-4390-9aeb-1a9f1e8cde50-x',
+              title: 'Clean up the release workflow',
+              cwd: '/Users/you/code/other-project',
+              turns: 31,
+              tokens: 640000,
+              readFiles: 22,
+              readBytes: 120400,
+              score: 96,
+              noise: 0,
+              at: 1793230000000
+            }
+          ]
+        });
+      }
       if (url.indexOf('/aiignore/conversation') === 0) {
         return record({
           id: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50',
@@ -337,6 +371,7 @@
             { path: 'dist/bundle.js', relativePath: 'dist/bundle.js', bytes: 150000, reason: 'generated build output' },
             { path: 'package-lock.json', relativePath: 'package-lock.json', bytes: 30224, reason: 'lockfile' }
           ],
+          suggestedAiignore: ['dist/', 'package-lock.json'],
           reads: [
             { path: 'src/index.js', relativePath: 'src/index.js', bytes: 24000 },
             { path: 'src/legacy.js', relativePath: 'src/legacy.js', bytes: 90000 }
@@ -413,7 +448,19 @@
           blockedNow: [
             { path: 'dist/bundle.js', blocked: true },
             { path: 'package-lock.json', blocked: true }
-          ]
+          ],
+          covered: [
+            { path: 'dist/bundle.js', bytes: 146000, reason: 'generated build output' },
+            { path: 'package-lock.json', bytes: 30000, reason: 'lockfile' }
+          ],
+          report: window.__lastReport === null
+            ? null
+            : Object.assign({}, window.__lastReport, {
+                scanned: Object.assign({}, window.__lastReport.scanned, {
+                  effectiveScore: Math.min(100, before + 6),
+                  suggestedAiignore: []
+                })
+              })
         });
       }
       if (url === '/aiignore/optimize/undo') return record({ undone: true, restored: 'previous' });

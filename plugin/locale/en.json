@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Context Budget",
-    "description": "Shows what one conversation handed the model, which of it was noise, and applies the .aiignore rules that keep it out next time."
+    "title": "AIignore",
+    "description": "See what a conversation feeds the model, what your rules keep out, and what one click would change."
   }
 }

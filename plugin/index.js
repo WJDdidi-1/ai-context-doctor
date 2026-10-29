@@ -695,6 +695,52 @@ export function activeWorkspace(home = dshHome()) {
  * a workspace usually holds several conversations, and "analyse this chat"
  * means the chat, not the folder.
  */
+/**
+ * Every conversation this app has a projection for, newest first.
+ *
+ * The left-rail page is an index, not a dossier: enough per conversation to
+ * rank it and act on it (score, what it read, how much of that was noise),
+ * without opening each panel in turn.
+ */
+export function conversationIndex(options = {}) {
+  const home = typeof options.home === 'string' ? options.home : dshHome();
+  const root = path.join(home, 'storages', 'session_projcache', 'sessions');
+  let names = [];
+  try {
+    names = fs.readdirSync(root);
+  } catch {
+    return [];
+  }
+
+  const rows = [];
+  for (const name of names) {
+    if (name.startsWith('session-') !== true || name.endsWith('.json') !== true) continue;
+    const id = name.slice(0, -5);
+    let at = 0;
+    try {
+      at = fs.statSync(path.join(root, name)).mtimeMs;
+    } catch {
+      continue;
+    }
+    const report = conversationReport(id, { home });
+    if (report === null || report.cwd === null) continue;
+    rows.push({
+      id: report.id,
+      title: report.title,
+      cwd: report.cwd,
+      turns: report.turns,
+      tokens: report.tokens,
+      readFiles: report.readFiles,
+      readBytes: report.readBytes,
+      score: report.score,
+      noise: report.noise.length,
+      at: Math.round(at)
+    });
+  }
+
+  return rows.sort((left, right) => right.at - left.at);
+}
+
 export function recentSessions(home = dshHome(), limit = 12) {
   const root = sessionsRoot(home);
   let buckets;
@@ -1664,6 +1710,24 @@ export function apply(ctx, config = {}) {
     return sendJson(res, 200, { ...report, available: recentSessions().map((entry) => ({ id: entry.id, at: entry.at, cwd: entry.cwd })) });
   };
 
+  /** Every conversation, summarised, for the left-rail index page. */
+  let conversationsCache = { at: 0, rows: [] };
+  const conversationsHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+
+    const fresh = new URL(req.url, 'http://localhost').searchParams.get('fresh') === '1';
+    const now = Date.now();
+    if (fresh === true || now - conversationsCache.at > 30 * 1000) {
+      conversationsCache = { at: now, rows: conversationIndex() };
+    }
+    const active = activeSession();
+    return sendJson(res, 200, {
+      current: active === null ? null : active.id,
+      conversations: conversationsCache.rows
+    });
+  };
+
   /** The strength the user picked, and the numbers behind every level. */
   const policyHandler = (req, res) => {
     if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
@@ -1777,7 +1841,13 @@ export function apply(ctx, config = {}) {
           after: after.effectiveScore,
           rawBefore: before.healthScore,
           rawAfter: after.healthScore,
-          blockedNow
+          blockedNow,
+          // What the rules just took out of the model's way, with sizes, so the
+          // panel can name files instead of only claiming a number moved.
+          covered: Array.isArray(after.blocked) ? after.blocked : [],
+          // The fresh report, so the panel's headline numbers move on the same
+          // click that wrote the file — without it they waited for a poll.
+          report: buildReport({ cwd, state: stateFor(cwd), policy: readPolicy(cwd) })
         });
       } catch {
         return sendJson(res, 400, { error: 'optimize-failed' });
@@ -1813,6 +1883,7 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/debug', handler: debugHandler });
       server.register({ kind: 'exact', path: '/aiignore/sessions', handler: sessionsHandler });
       server.register({ kind: 'exact', path: '/aiignore/conversation', handler: conversationHandler });
+      server.register({ kind: 'exact', path: '/aiignore/conversations', handler: conversationsHandler });
       server.register({ kind: 'exact', path: '/aiignore/policy', handler: policyHandler });
       server.register({ kind: 'exact', path: '/aiignore/levels', handler: levelsHandler });
       server.register({ kind: 'exact', path: '/aiignore/optimize', handler: optimizeHandler });
