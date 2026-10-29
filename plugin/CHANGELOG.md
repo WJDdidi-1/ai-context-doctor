@@ -1,3 +1,13 @@
+## 0.24.4
+
+- A conversation that has not opened a file no longer shows a 0% bar under
+  "0 B read": the Chat tab says **Nothing read yet** once, and explains that the
+  cost appears as the conversation works.
+- The conversation picker only appears when there is more than one conversation
+  to pick. With a single one it duplicated the title in the header.
+- Fixed a crash when the chat had nothing yet (`reads` was read before it was
+  declared) that the preview caught as a blank tab.
+
 ## 0.24.3
 
 - A refused read never had a way back. The Chat tab now lists **Blocked from

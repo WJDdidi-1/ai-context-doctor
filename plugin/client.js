@@ -77,6 +77,8 @@ window.__ModuleLoader__.load({
         rescan: 'Scan again',
         noteWhy: 'A few words in your own voice, read by the agent before it starts on this folder. Nothing here is enforced — it is context, not a command.',
         chatCurrent: 'current',
+        chatNothing: 'Nothing read yet',
+        chatNothingHint: 'This conversation has not opened a file yet. Its cost shows up here as it does — including anything the guard keeps out.',
         chatEmpty: 'No conversation data yet.',
         chatComposition: 'What this conversation spent tokens on',
         working: 'Working…',
@@ -250,6 +252,8 @@ window.__ModuleLoader__.load({
         rescan: '重新扫描',
         noteWhy: 'AI 每次开始干活前都会先读这段话。用它说明「这个仓库里什么重要」，用你自己的话就行。',
         chatCurrent: '当前',
+        chatNothing: '还没有读入文件',
+        chatNothingHint: '这个对话还没有打开过文件。读过之后，它的开销会出现在这里，被拦下的部分也会列出来。',
         chatEmpty: '还没有对话数据。',
         chatComposition: '这个对话的 token 花在哪',
         working: '处理中…',
@@ -2776,7 +2780,26 @@ window.__ModuleLoader__.load({
       // A read the guard refused is the one place the model was told "no" —
       // showing it here is what lets the user answer that "no" with a yes.
       const blockedReads = skipped.filter((item) => item.attempts > 0);
+      const available = Array.isArray(conv.available) ? conv.available : [];
       const reads = Array.isArray(conv.reads) ? conv.reads.slice(0, 6) : [];
+      // A brand-new conversation has no composition and nothing to list. Saying
+      // so once beats three empty sections and a 0% bar.
+      const nothingYet = total === 0 && blockedReads.length === 0 && reads.length === 0;
+
+      if (nothingYet === true) {
+        return h('div', { className: 'aicd-body' },
+          h(Empty, {
+            icon: 'spark',
+            title: tr('chatNothing'),
+            hint: tr('chatNothingHint')
+          }),
+          available.length > 1
+            ? h('div', { className: 'aicd-section' },
+                h('div', { className: 'aicd-section-title' }, tr('chatPick')),
+                h('select', { className: 'aicd-select', 'aria-label': tr('chatPick'), value: pinnedSession === null ? conv.id : pinnedSession, onChange: (event) => onPin(event.target.value) },
+                  available.map((entry) => h('option', { key: entry.id, value: entry.id }, entry.id === conv.id ? `${entry.id} · ${tr('chatCurrent')}` : entry.id))))
+            : null);
+      }
 
       return h('div', { className: 'aicd-body' },
         h('div', { className: 'aicd-chat' },
@@ -2846,18 +2869,20 @@ window.__ModuleLoader__.load({
                 })))
             : null,
 
-          h('div', { className: 'aicd-section' },
-            h('div', { className: 'aicd-section-title' }, tr('chatPick')),
-            h('select', {
-              className: 'aicd-select',
-              'aria-label': tr('chatPick'),
-              value: pinnedSession === null ? conv.id : pinnedSession,
-              onChange: (event) => onPin(event.target.value)
-            },
-              (Array.isArray(conv.available) ? conv.available : []).map((entry) => h('option', {
-                key: entry.id,
-                value: entry.id
-              }, `${entry.id.slice(-8)} · ${shortPath(entry.cwd || '')}${entry.id === conv.id ? ` · ${tr('chatCurrent')}` : ''}`))))));
+          available.length > 1
+            ? h('div', { className: 'aicd-section' },
+                h('div', { className: 'aicd-section-title' }, tr('chatPick')),
+                h('select', {
+                  className: 'aicd-select',
+                  'aria-label': tr('chatPick'),
+                  value: pinnedSession === null ? conv.id : pinnedSession,
+                  onChange: (event) => onPin(event.target.value)
+                },
+                  available.map((entry) => h('option', {
+                    key: entry.id,
+                    value: entry.id
+                  }, `${entry.id.slice(-8)} · ${shortPath(entry.cwd || '')}${entry.id === conv.id ? ` · ${tr('chatCurrent')}` : ''}`))))
+            : null));
     }
 
     //#endregion chat
