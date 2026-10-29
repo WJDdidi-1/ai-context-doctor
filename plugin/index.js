@@ -13,6 +13,8 @@ import {
   levelBlocksCategory,
   scoreNoise,
   noiseCategory,
+  contextScore,
+  isBinaryPath,
   LEVELS,
   DEFAULT_LEVEL
 } from 'ai-context-doctor';
@@ -561,7 +563,17 @@ export function conversationReport(sessionId, options = {}) {
   const read = files.filter((file) => file.reads > 0);
   const readBytes = read.reduce((sum, file) => sum + file.bytes, 0);
   const noiseFiles = read.filter((file) => file.reason !== undefined && file.category !== undefined);
-  const scored = scoreNoise(noiseFiles.map((file) => ({ bytes: file.bytes, reason: file.reason })), readBytes);
+  const largestRead = read.reduce((biggest, file) => (file.bytes > biggest ? file.bytes : biggest), 0);
+  const binaryRead = read.reduce((sum, file) => sum + (isBinaryPath(file.path) ? file.bytes : 0), 0);
+  // Same five-dimension model as the folder score, pointed at one conversation:
+  // a chat that opened 300 files costs context even when none of them is noise.
+  const scored = contextScore({
+    files: read.length,
+    bytes: readBytes,
+    largestBytes: largestRead,
+    binaryBytes: binaryRead,
+    noise: noiseFiles.map((file) => ({ bytes: file.bytes, reason: file.reason }))
+  });
 
   // What the conversation read is history; what your rules would still let through
   // is the only number that can change when you press Optimize. Same decision
@@ -584,7 +596,13 @@ export function conversationReport(sessionId, options = {}) {
       stillNoise.push({ bytes: file.bytes, reason: file.reason });
     }
   }
-  const effective = scoreNoise(stillNoise, readBytes);
+  const effective = contextScore({
+    files: read.length - covered.length,
+    bytes: readBytes - covered.reduce((sum, file) => sum + file.bytes, 0),
+    largestBytes: largestRead,
+    binaryBytes: binaryRead,
+    noise: stillNoise
+  });
 
   return {
     id: projection.id,

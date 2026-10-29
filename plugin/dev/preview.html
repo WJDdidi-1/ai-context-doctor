@@ -196,17 +196,21 @@
 
     // Scoring, mirrored from lib/rules.js so the bars show what the Host would
     // compute: each category can cost its weight, scaled by its share.
+    // Same five dimensions the real scorer produces: one of them can be moved by
+    // rules (noise), the other four describe the folder itself.
     const BREAKDOWN_NOISY = [
-      { id: 'build', label: 'build output', weight: 40, bytes: 918273, share: 58, lost: 23.4 },
-      { id: 'large', label: 'large files', weight: 25, bytes: 0, share: 0, lost: 0 },
-      { id: 'lockfile', label: 'lockfiles', weight: 20, bytes: 36044, share: 2.3, lost: 0.5 },
-      { id: 'log', label: 'logs', weight: 15, bytes: 18841, share: 1.2, lost: 0.2 }
+      { id: 'noise', label: 'waste', hint: 'Generated output, lockfiles and log files.', weight: 30, bytes: 980000, lost: 26.4 },
+      { id: 'volume', label: 'sheer size', hint: 'How much text the agent has to read.', weight: 25, bytes: 1572864, lost: 25 },
+      { id: 'concentration', label: 'one big file', hint: 'The largest file, as a share of the folder.', weight: 20, bytes: 1048576, lost: 20 },
+      { id: 'sprawl', label: 'file count', hint: 'How many files the agent has to pick from.', weight: 15, bytes: 0, lost: 0 },
+      { id: 'binary', label: 'binaries', hint: 'Bytes no model can read as text.', weight: 10, bytes: 0, lost: 0 }
     ];
     const BREAKDOWN_CLEAN = [
-      { id: 'build', label: 'build output', weight: 40, bytes: 0, share: 0, lost: 0 },
-      { id: 'large', label: 'large files', weight: 25, bytes: 0, share: 0, lost: 0 },
-      { id: 'lockfile', label: 'lockfiles', weight: 20, bytes: 12044, share: 3, lost: 0.6 },
-      { id: 'log', label: 'logs', weight: 15, bytes: 0, share: 0, lost: 0 }
+      { id: 'noise', label: 'waste', hint: 'Generated output, lockfiles and log files.', weight: 30, bytes: 0, lost: 0 },
+      { id: 'volume', label: 'sheer size', hint: 'How much text the agent has to read.', weight: 25, bytes: 204800, lost: 3.1 },
+      { id: 'concentration', label: 'one big file', hint: 'The largest file, as a share of the folder.', weight: 20, bytes: 40960, lost: 0 },
+      { id: 'sprawl', label: 'file count', hint: 'How many files the agent has to pick from.', weight: 15, bytes: 0, lost: 0 },
+      { id: 'binary', label: 'binaries', hint: 'Bytes no model can read as text.', weight: 10, bytes: 0, lost: 0 }
     ];
     Object.entries(SCENARIOS).forEach(([name, scenario]) => {
       if (scenario === null) return;
@@ -240,6 +244,9 @@
         ) / 10;
         scenario.scanned.effectiveScore = Math.max(0, Math.round(100 - scenario.scanned.effectiveLost));
         scenario.scanned.blockedBytes = name === 'noisy' ? 400000 : 0;
+        scenario.scanned.allowedBytes = name === 'noisy' ? 862208 : 204800;
+        scenario.scanned.allowedFiles = name === 'noisy' ? 4 : 2;
+        scenario.scanned.blockedFiles = name === 'noisy' ? 2 : 0;
       }
     });
 
@@ -311,6 +318,17 @@
       if (data === null) return record({ error: 'boom' }, 500);
 
       const scannedCwd = url.match(/[?&]cwd=([^&]+)/);
+      const slow = (body, status) =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              ok: status === undefined || status < 400,
+              status: status || 200,
+              json: () => Promise.resolve(body)
+            });
+          }, 260);
+        });
+
       if (url.indexOf('/aiignore/scan') === 0 && scannedCwd !== null) {
         bound = decodeURIComponent(scannedCwd[1]);
       }
@@ -327,7 +345,7 @@
           ? Object.assign({}, data, { workspace: null, policy: null, source: 'none' })
           : Object.assign({}, data, { workspace: workspace, source: source });
         window.__lastReport = answer;
-        return record(answer);
+        return slow(answer);
       }
 
       if (url.indexOf('/aiignore/tree') === 0) {
@@ -344,7 +362,7 @@
         });
         const scanned = SCENARIOS.noisy;
         window.__lastReport = scanned;
-        return record(scanned);
+        return slow(scanned);
       }
       if (url.indexOf('/aiignore/workspaces') === 0) {
         return record({
@@ -451,7 +469,14 @@
         // still reaches the model, not how noisy the folder is.
         const named = body && typeof body.cwd === 'string' ? body.cwd : null;
         const before = (window.__lastReport && window.__lastReport.scanned.effectiveScore) || 0;
-        return record({
+        const target = SCENARIOS[scenario];
+        if (target && target.scanned) {
+          target.scanned.effectiveScore = Math.min(100, before + 6);
+          target.scanned.suggestedAiignore = [];
+          delete target.scanned.effectiveBreakdown;
+          window.__lastReport = null;
+        }
+        return slow({
           workspace: named || '/Users/you/code/demo-noise',
           added: ['dist/', 'package-lock.json'],
           written: true,

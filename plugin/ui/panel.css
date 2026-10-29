@@ -1244,6 +1244,37 @@
   flex: none;
 }
 
+.aicd-action {
+  padding: 0 10px 8px;
+}
+
+.aicd-progress {
+  position: relative;
+  height: 28px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aicd-progress-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--dsw-alias-state-business-primary, #4a7edb);
+  opacity: 0.28;
+  transition: width 220ms ease;
+}
+
+.aicd-progress-label {
+  position: relative;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary, rgba(127, 127, 127, 0.95));
+}
+
 .aicd-toast {
   margin: 0 12px 6px;
   padding: 5px 8px;

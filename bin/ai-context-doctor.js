@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const packageInfo = require('../package.json');
-const { scanRepository, formatBytes, statusFor, writeAiignore } = require('../lib');
+const { scanRepository, formatBytes, statusFor, writeAiignore, parseRules, readPolicy, levelFor } = require('../lib');
 
 const args = process.argv.slice(2);
 const KNOWN_FLAGS = ['--json', '--write', '--dry-run', '--help', '--version'];
@@ -102,6 +102,13 @@ function assertReadableDirectory(dir) {
   }
 }
 
+function printScoreBreakdown(breakdown) {
+  for (const item of breakdown) {
+    const lost = `${item.lost}`.padStart(5);
+    console.log(`  ${item.label.padEnd(22)} -${lost} / ${item.weight}`);
+  }
+}
+
 function printTable(items, emptyMessage) {
   if (items.length === 0) {
     console.log(emptyMessage);
@@ -117,7 +124,18 @@ function printTable(items, emptyMessage) {
 
 assertReadableDirectory(cwd);
 
-const report = scanRepository(cwd);
+// The CLI reads the same two files the guard reads, so its numbers describe what
+// an agent in this folder would actually be handed — not a hypothetical scan.
+function localRules() {
+  try {
+    return parseRules(fs.readFileSync(path.join(cwd, '.aiignore'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+const level = readPolicy(cwd);
+const report = scanRepository(cwd, { rules: localRules(), level });
 
 let writeResult = null;
 
@@ -164,6 +182,12 @@ console.log(`Scanned: ${scannedFiles} files, ${formatBytes(scannedBytes)}`);
 console.log('');
 console.log(`AI Context Health: ${healthScore}/100`);
 console.log(`Status: ${statusFor(healthScore)}`);
+console.log('');
+console.log(`What reaches the model: ${report.effectiveScore}/100`);
+console.log(`  strength ${levelFor(level).level} (${levelFor(level).label}) · ${formatBytes(report.allowedBytes)} of ${formatBytes(scannedBytes)} let through`);
+console.log('');
+console.log('Where the points go:');
+printScoreBreakdown(report.scoreBreakdown);
 console.log('');
 console.log('Context noise estimate:');
 console.log(`${noisePercent}% likely noise`);

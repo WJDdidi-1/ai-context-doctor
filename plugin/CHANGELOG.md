@@ -1,3 +1,19 @@
+## 0.24.0
+
+- The Optimize button is the panel's centre. It sits under the tabs, and one
+  press runs the whole job in order: rescan the folder, re-score what is left,
+  write the rules, then re-score again and move the number on screen. The bar
+  only advances when the request behind that phase has actually returned.
+- Scores are five dimensions now (`noise`, `volume`, `concentration`, `sprawl`,
+  `binary`), with a chip to switch the table between what is on disk and what
+  still reaches the model. Same model as the core, so the panel and the CLI
+  cannot disagree.
+- "On disk" and "Reaches the model" are labelled as such instead of being two
+  unlabelled numbers, and the let-through bytes are shown under them.
+- The conversation score uses the same five dimensions: a chat that opened 300
+  files is expensive even when none of them is noise.
+- Requires `ai-context-doctor@^0.7.0`.
+
 ## 0.23.1
 
 The left-rail page can now show that a clean-up worked, not just that it ran.
