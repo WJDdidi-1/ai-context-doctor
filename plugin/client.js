@@ -1590,6 +1590,12 @@ window.__ModuleLoader__.load({
   white-space: nowrap;
 }
 
+.aicd-level-meta {
+  margin-left: 6px;
+  color: var(--dsw-alias-label-tertiary, #8a8a8a);
+  font-size: 11px;
+}
+
 .aicd-level-score {
   font: var(--dsw-font-xxs-12, 12px/18px system-ui);
   font-variant-numeric: tabular-nums;
@@ -2414,7 +2420,10 @@ window.__ModuleLoader__.load({
             onClick: () => onPick(row.level)
           },
             h('span', { className: 'aicd-level-num' }, String(row.level)),
-            h('span', { className: 'aicd-level-label' }, row.label),
+            h('span', { className: 'aicd-level-label' }, row.label,
+              typeof row.blockedFiles === 'number' && row.blockedFiles > 0
+                ? h('span', { className: 'aicd-level-meta', title: formatBytes(row.blockedBytes || 0) }, `${row.blockedFiles} ${tr('files')}`)
+                : null),
             h('span', { className: 'aicd-level-score' },
               typeof row.effectiveScore === 'number' ? String(row.effectiveScore) : '—')
           )

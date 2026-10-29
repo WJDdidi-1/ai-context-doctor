@@ -1,3 +1,12 @@
+## 0.24.2
+
+- The strength table asks for all five scores at once, and the host used to
+  answer by walking the folder five times. It now walks once and scores the
+  same file list five ways: 44 ms → 9 ms on a 1,500-file folder, with every
+  score identical to the old per-strength scan.
+- Each row also reports how many files that strength blocks, not just bytes.
+- Requires `ai-context-doctor@^0.7.1`.
+
 ## 0.24.1
 
 - The line under the two scores still described them as "this conversation"
