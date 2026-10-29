@@ -1096,6 +1096,16 @@
   border-radius: 2px;
 }
 
+.aicd-blocked {
+  padding: 4px 0 6px;
+}
+
+.aicd-blocked-actions {
+  display: flex;
+  gap: 6px;
+  padding-left: 24px;
+}
+
 .aicd-chat-actions {
   display: flex;
   align-items: center;
