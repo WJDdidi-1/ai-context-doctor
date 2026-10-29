@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import {
+  scanLevels,
   scanRepository,
   classifyPath,
   estimateTokens,
@@ -1220,6 +1221,14 @@ export function apply(ctx, config = {}) {
    * `effectiveScore` says how much of that noise still reaches the model — which
    * is the number the Optimize button has to move.
    */
+  const rulesOf = (cwd) => {
+    try {
+      return parseRules(fs.readFileSync(path.join(cwd, '.aiignore'), 'utf8'));
+    } catch {
+      return [];
+    }
+  };
+
   const scanWithPolicy = (cwd, extra = {}) => {
     let rules = [];
     try {
@@ -1336,13 +1345,33 @@ export function apply(ctx, config = {}) {
     if (cached !== undefined && Date.now() - cached.at < LEVELS_TTL && cached.level === readPolicy(cwd)) {
       return cached.value;
     }
+    // One walk, five answers: the panel shows every strength at once, and this
+    // used to read the whole tree once per strength.
+    let previews = [];
+    try {
+      previews = scanLevels(cwd, {
+        levels: LEVELS.map((entry) => entry.level),
+        rules: rulesOf(cwd),
+        maxFiles: 4000,
+        maxBytes: 48 * 1024 * 1024
+      });
+    } catch {
+      previews = [];
+    }
     const value = LEVELS.map((entry) => {
-      let report;
-      try {
-        report = scanWithPolicy(cwd, { level: entry.level, maxFiles: 4000, maxBytes: 48 * 1024 * 1024 });
-      } catch {
-        return { level: entry.level, label: entry.label, note: entry.note, maxBytes: entry.maxBytes, effectiveScore: null, blockedBytes: null };
+      const found = previews.find((preview) => preview.level === entry.level);
+      if (found === undefined) {
+        return {
+          level: entry.level,
+          label: entry.label,
+          note: entry.note,
+          maxBytes: entry.maxBytes,
+          effectiveScore: null,
+          blockedBytes: null,
+          files: null
+        };
       }
+      const report = found.report;
       return {
         level: entry.level,
         label: entry.label,
@@ -1350,6 +1379,8 @@ export function apply(ctx, config = {}) {
         maxBytes: entry.maxBytes,
         effectiveScore: report.effectiveScore,
         blockedBytes: report.blockedBytes,
+        blockedFiles: report.blockedFiles,
+        files: report.scannedFiles,
         rules: Array.isArray(report.suggestedAiignore) ? report.suggestedAiignore.length : 0
       };
     });

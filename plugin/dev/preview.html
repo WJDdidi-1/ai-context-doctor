@@ -430,7 +430,9 @@
             label: entry.label,
             note: entry.note,
             maxBytes: entry.maxBytes,
-            effectiveScore: Math.round(raw + (100 - raw) * (factors[entry.level] || 0))
+            effectiveScore: Math.round(raw + (100 - raw) * (factors[entry.level] || 0)),
+            blockedFiles: entry.level === 1 ? 0 : Math.round(entry.level * 1.6),
+            blockedBytes: entry.level === 1 ? 0 : entry.level * 380 * 1024
           }))
         });
       }

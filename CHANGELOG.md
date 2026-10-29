@@ -2,6 +2,14 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.7.1
+
+- Add `scanLevels(root, { levels })`: the same reports for several strengths
+  from **one** directory walk. The panel shows all five strengths at once and
+  used to read the whole tree once per strength — 44 ms became 9 ms on a
+  1,500-file folder. Each preview is byte-for-byte what `scanRepository` returns
+  for that strength, which the tests assert level by level.
+
 ## 0.7.0
 
 - Score a repository on five dimensions instead of one, because "no noise" was
