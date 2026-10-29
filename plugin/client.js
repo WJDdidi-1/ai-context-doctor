@@ -44,9 +44,9 @@ window.__ModuleLoader__.load({
 
     const COPY = {
       en: {
-        entry: 'AI context',
-        tabTitle: 'AI context',
-        guideTitle: 'AI context report',
+        entry: 'Context budget',
+        tabTitle: 'Context budget',
+        guideTitle: 'Context budget',
         guideDesc: 'What this session read, what was blocked, and the note you leave for the agent.',
         score: 'Health',
         scoreHint: 'out of 100',
@@ -75,12 +75,21 @@ window.__ModuleLoader__.load({
         scoreRaw: 'without your rules the same folder scores',
         rescan: 'Scan again',
         noteWhy: 'The agent reads this before it starts working. Use it to say what matters here, in your own words.',
-        chatFollow: 'Follow the open conversation',
+        chatCurrent: 'current',
         chatEmpty: 'No conversation data yet.',
         chatComposition: 'What this conversation spent tokens on',
         working: 'Working…',
         scoreTitle: 'Why this score',
-        scoreFormula: 'Each category can cost at most its weight. What it costs is how much of the repository it occupies.',
+        scoreHow: 'How the score is computed',
+        scoreFormula: 'Start at 100. Each category can cost at most its weight, and what it costs is how much of the folder it occupies: build output 40, large files 25, lockfiles 20, logs 15. Your rules and your strength remove categories from the count, which is why the right-hand number is higher.',
+        strengthTable: 'What each notch would score',
+        strengthNow: 'current',
+        strengthUse: 'Use notch',
+        strengthPreview: 'not saved yet',
+        noteInjected: 'What the agent will read',
+        noteToggleEntry: 'where to start',
+        noteToggleAvoid: 'what not to open',
+        noteToggleTests: 'how to check itself',
         optimizeTitle: 'Make it better',
         optimizeHint: 'Writes the suggested rules into .aiignore. Your existing lines are kept, and one click puts the file back.',
         optimize: 'Optimize this workspace',
@@ -122,6 +131,9 @@ window.__ModuleLoader__.load({
         overviewHint: 'Every folder this app has been used in, scanned with the same rules as the panel.',
         overviewNone: 'No workspaces yet.',
         overviewCurrent: 'current',
+        overviewOpen: 'Open the panel',
+        overviewApply: 'Apply rules',
+        overviewWorst: 'Worst first:',
         overviewFiles: 'files',
         webTitle: 'No workspace yet',
         errorTitle: 'Could not read the report',
@@ -169,8 +181,8 @@ window.__ModuleLoader__.load({
         templateAvoid: 'Do not open dist/, build output, lockfiles or logs. If you think you need one, ask me first.',
         templateTestsLabel: 'Check my work',
         templateTests: 'After any change, run `npm test`. It is the fastest way to know you did not break something.',
-        noteTitle: 'A note for the agent',
-        noteHint: 'Saved to .aiignore.notes.md in this workspace, and sent to the agent right away.',
+        noteTitle: 'What the agent should know',
+        noteHint: 'Saved to .aiignore.notes.md in this workspace and sent to the agent right away. It is not an order the tool enforces — it is context the agent reads before it starts.',
         notePlaceholder: 'e.g. Prefer lib/ over legacy/. Never read dist/.',
         noteSave: 'Save and send',
         noteSaved: 'Saved. The agent has it.',
@@ -183,9 +195,9 @@ window.__ModuleLoader__.load({
         verdictAllowed: 'you allowed it'
       },
       zh: {
-        entry: '上下文',
-        tabTitle: 'AI 上下文',
-        guideTitle: 'AI 上下文报告',
+        entry: '上下文预算',
+        tabTitle: '上下文预算',
+        guideTitle: '上下文预算',
         guideDesc: '本次会话读了什么、挡了什么，以及你留给 AI 的说明。',
         score: '健康度',
         scoreHint: '满分 100',
@@ -214,12 +226,21 @@ window.__ModuleLoader__.load({
         scoreRaw: '不应用你的规则时，同一个文件夹是',
         rescan: '重新扫描',
         noteWhy: 'AI 每次开始干活前都会先读这段话。用它说明「这个仓库里什么重要」，用你自己的话就行。',
-        chatFollow: '跟随当前打开的对话',
+        chatCurrent: '当前',
         chatEmpty: '还没有对话数据。',
         chatComposition: '这个对话的 token 花在哪',
         working: '处理中…',
         scoreTitle: '评分从哪来',
-        scoreFormula: '每类最多扣掉它的权重；实际扣多少，取决于它占仓库的比例。',
+        scoreHow: '评分是怎么算的',
+        scoreFormula: '从 100 分起扣。每类最多扣掉它的权重，实际扣多少取决于它占这个文件夹的比例：构建产物 40、大文件 25、锁文件 20、日志 15。你写的规则和筛选力度会把相应类别从扣分里去掉，所以右边那个数会更高。',
+        strengthTable: '每一档会得多少分',
+        strengthNow: '当前',
+        strengthUse: '使用第',
+        strengthPreview: '尚未保存',
+        noteInjected: 'AI 会读到的内容',
+        noteToggleEntry: '从哪里开始看',
+        noteToggleAvoid: '哪些不要打开',
+        noteToggleTests: '怎么自检',
         optimizeTitle: '一键优化',
         optimizeHint: '把建议规则写进 .aiignore。你原有的行会保留，一次点击就能还原。',
         optimize: '优化这个工作区',
@@ -261,6 +282,9 @@ window.__ModuleLoader__.load({
         overviewHint: '这个应用用过的每个文件夹，用和面板相同的规则扫一遍。',
         overviewNone: '还没有工作区。',
         overviewCurrent: '当前',
+        overviewOpen: '打开面板',
+        overviewApply: '应用规则',
+        overviewWorst: '最该先处理：',
         overviewFiles: '个文件',
         webTitle: '还没有工作区',
         errorTitle: '读取报告失败',
@@ -308,7 +332,7 @@ window.__ModuleLoader__.load({
         templateAvoid: '不要打开 dist/、构建产物、锁文件和日志。真需要就先问我。',
         templateTestsLabel: '帮我验证',
         templateTests: '改完代码跑一遍 `npm test`，这是最快的验证方式。',
-        noteTitle: '给 AI 的说明',
+        noteTitle: '想让 AI 知道的事',
         noteHint: '保存到本工作区的 .aiignore.notes.md，并立即发送给 AI。',
         notePlaceholder: '例如：优先用 lib/，不要用 legacy/；永远不要读 dist/。',
         noteSave: '保存并发送',
@@ -1440,6 +1464,138 @@ window.__ModuleLoader__.load({
   color: var(--dsw-alias-label-secondary, inherit);
   font: var(--dsw-font-xxs-12, 12px/1.4 sans-serif);
 }
+
+/* ---------- fold: the scoring standard, on demand ---------- */
+
+.aicd-fold {
+  margin-top: 8px;
+  border-top: 1px solid var(--dsw-alias-border-l3, rgba(127, 127, 127, 0.18));
+  padding-top: 6px;
+}
+
+.aicd-fold-head {
+  cursor: pointer;
+  font: var(--dsw-font-xxxs-11, 11px/16px system-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dsw-alias-label-caption, currentColor);
+  padding: 2px 0;
+}
+
+.aicd-fold-head:hover { color: var(--dsw-alias-label-primary, currentColor); }
+
+.aicd-fold-head:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary, #4176e6);
+  outline-offset: 2px;
+  border-radius: var(--dsw-radius-xs, 4px);
+}
+
+.aicd-fold-body {
+  margin: 6px 0 0;
+  font: var(--dsw-font-xxxs-11, 11px/16px system-ui);
+  line-height: 16px;
+  color: var(--dsw-alias-label-secondary, currentColor);
+}
+
+/* ---------- strength: five notches, five numbers ---------- */
+
+.aicd-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.aicd-level-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.aicd-level-row:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12)); }
+
+.aicd-level-row[data-active="true"] {
+  border-color: var(--dsw-alias-state-business-primary, #4176e6);
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+}
+
+.aicd-level-row:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary, #4176e6);
+  outline-offset: 1px;
+}
+
+.aicd-level-num {
+  font: var(--dsw-font-xxs-12, 12px/18px system-ui);
+  color: var(--dsw-alias-label-tertiary, currentColor);
+  text-align: center;
+}
+
+.aicd-level-label {
+  font: var(--dsw-font-xxs-12, 12px/18px system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-level-score {
+  font: var(--dsw-font-xxs-12, 12px/18px system-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-secondary, currentColor);
+  text-align: right;
+}
+
+/* ---------- notes: the exact text the agent reads ---------- */
+
+.aicd-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dsw-alias-border-l3, rgba(127, 127, 127, 0.18));
+}
+
+.aicd-injected {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--dsw-alias-border-l3, rgba(127, 127, 127, 0.18));
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.06));
+  font-family: var(--ds-font-family-code, ui-monospace, SFMono-Regular, monospace);
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-secondary, currentColor);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- summary page: actions per row ---------- */
+
+.aicd-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.aicd-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
 `;
 
     //#endregion styles
@@ -2096,7 +2252,6 @@ window.__ModuleLoader__.load({
           h('span', { className: 'aicd-opt-title' }, tr('scoreTitle')),
           h('span', { className: 'aicd-count' }, lost === null ? '' : `−${lost}`)
         ),
-        h('div', { className: 'aicd-note' }, tr('scoreFormula')),
         rows.map((row) =>
           h('div', { key: row.id, className: 'aicd-bar-row' },
             h('span', { className: 'aicd-bar-name' }, row.label),
@@ -2108,6 +2263,56 @@ window.__ModuleLoader__.load({
               })
             ),
             h('span', { className: 'aicd-bar-loss' }, `${row.lost} / ${row.weight}`)
+          )
+        ),
+        h('details', { className: 'aicd-fold' },
+          h('summary', { className: 'aicd-fold-head' }, tr('scoreHow')),
+          h('p', { className: 'aicd-fold-body' }, tr('scoreFormula'))
+        )
+      );
+    }
+
+    /**
+     * The five notches with the score each one would produce. "How strict" stops
+     * being a feeling once the numbers sit in a column.
+     */
+    function LevelsTable({ data, draft, onPick }) {
+      const [levels, setLevels] = useState(null);
+      const cwd = data !== null && data !== undefined && typeof data.workspace === 'string' ? data.workspace : '';
+
+      useEffect(() => {
+        if (cwd === '') return undefined;
+        let alive = true;
+        fetch(`/aiignore/levels?cwd=${encodeURIComponent(cwd)}`, { headers: { accept: 'application/json' } })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then((payload) => {
+            if (alive === true) setLevels(Array.isArray(payload.levels) ? payload.levels : []);
+          })
+          .catch(() => {
+            if (alive === true) setLevels([]);
+          });
+        return () => {
+          alive = false;
+        };
+      }, [cwd]);
+
+      if (levels === null || levels.length === 0) return null;
+
+      return h('div', { className: 'aicd-levels' },
+        h('div', { className: 'aicd-section-title' }, tr('strengthTable')),
+        levels.map((row) =>
+          h('button', {
+            key: row.level,
+            type: 'button',
+            className: 'aicd-level-row',
+            'data-active': row.level === draft ? 'true' : 'false',
+            'aria-pressed': row.level === draft ? 'true' : 'false',
+            onClick: () => onPick(row.level)
+          },
+            h('span', { className: 'aicd-level-num' }, String(row.level)),
+            h('span', { className: 'aicd-level-label' }, row.label),
+            h('span', { className: 'aicd-level-score' },
+              typeof row.effectiveScore === 'number' ? String(row.effectiveScore) : '—')
           )
         )
       );
@@ -2161,6 +2366,10 @@ window.__ModuleLoader__.load({
           h('span', { className: 'aicd-count' }, String(suggested.length))
         ),
         h('div', { className: 'aicd-note' }, session === null ? tr('optimizeHint') : tr('optimizeConversationHint')),
+        suggested.length > 0
+          ? h('div', { className: 'aicd-chips' },
+              suggested.slice(0, 6).map((rule) => h('span', { key: rule, className: 'aicd-chip', 'data-static': 'true' }, rule)))
+          : null,
         result !== null && result.error !== true && added.length > 0
           ? h('div', null,
               h('div', { className: 'aicd-note', 'data-tone': 'ok' },
@@ -2180,8 +2389,13 @@ window.__ModuleLoader__.load({
             : suggested.length === 0
               ? h('div', { className: 'aicd-note' }, tr('optimizeNone'))
               : h('div', { className: 'aicd-btn-row' },
-                  h('button', { type: 'button', className: 'aicd-btn', 'data-variant': 'primary', disabled: busy, onClick: run },
-                    session === null ? tr('optimize') : tr('optimizeConversation'))
+                  h('button', {
+                    type: 'button',
+                    className: 'aicd-btn',
+                    'data-variant': 'primary',
+                    disabled: busy ? 'true' : undefined,
+                    onClick: run
+                  }, busy === true ? tr('working') : (session === null ? tr('optimize') : tr('optimizeConversation')))
                 )
       );
     }
@@ -2281,10 +2495,19 @@ window.__ModuleLoader__.load({
             }, String(item.level))
           )
         ),
+        h(LevelsTable, {
+          data,
+          draft: level,
+          onPick: (picked) => {
+            setLevel(picked);
+            setStatus(null);
+          }
+        }),
         h('div', { className: 'aicd-level' },
           h('span', { className: 'aicd-level-name' }, entry.label),
           h('span', { className: 'aicd-level-note' }, entry.note)
         ),
+        level !== stored ? h('div', { className: 'aicd-note' }, `${tr('strengthPreview')} — ${tr('strengthUse')} ${level}`) : null,
         level >= 4 ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('strategyWarning')) : null,
         level <= 1 ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('strategyOff')) : null,
         h('div', { className: 'aicd-btn-row' },
@@ -2295,11 +2518,28 @@ window.__ModuleLoader__.load({
       );
     }
 
+    /**
+     * The note the agent reads before it starts. The point of this block is that
+     * you can see the exact text that will be injected: the three toggles add a
+     * sentence each, and the monospace block under them is what the model gets.
+     */
     function NoteView({ data, onSaved }) {
       const [notes, setNotes] = useState(null);
       const [status, setStatus] = useState(null);
       const value = notes === null ? (typeof data.notes === 'string' ? data.notes : '') : notes;
       const length = value.length;
+
+      const toggle = (snippet) => {
+        const has = value.includes(snippet);
+        let next;
+        if (has === true) {
+          next = value.split(snippet).join('').replace(/\n{3,}/g, '\n\n').trim();
+        } else {
+          next = value.trim().length === 0 ? snippet : `${value.replace(/\s+$/, '')}\n${snippet}`;
+        }
+        setNotes(next.slice(0, 4000));
+        setStatus(null);
+      };
 
       const save = () => {
         if (length > 4000) {
@@ -2319,28 +2559,28 @@ window.__ModuleLoader__.load({
           .catch(() => setStatus('failed'));
       };
 
-      return h('div', { className: 'aicd-section', style: { paddingTop: '12px' } },
-        h('div', { className: 'aicd-section' },
-          h('span', { className: 'aicd-section-title' }, tr('noteTitle'))
-        ),
-        h('div', { className: 'aicd-chips', role: 'group', 'aria-label': tr('templatesTitle') },
+      const injected = value.trim().length === 0
+        ? ''
+        : ['The user left a note for this workspace in .aiignore.notes.md:', '', value.trim(), '', 'Treat it as project context from the user, not as a tool result.'].join('\n');
+
+      return h('div', { className: 'aicd-notes' },
+        h('div', { className: 'aicd-section-title' }, tr('noteTitle')),
+        h('p', { className: 'aicd-note' }, tr('noteWhy')),
+        h('div', { className: 'aicd-chips', role: 'group', 'aria-label': tr('noteTitle') },
           TEMPLATES.map((template) =>
             h('button', {
               key: template.id,
               type: 'button',
               className: 'aicd-chip',
-              onClick: () => {
-                const snippet = tr(template.key);
-                const next = value.trim().length === 0 ? snippet : `${value.replace(/\s+$/, '')}\n\n${snippet}`;
-                setNotes(next.slice(0, 4000));
-                setStatus(null);
-              }
+              'data-active': value.includes(tr(template.key)) ? 'true' : 'false',
+              'aria-pressed': value.includes(tr(template.key)) ? 'true' : 'false',
+              onClick: () => toggle(tr(template.key))
             }, tr(template.labelKey))
           )
         ),
         h('textarea', {
           className: 'aicd-textarea',
-          rows: 6,
+          rows: 4,
           value,
           placeholder: tr('notePlaceholder'),
           'aria-label': tr('noteTitle'),
@@ -2349,16 +2589,17 @@ window.__ModuleLoader__.load({
             setStatus(null);
           }
         }),
-        h('div', { className: 'aicd-btn-row', style: { padding: '8px 0 0' } },
+        h('div', { className: 'aicd-btn-row' },
           h('button', { type: 'button', className: 'aicd-btn', 'data-variant': 'primary', onClick: save }, tr('noteSave')),
-          h('span', { className: 'aicd-count', style: { marginLeft: 'auto' } }, `${length} / 4000`)
+          h('span', { className: 'aicd-count' }, `${length} / 4000`)
         ),
-        h('div', { className: 'aicd-note' }, tr('noteWhy')),
-        h('div', { className: 'aicd-note' }, tr('noteHint')),
-        status === 'saved' ? h('div', { className: 'aicd-note', 'data-tone': 'ok' }, tr('noteSaved')) : null,
-        status === 'too-long' ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteTooLong')) : null,
-        status === 'failed' ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null,
-        status === 'empty' ? h('div', { className: 'aicd-note' }, tr('noteEmpty')) : null
+        h('div', { className: 'aicd-section-title' }, tr('noteInjected')),
+        h('pre', { className: 'aicd-injected' }, injected.length === 0 ? '—' : injected),
+        h('p', { className: 'aicd-note' }, tr('noteHint')),
+        status === 'saved' ? h('p', { className: 'aicd-note', 'data-tone': 'ok' }, tr('noteSaved')) : null,
+        status === 'too-long' ? h('p', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteTooLong')) : null,
+        status === 'failed' ? h('p', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null,
+        status === 'empty' ? h('p', { className: 'aicd-note' }, tr('noteEmpty')) : null
       );
     }
 
@@ -2436,14 +2677,13 @@ window.__ModuleLoader__.load({
             h('select', {
               className: 'aicd-select',
               'aria-label': tr('chatPick'),
-              value: pinnedSession === null ? '' : pinnedSession,
-              onChange: (event) => onPin(event.target.value === '' ? null : event.target.value)
+              value: pinnedSession === null ? conv.id : pinnedSession,
+              onChange: (event) => onPin(event.target.value)
             },
-              h('option', { value: '' }, tr('chatFollow')),
               (Array.isArray(conv.available) ? conv.available : []).map((entry) => h('option', {
                 key: entry.id,
                 value: entry.id
-              }, `${entry.id.slice(-8)} · ${shortPath(entry.cwd || '')}`))))));
+              }, `${entry.id.slice(-8)} · ${shortPath(entry.cwd || '')}${entry.id === conv.id ? ` · ${tr('chatCurrent')}` : ''}`))))));
     }
 
     //#endregion chat
@@ -2455,28 +2695,68 @@ window.__ModuleLoader__.load({
      * the same health score the panel shows. It is the aggregate view — the
      * panel answers "this conversation", this answers "all of them".
      */
-    function SummaryPage() {
+    function SummaryPage(props) {
       const [data, setData] = useState(null);
       const [failed, setFailed] = useState(false);
+      const [busy, setBusy] = useState(null);
+      const [notice, setNotice] = useState(null);
+      const holder = props === null || props === undefined ? {} : props;
+      const openPanel = typeof holder.openPanel === 'function' ? holder.openPanel : null;
 
-      const load = () => {
+      const load = (fresh) => {
         setFailed(false);
-        fetch('/aiignore/overview', { headers: { accept: 'application/json' } })
+        const suffix = fresh === true ? '?fresh=1' : '';
+        fetch(`/aiignore/overview${suffix}`, { headers: { accept: 'application/json' } })
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => setData(Array.isArray(payload.workspaces) ? payload : { workspaces: [] }))
-          .catch(() => setFailed(true));
+          .catch(() => setFailed(true))
+          .then(() => setBusy(null));
       };
-      useEffect(load, []);
+      useEffect(() => load(false), []);
+
+      const apply = (row) => {
+        setBusy(row.path);
+        setNotice(null);
+        fetch('/aiignore/optimize', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ cwd: row.path })
+        })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then((payload) => {
+            setNotice(`${shortPath(row.path)} · ${payload.before} → ${payload.after}`);
+            load(true);
+          })
+          .catch(() => {
+            setBusy(null);
+            setNotice(`${shortPath(row.path)} · ${tr('optimizeFailed')}`);
+          });
+      };
 
       const rows = data === null
         ? []
-        : data.workspaces.slice().sort((left, right) => (left.healthScore ?? 101) - (right.healthScore ?? 101));
+        : data.workspaces.slice().sort((left, right) => (left.effectiveScore ?? 101) - (right.effectiveScore ?? 101));
+      const worst = rows.filter((row) => typeof row.effectiveScore === 'number').slice(0, 3);
 
       return h('div', { className: 'aicd-page' },
         h('div', { className: 'aicd-page-inner' },
-          h('h1', { className: 'aicd-page-title' }, tr('overviewTitle')),
-          h('p', { className: 'aicd-page-hint' }, tr('overviewHint')),
-          failed === true ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('errorHint')) : null,
+          h('div', { className: 'aicd-page-head' },
+            h('div', null,
+              h('h1', { className: 'aicd-page-title' }, tr('overviewTitle')),
+              h('p', { className: 'aicd-page-hint' }, tr('overviewHint'))
+            ),
+            h('div', { className: 'aicd-btn-row' },
+              h('button', { type: 'button', className: 'aicd-btn', disabled: busy !== null ? 'true' : undefined, onClick: () => { setBusy('all'); load(true); } }, tr('rescan')),
+              openPanel === null
+                ? null
+                : h('button', { type: 'button', className: 'aicd-btn', 'data-variant': 'primary', onClick: () => openPanel() }, tr('overviewOpen'))
+            )
+          ),
+          failed === true ? h('p', { className: 'aicd-note', 'data-tone': 'bad' }, tr('errorHint')) : null,
+          notice !== null ? h('p', { className: 'aicd-note' }, notice) : null,
+          worst.length > 0
+            ? h('p', { className: 'aicd-page-hint' }, `${tr('overviewWorst')} ${worst.map((row) => `${row.title} ${row.effectiveScore}`).join(' · ')}`)
+            : null,
           rows.length === 0 && data !== null
             ? h('p', { className: 'aicd-page-hint' }, tr('overviewNone'))
             : null,
@@ -2484,12 +2764,14 @@ window.__ModuleLoader__.load({
             h('div', { key: row.path, className: 'aicd-page-row' },
               h('span', {
                 className: 'aicd-page-score',
-                'data-tone': typeof row.healthScore === 'number' ? toneFor(row.healthScore) : 'bad'
-              }, typeof row.healthScore === 'number' ? String(row.healthScore) : '—'),
+                'data-tone': typeof row.effectiveScore === 'number' ? toneFor(row.effectiveScore) : 'bad'
+              }, typeof row.effectiveScore === 'number' ? String(row.effectiveScore) : '—'),
               h('span', { className: 'aicd-page-text' },
                 h('span', { className: 'aicd-page-name' },
                   row.title,
-                  row.path === (data === null ? null : data.current) ? h('span', { className: 'aicd-page-badge' }, tr('overviewCurrent')) : null
+                  row.path === (data === null ? null : data.current)
+                    ? h('span', { className: 'aicd-page-badge' }, tr('overviewCurrent'))
+                    : null
                 ),
                 h('span', { className: 'aicd-page-meta' },
                   typeof row.files === 'number'
@@ -2497,9 +2779,16 @@ window.__ModuleLoader__.load({
                     : row.path
                 )
               ),
-              row.noise !== undefined && row.noise.length > 0
-                ? h('span', { className: 'aicd-page-noise', title: row.noise.join(', ') }, row.noise[0])
-                : null
+              h('span', { className: 'aicd-page-actions' },
+                h('button', {
+                  type: 'button',
+                  className: 'aicd-btn',
+                  'data-variant': typeof row.suggested === 'number' && row.suggested > 0 ? 'primary' : undefined,
+                  disabled: busy !== null ? 'true' : undefined,
+                  title: row.path,
+                  onClick: () => apply(row)
+                }, typeof row.suggested === 'number' && row.suggested > 0 ? `${tr('overviewApply')} ${row.suggested}` : tr('overviewApply'))
+              )
             )
           )
         )
@@ -2961,7 +3250,24 @@ window.__ModuleLoader__.load({
         // a summary belongs to the app, not to one conversation.
         if (ctx.slots !== undefined && ctx.slots !== null && typeof ctx.slots.inject === 'function') {
           ctx.slots.inject('main', () =>
-            ctx.slots.register({ name: 'main', key: SUMMARY_ID, locale: NS }, SummaryPage)
+            ctx.slots.register({
+              name: 'main',
+              key: SUMMARY_ID,
+              locale: NS,
+              inject: () => ({
+                openPanel: () => {
+                  try {
+                    if (ctx.sidebarRight !== undefined && ctx.sidebarRight !== null && typeof ctx.sidebarRight.openTab === 'function') {
+                      ctx.sidebarRight.openTab(KIND);
+                      return true;
+                    }
+                  } catch {
+                    /* no sidebar: the page still works */
+                  }
+                  return false;
+                }
+              })
+            }, SummaryPage)
           );
           ctx.slots.inject('sidebar.panellist', () =>
             ctx.slots.register({

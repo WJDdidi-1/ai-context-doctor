@@ -1,8 +1,8 @@
 {
   "name": "dsh-aiignore",
-  "version": "0.21.0",
-  "description": "Tells the agent which workspace files waste context, right when a session opens the repo.",
-  "license": "MIT",
+  "version": "0.22.0",
+  "description": "See what a conversation feeds the model, what your rules keep out, and what one click would change.",
+  "license": "Apache-2.0",
   "type": "module",
   "exports": {
     ".": "./index.js",
@@ -20,7 +20,8 @@
     "locale/*.json",
     "icon.svg",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "NOTICE"
   ],
   "dsh": {
     "bundle": {

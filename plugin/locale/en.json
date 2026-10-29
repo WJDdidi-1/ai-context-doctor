@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "AI Context Doctor",
-    "description": "When a session opens a repository, checks whether build output, lockfiles, or logs would waste the agent's context, and tells it what to skip."
+    "title": "Context Budget",
+    "description": "Shows what one conversation handed the model, which of it was noise, and applies the .aiignore rules that keep it out next time."
   }
 }

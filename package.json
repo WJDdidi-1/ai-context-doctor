@@ -1,8 +1,8 @@
 {
   "name": "ai-context-doctor",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Find the files your AI coding agent should not read before sending it your repo.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bin": {
     "ai-context-doctor": "bin/ai-context-doctor.js"
   },
@@ -21,7 +21,8 @@
     "lib/",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "NOTICE"
   ],
   "repository": {
     "type": "git",

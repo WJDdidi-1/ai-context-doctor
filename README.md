@@ -160,9 +160,9 @@ console.log(report.healthScore, report.topNoise);
 dsh plugin --profile web add dsh-aiignore
 ```
 
-The plugin also adds a **Context** tab to the right sidebar, opened from a folder button in the composer: it lists every file the session touched, browses the workspace with the verdict already attached, lets you pick files one at a time or in bulk, reports what the guard kept out, and carries a note you can send to the agent. It follows the Harness light and dark themes.
+The plugin also adds a **Context budget** tab to the right sidebar, opened from a folder button in the composer. It answers three questions in that order: what this conversation actually fed the model, what is left after your rules and your strength, and what one click would change. Under the score sit the arithmetic behind it, the strength slider, a table that scores all five notches before you pick one, and an optimize button that names the rules it will write and reports the score before and after. It follows the Harness light and dark themes.
 
-![The Context tab in the right sidebar](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
+![The Context budget tab in the right sidebar](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
 
 It declares `engines.dsh: ">=0.2.0"`, and the Harness checks that range before installing. The source, its configuration and its limits are in [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
 
@@ -213,4 +213,6 @@ Maintainers: see the [release checklist](https://github.com/WJDdidi-1/ai-context
 
 ## License
 
-MIT
+Apache-2.0 — see [LICENSE](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/LICENSE)
+and [NOTICE](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/NOTICE).
+The earlier releases were MIT; the licence change applies from 0.22.0 on.

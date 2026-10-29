@@ -353,8 +353,8 @@
           current: '/Users/you/code/demo-noise',
           source: 'session',
           workspaces: [
-            { path: '/Users/you/code/demo-noise', title: 'demo-noise', sessions: 3, healthScore: 22, files: 8, bytes: 1572864, noisePercent: 78, noise: ['dist/', 'package-lock.json'] },
-            { path: '/Users/you/code/other', title: 'other-project', sessions: 1, healthScore: 91, files: 24, bytes: 204800, noisePercent: 9, noise: [] }
+            { path: '/Users/you/code/demo-noise', title: 'demo-noise', sessions: 3, healthScore: 22, effectiveScore: 62, suggested: 4, files: 8, bytes: 1572864, noisePercent: 78, noise: ['dist/', 'package-lock.json'] },
+            { path: '/Users/you/code/other', title: 'other-project', sessions: 1, healthScore: 91, effectiveScore: 97, suggested: 0, files: 24, bytes: 204800, noisePercent: 9, noise: [] }
           ]
         });
       }
@@ -362,6 +362,22 @@
       if (url === '/aiignore/ignore') return record({ ignored: true, rule: String((body && body.path) || '') });
       if (url === '/aiignore/unignore') return record({ removed: true });
       if (url === '/aiignore/notes') return record({ written: true, removed: false });
+      if (url.indexOf('/aiignore/levels') === 0) {
+        const target = SCENARIOS[scenario];
+        const raw = target && target.scanned ? target.scanned.healthScore : 22;
+        const factors = { 1: 0, 2: 0.15, 3: 0.35, 4: 0.55, 5: 0.75 };
+        return record({
+          workspace: '/Users/you/code/demo-noise',
+          level: window.__level ? window.__level.level : 3,
+          levels: LEVELS.map((entry) => ({
+            level: entry.level,
+            label: entry.label,
+            note: entry.note,
+            maxBytes: entry.maxBytes,
+            effectiveScore: Math.round(raw + (100 - raw) * (factors[entry.level] || 0))
+          }))
+        });
+      }
       if (url === '/aiignore/policy') {
         const next = Number((body && body.level) || 3);
         LEVELS.forEach((entry) => { if (entry.level === next) window.__level = entry; });
@@ -385,8 +401,10 @@
       if (url === '/aiignore/optimize') {
         // The Host reports the effective score on both sides: rules change what
         // still reaches the model, not how noisy the folder is.
+        const named = body && typeof body.cwd === 'string' ? body.cwd : null;
         const before = (window.__lastReport && window.__lastReport.scanned.effectiveScore) || 0;
         return record({
+          workspace: named || '/Users/you/code/demo-noise',
           added: ['dist/', 'package-lock.json'],
           written: true,
           before: before,

@@ -1210,6 +1210,9 @@ export function apply(ctx, config = {}) {
       title: entry.title,
       sessions: entry.sessions,
       healthScore: report.healthScore,
+      effectiveScore: typeof report.effectiveScore === 'number' ? report.effectiveScore : report.healthScore,
+      suggested: Array.isArray(report.suggestedAiignore) ? report.suggestedAiignore.length : 0,
+      level: readPolicy(entry.path),
       files: report.scannedFiles,
       bytes: report.scannedBytes,
       noisePercent: report.noisePercent,
@@ -1217,6 +1220,38 @@ export function apply(ctx, config = {}) {
       truncated: report.truncated === true
     };
     overviewCache.set(entry.path, { at: Date.now(), value });
+    return value;
+  };
+
+  // The strength slider has to show what each notch would cost, so the same
+  // folder is scored five times (once per level) and cached briefly. Five scans
+  // of one folder is cheap; five per keystroke would not be.
+  const levelsCache = new Map();
+  const LEVELS_TTL = 60 * 1000;
+
+  const levelsFor = (cwd) => {
+    const cached = levelsCache.get(cwd);
+    if (cached !== undefined && Date.now() - cached.at < LEVELS_TTL && cached.level === readPolicy(cwd)) {
+      return cached.value;
+    }
+    const value = LEVELS.map((entry) => {
+      let report;
+      try {
+        report = scanWithPolicy(cwd, { level: entry.level, maxFiles: 4000, maxBytes: 48 * 1024 * 1024 });
+      } catch {
+        return { level: entry.level, label: entry.label, note: entry.note, maxBytes: entry.maxBytes, effectiveScore: null, blockedBytes: null };
+      }
+      return {
+        level: entry.level,
+        label: entry.label,
+        note: entry.note,
+        maxBytes: entry.maxBytes,
+        effectiveScore: report.effectiveScore,
+        blockedBytes: report.blockedBytes,
+        rules: Array.isArray(report.suggestedAiignore) ? report.suggestedAiignore.length : 0
+      };
+    });
+    levelsCache.set(cwd, { at: Date.now(), value, level: readPolicy(cwd) });
     return value;
   };
 
@@ -1266,7 +1301,8 @@ export function apply(ctx, config = {}) {
       level: readPolicy(latestCwd),
       levels: LEVELS,
       uploads: recentUploads(startedAt),
-      notes: readNotes(latestCwd)
+      notes: readNotes(latestCwd),
+      notesInjected: formatNotes(readNotes(latestCwd))
     });
   };
 
@@ -1474,11 +1510,36 @@ export function apply(ctx, config = {}) {
     } catch {
       list = [];
     }
+    // `?fresh=1` is the "Scan again" button on the summary page: the cached
+    // numbers are five minutes old, and someone just changed something.
+    try {
+      const url = new URL(req.url, 'http://localhost');
+      if (url.searchParams.get('fresh') === '1') overviewCache.clear();
+    } catch {
+      /* no query, nothing to refresh */
+    }
     const current = bindWorkspace(req);
     return sendJson(res, 200, {
       current: typeof current === 'string' ? current : null,
       source: resolvedSource,
       workspaces: list.map(overviewOf)
+    });
+  };
+
+  /**
+   * What each notch of the strength slider would score. The number that matters
+   * is `effectiveScore`, and it only becomes a decision once the five options
+   * sit next to each other with their own numbers.
+   */
+  const levelsHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    const cwd = askedCwd(req) !== undefined ? askedCwd(req) : resolveWorkspace();
+    if (cwd === undefined || cwd === null) return sendJson(res, 200, { workspace: null, level: null, levels: [] });
+    return sendJson(res, 200, {
+      workspace: cwd,
+      level: readPolicy(cwd),
+      levels: levelsFor(cwd)
     });
   };
 
@@ -1670,9 +1731,16 @@ export function apply(ctx, config = {}) {
         if (conversation === null) return sendJson(res, 404, { error: 'no-projection', session: asked });
       }
 
-      const cwd = askedCwd(req) !== undefined
-        ? askedCwd(req)
-        : (conversation !== null && conversation.cwd !== null ? conversation.cwd : resolveWorkspace());
+      // The summary page acts on a row the panel is not showing, so it names the
+      // folder itself; the panel just omits it and gets its own workspace.
+      const named = parsed !== null && typeof parsed === 'object' && typeof parsed.cwd === 'string' && path.isAbsolute(parsed.cwd)
+        ? path.resolve(parsed.cwd)
+        : undefined;
+      const cwd = named !== undefined
+        ? named
+        : (askedCwd(req) !== undefined
+          ? askedCwd(req)
+          : (conversation !== null && conversation.cwd !== null ? conversation.cwd : resolveWorkspace()));
       if (cwd === undefined || cwd === null) return sendJson(res, 404, { error: 'no-workspace' });
 
       try {
@@ -1681,6 +1749,9 @@ export function apply(ctx, config = {}) {
         const result = optimizeWorkspace(cwd, before, rules);
         const after = scanWithPolicy(cwd);
         stateFor(cwd).report = after;
+        overviewCache.delete(cwd);
+        levelsCache.delete(cwd);
+        if (latestCwd === cwd) latestCwd = cwd;
 
         // Proof the click did something: every noise read of this conversation,
         // tested against the rules that now exist on disk.
@@ -1743,6 +1814,7 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/sessions', handler: sessionsHandler });
       server.register({ kind: 'exact', path: '/aiignore/conversation', handler: conversationHandler });
       server.register({ kind: 'exact', path: '/aiignore/policy', handler: policyHandler });
+      server.register({ kind: 'exact', path: '/aiignore/levels', handler: levelsHandler });
       server.register({ kind: 'exact', path: '/aiignore/optimize', handler: optimizeHandler });
       server.register({ kind: 'exact', path: '/aiignore/optimize/undo', handler: undoOptimizeHandler });
       routesInstalled = true;
