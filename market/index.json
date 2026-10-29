@@ -23,8 +23,8 @@
       "name": "dsh-aiignore",
       "title": "AIignore",
       "description": {
-        "en": "Lists the rules in force and lets you remove one line at a time; the panel says when you are looking at an older conversation.",
-        "zh": "列出正在生效的规则，可逐条删除；查看较早对话时面板会明确标注。"
+        "en": "Counts the reads it blocked, shows roughly what they would have cost, and one click writes the rules that make the rules pay off next time.",
+        "zh": "统计已挡下的读取、显示它们本会占多少上下文，一键写入规则让下次真正生效。"
       },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
@@ -43,6 +43,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.25.0",
+          "publishTimestamp": 1793255312,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.24.5",
           "publishTimestamp": 1793249914,
