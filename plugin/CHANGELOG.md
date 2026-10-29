@@ -1,3 +1,12 @@
+## 0.24.3
+
+- A refused read never had a way back. The Chat tab now lists **Blocked from
+  context** with the same Read once / Never read buttons the tree rows have, so
+  the "no" the model was told can be answered without editing files by hand.
+- The refusal the model reads now says what to do instead: stop, do not look for
+  another way in, and tell the user — who has a Read once button waiting. It
+  still names the file, the size and the token cost.
+
 ## 0.24.2
 
 - The strength table asks for all five scores at once, and the host used to

@@ -68,6 +68,7 @@ window.__ModuleLoader__.load({
         chatOptimize: 'Optimize this conversation',
         chatRulesWritten: 'Rules written',
         chatBlocked: 'reads now blocked',
+        more: 'more',
         chatPick: 'Conversation',
         scoreConv: 'This conversation',
         scoreFolder: 'Reaches the model',
@@ -240,6 +241,7 @@ window.__ModuleLoader__.load({
         chatOptimize: '优化本对话',
         chatRulesWritten: '已写入规则',
         chatBlocked: '条读入现在会被拦截',
+        more: '条更多',
         chatPick: '对话',
         scoreConv: '本对话',
         scoreFolder: '还会进模型',
@@ -1489,6 +1491,16 @@ window.__ModuleLoader__.load({
   width: 8px;
   height: 8px;
   border-radius: 2px;
+}
+
+.aicd-blocked {
+  padding: 4px 0 6px;
+}
+
+.aicd-blocked-actions {
+  display: flex;
+  gap: 6px;
+  padding-left: 24px;
 }
 
 .aicd-chat-actions {
@@ -2744,7 +2756,7 @@ window.__ModuleLoader__.load({
      * spent tokens on, which files it read, and one button that turns those reads
      * into `.aiignore` rules — with the before/after score right there.
      */
-    function ChatView({ conv, error, pinnedSession, onPin }) {
+    function ChatView({ conv, data, error, pinnedSession, onPin, onAllow, onIgnore }) {
       if (error !== null) {
         return h('div', { className: 'aicd-body', 'data-center': 'true' },
           h(Empty, { icon: 'warn', title: tr('errorTitle'), hint: tr('chatEmpty') }));
@@ -2760,6 +2772,10 @@ window.__ModuleLoader__.load({
       ];
       const total = parts.reduce((sum, [, value]) => sum + value, 0);
       const blocked = Array.isArray(conv.noise) ? conv.noise : [];
+      const skipped = data !== null && data !== undefined && Array.isArray(data.skipped) ? data.skipped : [];
+      // A read the guard refused is the one place the model was told "no" —
+      // showing it here is what lets the user answer that "no" with a yes.
+      const blockedReads = skipped.filter((item) => item.attempts > 0);
       const reads = Array.isArray(conv.reads) ? conv.reads.slice(0, 6) : [];
 
       return h('div', { className: 'aicd-body' },
@@ -2791,6 +2807,32 @@ window.__ModuleLoader__.load({
                   badge: [{ text: (item.reason || 'noise').replace(/^(generated|local) /, ''), tone: 'noise' }],
                   meta: bytesShort(item.bytes)
                 })))
+            : null,
+
+          blockedReads.length > 0
+            ? h('div', { className: 'aicd-section' },
+                h('div', { className: 'aicd-section-title' }, tr('blockedTitle')),
+                blockedReads.slice(0, 4).map((item) => h('div', { key: item.path, className: 'aicd-blocked' },
+                  h(Row, {
+                    icon: 'lock',
+                    name: item.path,
+                    badge: [{ text: (item.reason || 'noise').replace(/^(generated|local) /, ''), tone: 'noise' }],
+                    meta: bytesShort(item.bytes)
+                  }),
+                  h('div', { className: 'aicd-blocked-actions' },
+                    h('button', {
+                      type: 'button',
+                      className: 'aicd-btn',
+                      onClick: () => { if (typeof onAllow === 'function') onAllow(item.path); }
+                    }, tr('readOnce')),
+                    h('button', {
+                      type: 'button',
+                      className: 'aicd-btn',
+                      onClick: () => { if (typeof onIgnore === 'function') onIgnore(item.path); }
+                    }, tr('neverRead'))))),
+                blockedReads.length > 4
+                  ? h('p', { className: 'aicd-note' }, `${blockedReads.length - 4} ${tr('more')}`)
+                  : null)
             : null,
 
           reads.length > 0
@@ -3343,11 +3385,11 @@ window.__ModuleLoader__.load({
             : data.workspace === null || data.workspace === undefined || choosing === true
               // The Chat tab needs no workspace: it reads the conversation itself.
               ? (view === 'chat' && choosing !== true
-                  ? h(ChatView, { conv, error: convError, pinnedSession, onPin: setPinnedSession })
+                  ? h(ChatView, { conv, data, error: convError, pinnedSession, onPin: setPinnedSession, onAllow, onIgnore })
                   : h('div', { className: 'aicd-body', 'data-center': 'true' },
                       h(NoWorkspace, { spaces, pending, scan, pick, scanError, choosing })))
               : view === 'chat'
-                ? h(ChatView, { conv, error: convError, pinnedSession, onPin: setPinnedSession })
+                ? h(ChatView, { conv, data, error: convError, pinnedSession, onPin: setPinnedSession, onAllow, onIgnore })
                 : view === 'files'
                   ? h(FilesView, {
                     data, tree, at, setAt, pending, onAllow, onIgnore,

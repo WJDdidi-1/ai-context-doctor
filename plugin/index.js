@@ -193,9 +193,9 @@ export function decideRead({ root, filePath, policy = 'deny', rules, level = DEF
  */
 export function formatDenial(decision) {
   return [
-    `[ai-context-doctor] Skipped ${decision.relativePath} (${formatBytes(decision.bytes)}, ${decision.reason}).`,
-    `Reading it would have added ${formatTokens(decision.tokens)} tokens of context this task probably does not need.`,
-    'Tell the user the file was skipped and why. If the content matters, ask them to paste the relevant part or turn the plugin read policy off.'
+    `[ai-context-doctor] Skipped ${decision.relativePath} (${formatBytes(decision.bytes)}, ${decision.reason}) — about ${formatTokens(decision.tokens)} tokens of context.`,
+    'Do not retry it and do not try to read it another way.',
+    'If you need its contents, say so: the user can allow this one file with "Read once" in the AIignore panel (Chat → blocked reads), or loosen the strength under Score.'
   ].join(' ');
 }
 
