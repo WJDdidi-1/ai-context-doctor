@@ -21,14 +21,8 @@
   "plugins": [
     {
       "name": "dsh-aiignore",
-      "title": {
-        "en": "dsh-aiignore",
-        "zh-cn": "dsh-aiignore"
-      },
-      "description": {
-        "en": "Makes one conversation the unit of analysis: it reads the session the app is showing, scores what that chat actually read, shows how much noise still reaches the model after your rules and strength, and applies the suggested .aiignore in one click — with a before/after score and undo.",
-        "zh-cn": "以对话为单位：读取应用当前展示的会话，针对这次对话真正读进来的文件打分，并显示应用你的规则和筛选力度之后还有多少噪音会进模型；一键写入建议的 .aiignore，附带前后对比分数与撤销。"
-      },
+      "title": "Context Budget",
+      "description": "See what a conversation feeds the model, what your rules keep out, and what one click would change.",
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
       "repository": {
@@ -46,6 +40,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.22.0",
+          "publishTimestamp": 1793237207,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.21.0",
           "publishTimestamp": 1793200715,
