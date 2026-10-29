@@ -11,7 +11,7 @@ import test from 'node:test';
  */
 const CLIENT = fs.readFileSync(path.join(import.meta.dirname, '..', 'client.js'), 'utf8');
 
-const EXPECTED = ['copy', 'styles', 'helpers', 'components', 'views', 'score', 'chat', 'summary', 'shell', 'registration'];
+const EXPECTED = ['copy', 'copyZh', 'styles', 'helpers', 'components', 'views', 'score', 'chat', 'summary', 'shell', 'registration'];
 
 test('client.js declares its regions once, in reading order', () => {
   const opened = [...CLIENT.matchAll(/\/\/#region (\S+)/g)].map((match) => match[1]);
@@ -27,7 +27,7 @@ test('each region holds a bounded amount of code', () => {
   // without a new page is drift.
   // `styles` is one region by design: the CSS is inlined verbatim, and a second
 // copy of it is a bug waiting to happen. It grows when the UI grows.
-const bounds = { copy: 380, styles: 1400, helpers: 280, components: 200, views: 340, score: 380, chat: 200, summary: 160, shell: 340, registration: 120 };
+const bounds = { copy: 260, copyZh: 260, styles: 1560, helpers: 280, components: 200, views: 340, score: 380, chat: 200, summary: 160, shell: 340, registration: 120 };
   const lines = CLIENT.split('\n');
   let open = null;
   let start = 0;

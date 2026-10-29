@@ -31,39 +31,37 @@ button in the composer; clicking it opens the **right sidebar** on the
 sidebar services the same button opens the panel as a floating card instead, so
 one plugin covers both.
 
-![The Files tab, light theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
+![The Protection tab, light theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-light.png)
 
-Three tabs inside:
+Three tabs inside, and the first one exists to answer a single question: *is
+this doing anything?*
 
-- **Chat** — the conversation in front of you, and the tab the panel opens on.
-  Its title sits in the header; the tab shows the turns, the files it read, and
-  how its tokens split across assistant / tool / user / injected context. A
-  conversation is the thing you are actually in, so it gets the first tab.
+- **Protection** — the number this panel is built around: how many reads the
+  guard has refused for this workspace, and roughly how many tokens that kept
+  out of the model. It counts up while you work, because a score describes a
+  folder and stops moving once the rules cover it. Under it sits one primary
+  button, **Optimize now**: rescan, write whatever is missing, re-score, and
+  report `before → after`. When nothing is missing it says so instead of
+  pretending. Then **one notch stricter**, with the number attached ("would
+  block 2 more files, about 65k–81k tokens") and a button that sets it and
+  rescans. Below that, the files it kept out, and how many rules are in force.
 - **Files** — opens on **the files this session touched** (what the agent read
   and what it wrote), then lets you browse the whole workspace a directory at a
   time. Search, filter by verdict — and when a filter has nothing in it, the
   panel says which filter that was instead of looking empty.
-- **Score** — two labelled numbers and the arithmetic behind them:
+- **Settings** — everything you can change, off the screen that answers *is it
+  working*: five strength buttons that each show what they would score on your
+  repository, **Rules in .aiignore** with an × per line, the note for the agent
+  with a preview of exactly the text it will read, and the five-dimension
+  arithmetic folded away at the bottom.
 
-  | | what it counts |
-  |---|---|
-  | **This conversation** | what this chat actually read |
-  | **Still reaches the model** | what is left after your `.aiignore` rules and your strength |
-
-  Below them: one bar per noise category (what it cost, out of the weight it
-  could cost) with **how the score is computed** folded away behind a summary
-  you can open, and **Optimize from this conversation** as a primary button that
-  names the rules it is about to write before you press it — then reports the
-  score before and after plus how many of those reads the new rules now block.
-  Undo puts the file back byte for byte.
-
-  At the bottom sits the note for the agent, and it no longer asks you to
+  At the bottom sits the note for the agent  At the bottom sits the note for the agent, and it no longer asks you to
   imagine what it does: three one-click sentences, then a preview of **exactly
   the text the agent will read** before your next message.
 
-- **One button runs the job.** *Optimize now*, under the tabs, rescans, writes
-  the rules, re-scores and moves the number on screen — the progress bar only
-  advances when the request behind that phase has come back.
+- **One button runs the job.** *Optimize now* rescans, writes the rules,
+  re-scores and moves the number on screen — the progress bar only advances when
+  the request behind that phase has come back.
 - **The rules are visible, and removable one at a time.** Under the score sits
   **Rules in .aiignore**: every line that is in force, each with an ×. Removing
   one edits exactly that line — comments and the other rules stay — so a rule
@@ -166,7 +164,7 @@ There is no authentication beyond a same-origin check: like every
 `ctx.webServer` route, this one inherits the loopback bind of the Harness and
 must not be exposed to a network.
 
-![The Score tab, dark theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-insights-dark.png)
+![The Protection tab, dark theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-dark.png)
 
 ### Looking at the panel without a Harness
 

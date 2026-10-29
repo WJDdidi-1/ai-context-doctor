@@ -1386,3 +1386,150 @@
 .aicd-covered .aicd-row {
   cursor: default;
 }
+
+/* --- Protection: one number, one action ------------------------------- */
+.aicd-protect {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.aicd-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0 2px;
+}
+
+.aicd-hero-num {
+  font: var(--dsw-font-xl-24-strong, 600 24px/1.1 inherit);
+  font-size: 40px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-state-business-primary, #4a7cf7);
+}
+
+.aicd-hero-label {
+  font: var(--dsw-font-xxs-12, 12px/1.4 inherit);
+  color: var(--dsw-alias-label-secondary, rgba(127, 127, 127, 0.95));
+}
+
+.aicd-hero-sub {
+  margin-top: 6px;
+  max-width: 280px;
+  text-align: center;
+  font: var(--dsw-font-xxxs-11, 11px/1.5 inherit);
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.8));
+}
+
+.aicd-hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.aicd-hero-meta {
+  font: var(--dsw-font-xxxs-11, 11px/1.5 inherit);
+  color: var(--dsw-alias-label-tertiary, rgba(127, 127, 127, 0.85));
+  text-align: center;
+}
+
+.aicd-next {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--dsw-radius-md, 12px);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.22));
+  background: var(--dsw-alias-bg-layer-1, transparent);
+}
+
+.aicd-next-text {
+  font: var(--dsw-font-xxs-12, 12px/1.5 inherit);
+  color: var(--dsw-alias-label-secondary, rgba(127, 127, 127, 0.95));
+}
+
+.aicd-next .aicd-btn {
+  align-self: flex-start;
+}
+
+.aicd-hero-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+  font: var(--dsw-font-xxxs-11, 11px/1.4 inherit);
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.8));
+}
+
+.aicd-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--dsw-alias-state-business-primary, #4a7cf7);
+  font: inherit;
+  cursor: pointer;
+}
+
+.aicd-link:hover {
+  text-decoration: underline;
+}
+
+.aicd-block-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.14));
+}
+
+.aicd-block-row:last-child {
+  border-bottom: none;
+}
+
+.aicd-block-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xxs-12, 12px/1.4 inherit);
+  color: var(--dsw-alias-label-primary, inherit);
+}
+
+.aicd-block-meta {
+  flex: none;
+  white-space: nowrap;
+  font: var(--dsw-font-xxxs-11, 11px/1.4 inherit);
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.8));
+}
+
+.aicd-section-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A list, not a header line: .aicd-section is a flex row and flattens these. */
+.aicd-blocked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 6px;
+}
+
+.aicd-blocked-title {
+  font: var(--dsw-font-xxxs-strong-11, 500 11px/14px system-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dsw-alias-label-caption, currentColor);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-bottom: 2px;
+}

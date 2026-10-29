@@ -1,3 +1,27 @@
+## 0.25.0
+
+**One number that moves, one button that does something.**
+
+The panel opened on a score. A score describes a folder, and once the rules
+cover it the number stops moving — so nothing the plugin did was visible.
+
+- The first tab is now **Protection**: the count of reads the guard refused for
+  this workspace, and roughly how many tokens that kept out of the model. It
+  grows while you work; that is what makes it worth opening twice.
+- Counters live in `.aiignore.stats.json` next to the rules, and are incremented
+  on every refused read (the reason included in the refusal is unchanged).
+- One primary button, **Optimize now**: rescan, write what is missing, re-score,
+  and report `before → after`. When the rules already cover everything it says
+  so instead of pretending to work.
+- New: **one notch stricter**, with a number attached — "would block 2 more
+  files (about 65k–81k tokens)" — and a button that sets it and re-scans.
+- Files and Settings are still there; the score explanation, the strength table,
+  the rules list and the note editor moved into Settings.
+- `GET /aiignore/report` carries `stats` and `potential`.
+
+Requires `ai-context-doctor@^0.7.2`, which fixes rules being ignored by the
+scanner — the reason Optimize used to change nothing.
+
 ## 0.24.5
 
 **The rules you are actually running, one removable line at a time.**
