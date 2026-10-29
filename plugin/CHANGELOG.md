@@ -1,3 +1,21 @@
+## 0.26.1
+
+**The conversation is back in the header, and a failure stops pretending.**
+
+- The header's first line is the conversation title again (folder name when
+  there is none, `AIignore` when nothing is open); the second line reads
+  `AIignore · …/path · following this conversation`. Removing the title in
+  0.26.0 made the panel stop saying which chat it was looking at.
+- A toast now clears itself after seven seconds. Before, one failed click left
+  an error on screen until the next click — which reads as a permanent state.
+- The failure message no longer guesses a cause: it says the call did not
+  finish and appends the actual reason (`Could not finish that: 500`). The old
+  text claimed a write-permission problem on every error, including ones that
+  never reached the disk.
+- `POST /aiignore/optimize` with a session that has no projection falls back to
+  the workspace the panel is showing instead of answering `404`, so an optimise
+  with nothing to add reports "nothing to add" rather than an error.
+
 ## 0.26.0
 
 **The panel, redrawn.**
