@@ -377,6 +377,24 @@
         return record({ current: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50', conversations: conversationRows });
       }
       if (url.indexOf('/aiignore/conversation') === 0) {
+        if (scenario === 'fresh') {
+          return record({
+            id: 'session-new-0000-0000-0000-000000000000',
+            title: 'A conversation that has not read anything',
+            cwd: '/Users/you/code/demo-noise',
+            turns: 0,
+            steps: 0,
+            score: 100,
+            readFiles: 0,
+            readBytes: 0,
+            noiseBytes: 0,
+            tokens: { user: 0, inject: 0, skill: 0, assistant: 0, tool: 0 },
+            noise: [],
+            suggestedAiignore: [],
+            reads: [],
+            available: []
+          });
+        }
         return record({
           id: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50',
           title: 'Make the panel follow this conversation',

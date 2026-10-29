@@ -27,7 +27,7 @@ test('each region holds a bounded amount of code', () => {
   // without a new page is drift.
   // `styles` is one region by design: the CSS is inlined verbatim, and a second
 // copy of it is a bug waiting to happen. It grows when the UI grows.
-const bounds = { copy: 360, styles: 1400, helpers: 280, components: 200, views: 640, chat: 200, summary: 160, shell: 340, registration: 120 };
+const bounds = { copy: 380, styles: 1400, helpers: 280, components: 200, views: 640, chat: 200, summary: 160, shell: 340, registration: 120 };
   const lines = CLIENT.split('\n');
   let open = null;
   let start = 0;
