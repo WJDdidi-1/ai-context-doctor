@@ -141,6 +141,8 @@ window.__ModuleLoader__.load({
         scanning: 'Scanning this folder…',
         scoreMoved: 'Score moved',
         coveredTitle: 'No longer reaching the model',
+        coveredBadge: 'kept out',
+        beforeRules: 'before your rules',
         optimizeUpToDate: 'Nothing left to add — your rules already cover what this scan found.',
         strengthSaved: 'Saved. The score above now reflects it.',
         rescanHint: 'Scan this folder again',
@@ -301,6 +303,8 @@ window.__ModuleLoader__.load({
         scanning: '正在扫描这个文件夹…',
         scoreMoved: '评分变化',
         coveredTitle: '不再进模型的内容',
+        coveredBadge: '已挡下',
+        beforeRules: '规则前',
         optimizeUpToDate: '没有可加的了——现有规则已经覆盖这次扫描发现的东西。',
         strengthSaved: '已保存，上面的分数已经按这一档重算。',
         rescanHint: '重新扫描这个文件夹',
@@ -2799,6 +2803,8 @@ window.__ModuleLoader__.load({
           });
       };
 
+      const shown = (row) => (typeof row.effectiveScore === 'number' ? row.effectiveScore : row.score);
+
       const rows = data === null
         ? []
         : data.conversations.slice().sort((left, right) => (left.score ?? 101) - (right.score ?? 101));
@@ -2832,18 +2838,24 @@ window.__ModuleLoader__.load({
             h('div', { key: row.id, className: 'aicd-page-row' },
               h('span', {
                 className: 'aicd-page-score',
-                'data-tone': typeof row.score === 'number' ? toneFor(row.score) : 'bad'
-              }, typeof row.score === 'number' ? String(row.score) : '—'),
+                'data-tone': typeof shown(row) === 'number' ? toneFor(shown(row)) : 'bad'
+              }, typeof shown(row) === 'number' ? String(shown(row)) : '—'),
               h('span', { className: 'aicd-page-text' },
                 h('span', { className: 'aicd-page-name' },
                   row.title,
                   row.id === (data === null ? null : data.current)
                     ? h('span', { className: 'aicd-page-badge' }, tr('chatCurrent'))
+                    : null,
+                  row.covered > 0
+                    ? h('span', { className: 'aicd-count' }, `${row.covered} ${tr('coveredBadge')}`)
                     : null
                 ),
                 h('span', { className: 'aicd-page-meta' },
                   `${shortPath(row.cwd)} · ${row.turns} ${tr('chatTurns')} · ${row.readFiles} ${tr('files')} · ${formatBytes(row.readBytes)}`
                     + (row.noise > 0 ? ` · ${row.noise} ${tr('noise')}` : '')
+                    + (typeof row.effectiveScore === 'number' && row.effectiveScore !== row.score
+                      ? ` · ${row.score} ${tr('beforeRules')}`
+                      : '')
                 )
               ),
               h('span', { className: 'aicd-page-actions' },
