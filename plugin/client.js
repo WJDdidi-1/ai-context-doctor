@@ -19,7 +19,7 @@ window.__ModuleLoader__.load({
   factory(require) {
     const React = require('react');
     const h = React.createElement;
-    const { useState, useEffect, useCallback } = React;
+    const { useState, useEffect, useCallback, useRef } = React;
 
     const NS = 'dsh-aiignore';
     const KIND = 'ai-context';
@@ -4049,6 +4049,52 @@ window.__ModuleLoader__.load({
         ? conversationTitle
         : (known ? shortPath(workspace) : tr('tabTitle'));
 
+      // A dropdown is only real chrome if it closes the way every menu does:
+      // Escape anywhere in it, a click outside it — and focus moves in when it
+      // opens and back to the button that opened it when it closes.
+      const menuBtnRef = useRef(null);
+      const closeMenu = useCallback(() => {
+        setMenu(false);
+        const button = menuBtnRef.current;
+        if (button !== null && button !== undefined && typeof button.focus === 'function') button.focus();
+      }, [setMenu]);
+      useEffect(() => {
+        if (menu !== true) return undefined;
+        const first = document.querySelector('.aicd-menu-item:not([aria-disabled="true"])');
+        if (first !== null && first !== undefined && typeof first.focus === 'function') first.focus();
+        const onDocDown = (event) => {
+          const target = event.target;
+          if (target !== null && target !== undefined && typeof target.closest === 'function'
+            && target.closest('.aicd-menu') !== null) return;
+          if (target !== null && target !== undefined && typeof target.closest === 'function'
+            && menuBtnRef.current !== null && menuBtnRef.current !== undefined
+            && target.closest('[data-aicd-menu-btn]') !== null) return;
+          setMenu(false);
+        };
+        document.addEventListener('mousedown', onDocDown);
+        return () => document.removeEventListener('mousedown', onDocDown);
+      }, [menu === true, setMenu, closeMenu]);
+      const onMenuKey = (event) => {
+        if (event.key === 'Escape') {
+          event.stopPropagation();
+          closeMenu();
+          return;
+        }
+        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+        const items = Array.prototype.slice.call(
+          (event.currentTarget !== null && event.currentTarget !== undefined
+            ? event.currentTarget.querySelectorAll('.aicd-menu-item:not([aria-disabled="true"])')
+            : [])
+        );
+        if (items.length === 0) return;
+        const at = items.indexOf(document.activeElement);
+        const next = event.key === 'ArrowDown'
+          ? items[(at + items.length + 1) % items.length]
+          : items[(at + items.length - 1) % items.length];
+        if (next !== null && next !== undefined && typeof next.focus === 'function') next.focus();
+        event.preventDefault();
+      };
+
       return (
         h('div', { className: 'aicd-head' },
           h('div', { className: 'aicd-head-row' },
@@ -4065,15 +4111,29 @@ window.__ModuleLoader__.load({
               }, h(Icon, { name: 'refresh', size: 13 })),
               h('button', {
                 type: 'button',
+                ref: menuBtnRef,
                 className: 'aicd-iconbtn',
                 title: tr('chooseFolder'),
                 'aria-label': tr('chooseFolder'),
                 'aria-expanded': menu === true ? 'true' : 'false',
+                'aria-haspopup': 'menu',
+                'data-aicd-menu-btn': 'true',
+                onKeyDown: (event) => {
+                  if (menu !== true && event.key === 'Escape') {
+                    event.stopPropagation();
+                    setMenu(false);
+                    return;
+                  }
+                  if (menu !== true && event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    setMenu(true);
+                  }
+                },
                 onClick: () => setMenu(menu !== true)
               }, h(Icon, { name: 'folder', size: 13 }))
             ),
             menu === true
-              ? h('div', { className: 'aicd-menu', role: 'menu' },
+              ? h('div', { className: 'aicd-menu', role: 'menu', onKeyDown: onMenuKey },
                   h('button', {
                     type: 'button',
                     role: 'menuitem',

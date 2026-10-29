@@ -1,3 +1,19 @@
+## 0.26.2
+
+**A dropdown that can be dismissed like every other menu.**
+
+- The folder dropdown now closes on Escape (anywhere inside it), on a click
+  outside it, and on the toggle button that opened it. Before, Escape and
+  outside clicks did nothing: only the tiny button or choosing an item could
+  close the menu, which reads as a trap.
+- Focus is part of the same contract: opening moves focus into the menu (the
+  first item that is not disabled), arrow keys walk the items, and closing
+  hands focus back to the folder button — tabbing still starts where the
+  user left off.
+- The preview page's mock now answers a rescan with the score of the current
+  strength and reports back the saved level, so the numbers the panel shows in
+  `plugin/dev/preview.html` can no longer drift from the levels table.
+
 ## 0.26.1
 
 **The conversation is back in the header, and a failure stops pretending.**
