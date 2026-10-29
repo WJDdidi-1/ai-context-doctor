@@ -65,8 +65,8 @@ window.__ModuleLoader__.load({
         heroNoneCaption: 'Nothing has been blocked yet — the moment something is, it shows up here.',
         sessionLine: 'This conversation',
         turns: 'turns',
-        nextStep: 'One notch stricter would block',
-        nextFiles: 'more files',
+        nextStep: 'One notch stricter blocks',
+        nextFiles: 'more files ·',
         applyNext: 'Do that',
         nextDone: 'Turned up',
         rulesOn: 'rules in effect',
@@ -206,6 +206,7 @@ window.__ModuleLoader__.load({
         readOnce: 'Read once',
         neverRead: 'Never read',
         blockedTitle: 'Blocked from context',
+        blockedNone: 'Nothing has been blocked in this workspace yet.',
         blockedNone: 'Nothing blocked yet.',
         readsTitle: 'Read into this session',
         readsNone: 'Nothing read yet.',
@@ -267,7 +268,7 @@ window.__ModuleLoader__.load({
         sessionLine: '本次对话',
         turns: '轮',
         nextStep: '再严格一档会多挡下',
-        nextFiles: '个文件',
+        nextFiles: '个文件 ·',
         applyNext: '就这样做',
         nextDone: '已调高',
         rulesOn: '条规则在生效',
@@ -407,6 +408,7 @@ window.__ModuleLoader__.load({
         readOnce: '读一次',
         neverRead: '永不读',
         blockedTitle: '挡在上下文之外',
+        blockedNone: '这个工作区还没有文件被挡下。',
         blockedNone: '暂时没有拦截记录。',
         readsTitle: '已读入本次会话',
         readsNone: '还没有读取记录。',
@@ -1983,6 +1985,628 @@ window.__ModuleLoader__.load({
   text-overflow: ellipsis;
   padding-bottom: 2px;
 }
+
+/* ------------------------------------------------------------------ *
+ * Layout pass: header, tabs, and the protection screen.
+ * Everything here uses the host tokens with a plain fallback, so the
+ * panel looks like the app it lives in, in both themes.
+ * ------------------------------------------------------------------ */
+
+.aicd-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px 0;
+  position: relative;
+}
+
+.aicd-head-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.aicd-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  font: var(--dsw-font-xs-strong-13, 600 13px/18px system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-brand-icon {
+  color: var(--dsw-alias-label-tertiary, currentColor);
+}
+
+.aicd-head-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.aicd-head-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.aicd-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xxxs-11, 11px/15px ui-monospace, SFMono-Regular, monospace);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-chipdot {
+  flex: none;
+  padding: 1px 7px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.25));
+  border-radius: 999px;
+  background: none;
+  font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
+  color: var(--dsw-alias-label-tertiary, currentColor);
+  cursor: default;
+}
+
+.aicd-chipdot[data-state='pinned'] {
+  color: var(--dsw-alias-state-business-primary, #4d6bfe);
+  border-color: var(--dsw-alias-state-business-primary, #4d6bfe);
+  cursor: pointer;
+}
+
+.aicd-tabs {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.16));
+  border-radius: 0;
+  background: none;
+}
+
+.aicd-tab {
+  appearance: none;
+  margin-bottom: -1px;
+  padding: 8px 0 7px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  font: var(--dsw-font-xxs-12, 12px/16px system-ui);
+  color: var(--dsw-alias-label-tertiary, currentColor);
+  cursor: pointer;
+}
+
+.aicd-tab:hover {
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-tab[aria-selected='true'] {
+  color: var(--dsw-alias-label-primary, currentColor);
+  border-bottom-color: var(--dsw-alias-state-business-primary, #4d6bfe);
+  background: none;
+}
+
+.aicd-protect {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px 18px;
+}
+
+.aicd-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.16));
+  border-radius: var(--dsw-radius-md, 12px);
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.04));
+}
+
+.aicd-stat-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.aicd-stat-num {
+  font: var(--dsw-font-xl-strong-24, 600 30px/34px system-ui);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-stat-text {
+  min-width: 0;
+}
+
+.aicd-stat-label {
+  font: var(--dsw-font-xxs-12, 12px/16px system-ui);
+  color: var(--dsw-alias-label-secondary, currentColor);
+}
+
+.aicd-item-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-stat-sub {
+  margin-top: 2px;
+  font: var(--dsw-font-xxxs-11, 11px/15px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-stat-meta {
+  font: var(--dsw-font-xxxs-11, 11px/15px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-btn[data-wide='true'] {
+  width: 100%;
+  height: 32px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  font-weight: 600;
+}
+
+.aicd-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.16));
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: none;
+}
+
+.aicd-hint-text {
+  flex: 1;
+  min-width: 0;
+  font: var(--dsw-font-xxxs-11, 11px/15px system-ui);
+  color: var(--dsw-alias-label-secondary, currentColor);
+}
+
+.aicd-textbtn {
+  flex: none;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  font: var(--dsw-font-xxxs-strong-11, 600 11px/15px system-ui);
+  color: var(--dsw-alias-state-business-primary, #4d6bfe);
+  cursor: pointer;
+}
+
+.aicd-textbtn:disabled {
+  color: var(--dsw-alias-label-caption, currentColor);
+  cursor: default;
+}
+
+.aicd-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.aicd-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 2px 4px;
+}
+
+.aicd-list-title {
+  font: var(--dsw-font-xxxs-strong-11, 600 10px/14px system-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-list-count {
+  font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-list-empty {
+  padding: 10px 2px;
+  font: var(--dsw-font-xxxs-11, 11px/15px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px;
+  border-radius: var(--dsw-radius-sm, 8px);
+}
+
+.aicd-item:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.1));
+}
+
+.aicd-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.aicd-item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xxs-12, 12px/16px system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-item-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xxxs-11, 10px/14px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-item-actions {
+  display: flex;
+  gap: 2px;
+  flex: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.aicd-item:hover .aicd-item-actions,
+.aicd-item:focus-within .aicd-item-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .aicd-item-actions {
+    opacity: 1;
+  }
+}
+
+.aicd-minibtn {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid transparent;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: none;
+  color: var(--dsw-alias-label-tertiary, currentColor);
+  cursor: pointer;
+}
+
+.aicd-minibtn:hover {
+  border-color: var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.2));
+  background: var(--dsw-alias-bg-base, transparent);
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-minibtn:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary, #4d6bfe);
+  outline-offset: 1px;
+}
+
+.aicd-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px;
+  font: var(--dsw-font-xxxs-11, 11px/15px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+/* Files tab, same rhythm as the protection screen. */
+
+.aicd-files {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 10px 14px 16px;
+}
+
+.aicd-toolbar {
+  display: block;
+  padding: 0;
+}
+
+.aicd-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.16));
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.04));
+  color: var(--dsw-alias-label-tertiary, currentColor);
+}
+
+.aicd-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font: var(--dsw-font-xxs-12, 12px/16px system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-search:focus-within {
+  border-color: var(--dsw-alias-state-business-primary, #4d6bfe);
+}
+
+.aicd-filters {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 2px;
+  min-width: 0;
+}
+
+.aicd-filters .aicd-count {
+  margin-left: auto;
+  flex: none;
+  font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-chip {
+  flex: none;
+  padding: 3px 8px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  font: var(--dsw-font-xxxs-11, 11px/16px system-ui);
+  color: var(--dsw-alias-label-secondary, currentColor);
+  cursor: pointer;
+}
+
+.aicd-chip:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.1));
+}
+
+.aicd-chip[data-active='true'] {
+  background: var(--dsw-alias-interactive-bg-active, rgba(127, 127, 127, 0.16));
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-subbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 2px 0 4px;
+  min-height: 20px;
+}
+
+.aicd-sortbtn {
+  padding: 2px 0;
+  border: none;
+  background: none;
+  font: var(--dsw-font-xxxs-11, 11px/15px system-ui);
+  color: var(--dsw-alias-label-tertiary, currentColor);
+  cursor: pointer;
+}
+
+.aicd-sortbtn:hover {
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-subbar .aicd-chip {
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.06));
+}
+
+.aicd-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 0 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.aicd-list-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xxxs-11, 11px/14px ui-monospace, monospace);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  cursor: pointer;
+}
+
+.aicd-row:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.1));
+}
+
+.aicd-row[data-selected='true'] {
+  background: var(--dsw-alias-interactive-bg-active, rgba(127, 127, 127, 0.16));
+  box-shadow: none;
+}
+
+.aicd-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xxs-12, 12px/16px system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-row-meta {
+  flex: none;
+  font: var(--dsw-font-xxxs-11, 10px/14px system-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-caption, currentColor);
+  text-align: right;
+}
+
+.aicd-row-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  color: var(--dsw-alias-label-tertiary, currentColor);
+}
+
+.aicd-badge {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font: var(--dsw-font-xxxs-11, 10px/14px system-ui);
+  background: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, 0.12));
+  color: var(--dsw-alias-label-secondary, currentColor);
+}
+
+.aicd-badge[data-tone='noise'] {
+  background: var(--dsw-alias-state-warn-tertiary, rgba(224, 163, 58, 0.16));
+  color: var(--dsw-alias-state-warn-primary, #a4700f);
+}
+
+.aicd-badge[data-tone='review'] {
+  background: var(--dsw-alias-state-business-tertiary, rgba(77, 107, 254, 0.14));
+  color: var(--dsw-alias-state-business-primary, #4d6bfe);
+}
+
+/* Settings tab: one column of labelled blocks, same rhythm as the rest. */
+
+.aicd-body .aicd-opt,
+.aicd-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 0;
+  border-top: 1px solid var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.14));
+}
+
+.aicd-opt:first-child {
+  border-top: none;
+  padding-top: 4px;
+}
+
+.aicd-opt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aicd-opt-title {
+  font: var(--dsw-font-xxxs-strong-11, 600 10px/14px system-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-opt-head .aicd-count {
+  font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aicd-levels .aicd-section-title {
+  padding: 2px 0 4px;
+  font: var(--dsw-font-xxxs-strong-11, 600 10px/14px system-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-level-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--dsw-alias-label-secondary, currentColor);
+}
+
+.aicd-level-row:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.1));
+}
+
+.aicd-level-row[data-active='true'] {
+  background: var(--dsw-alias-interactive-bg-active, rgba(127, 127, 127, 0.14));
+  color: var(--dsw-alias-label-primary, currentColor);
+  box-shadow: inset 2px 0 0 var(--dsw-alias-state-business-primary, #4d6bfe);
+}
+
+.aicd-level-num {
+  font: var(--dsw-font-xxxs-11, 11px/14px ui-monospace, monospace);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-level-label {
+  font: var(--dsw-font-xxs-12, 12px/16px system-ui);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-level-meta {
+  margin-left: 6px;
+  font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-level-score {
+  font: var(--dsw-font-xxs-12, 12px/16px system-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-level {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 8px;
+}
+
+.aicd-level-name {
+  font: var(--dsw-font-xxs-strong-12, 600 12px/16px system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-level-note {
+  font: var(--dsw-font-xxxs-11, 11px/15px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
 `;
 
     //#endregion styles
@@ -2001,7 +2625,8 @@ window.__ModuleLoader__.load({
       close: 'M4 4l8 8M12 4l-8 8',
       upload: 'M8 10.6V2.8m0 0L5.2 5.6M8 2.8l2.8 2.8M2.6 11.4v1.8h10.8v-1.8',
       bookmark: 'M4 2.2h8v11.6L8 10.6l-4 3.2V2.2Z',
-      spark: 'M8 2.2 9.4 6.4 13.6 8 9.4 9.6 8 13.8 6.6 9.6 2.4 8 6.6 6.4 8 2.2Z'
+      spark: 'M8 2.2 9.4 6.4 13.6 8 9.4 9.6 8 13.8 6.6 9.6 2.4 8 6.6 6.4 8 2.2Z',
+      check: 'M3.4 8.4 6.4 11.4 12.6 5'
     };
 
     function Icon({ name, size = 14, stroke = 1.3, className }) {
@@ -2506,7 +3131,7 @@ window.__ModuleLoader__.load({
               onChange: (event) => setQuery(event.target.value)
             })
           ),
-          h('div', { className: 'aicd-chips' },
+          h('div', { className: 'aicd-filters' },
             filters.map(([id, label]) =>
               h('button', {
                 key: id,
@@ -2519,21 +3144,14 @@ window.__ModuleLoader__.load({
             h('span', { className: 'aicd-count' }, tr('filesCount').replace('{n}', String(total)))
           )
         ),
-        h('div', { className: 'aicd-chips', style: { padding: '0 4px 6px' } },
+        h('div', { className: 'aicd-subbar' },
           h('button', {
-            key: 'size',
+            key: 'sort',
             type: 'button',
-            className: 'aicd-chip',
-            'data-active': sort === 'size' ? 'true' : 'false',
-            onClick: () => setSort('size')
-          }, tr('sortSize')),
-          h('button', {
-            key: 'name',
-            type: 'button',
-            className: 'aicd-chip',
-            'data-active': sort === 'name' ? 'true' : 'false',
-            onClick: () => setSort('name')
-          }, tr('sortName')),
+            className: 'aicd-sortbtn',
+            'aria-label': tr('sortSize'),
+            onClick: () => setSort(sort === 'size' ? 'name' : 'size')
+          }, sort === 'size' ? tr('sortSize') : tr('sortName'), ' ▾'),
           picked.length > 1
             ? h('button', {
                 key: 'batch',
@@ -2576,9 +3194,9 @@ window.__ModuleLoader__.load({
           sessionFiles.length === 0 && (query !== '' || filter !== 'all')
             ? null
             : h('div', null,
-                h('div', { className: 'aicd-section' },
-                  h('span', { className: 'aicd-section-title' }, tr('sessionTitle')),
-                  h('span', { className: 'aicd-count' }, String(sessionFiles.length))
+                h('div', { className: 'aicd-list-head' },
+                  h('span', { className: 'aicd-list-title' }, tr('sessionTitle')),
+                  h('span', { className: 'aicd-list-count' }, String(sessionFiles.length))
                 ),
                 sessionFiles.length === 0
                   ? h('div', { className: 'aicd-note' }, tr('sessionNone'))
@@ -2594,11 +3212,11 @@ window.__ModuleLoader__.load({
                       })
                     )
               ),
-          h('div', { className: 'aicd-section' },
-            h('span', { className: 'aicd-section-title' }, tr('workspaceTitle')),
-            h('span', { className: 'aicd-count' }, at === '' ? (data.workspace || '') : at)
+          h('div', { className: 'aicd-list-head' },
+            h('span', { className: 'aicd-list-title' }, tr('workspaceTitle')),
+            h('span', { className: 'aicd-list-path', title: at === '' ? (data.workspace || '') : at }, at === '' ? (data.workspace || '') : at)
           ),
-          h('div', { className: 'aicd-chips', style: { padding: '0 4px 4px' } }, crumbs),
+          h('div', { className: 'aicd-crumbs' }, crumbs),
           tree === null
             ? h(Skeleton, null)
             : entries.length === 0
@@ -3106,55 +3724,80 @@ window.__ModuleLoader__.load({
           .catch(() => setRaised('failed'));
       };
 
-      return h('div', { className: 'aicd-body aicd-protect' },
-        h('div', { className: 'aicd-hero' },
-          h('div', { className: 'aicd-hero-num' }, String(blockedReads)),
-          h('div', { className: 'aicd-hero-label' }, tr(blockedReads === 1 ? 'heroOne' : 'heroMany')),
-          h('div', { className: 'aicd-hero-sub' }, blockedReads === 0
-            ? tr('heroNoneCaption')
-            : `${tr('heroAbout')} ${shortTokens(savedTokens)} ${tr('tokens')} ${tr('heroKept')}`)
+      const row = (item) => h('div', { key: item.path, className: 'aicd-item' },
+        h('span', { className: 'aicd-item-icon' }, h(Icon, { name: 'warn', size: 12 })),
+        h('div', { className: 'aicd-item-main' },
+          h('span', { className: 'aicd-item-name', title: item.path }, item.path),
+          h('span', { className: 'aicd-item-meta' },
+            `${formatBytes(item.bytes)} · ${item.reason}${item.attempts > 1 ? ` · ${item.attempts}×` : ''}`)
         ),
+        h('div', { className: 'aicd-item-actions' },
+          h('button', {
+            type: 'button',
+            className: 'aicd-minibtn',
+            title: tr('readOnce'),
+            'aria-label': tr('readOnce'),
+            onClick: () => onAllow(item.path)
+          }, h(Icon, { name: 'check', size: 12 })),
+          h('button', {
+            type: 'button',
+            className: 'aicd-minibtn',
+            title: tr('neverRead'),
+            'aria-label': tr('neverRead'),
+            onClick: () => onIgnore(item.path)
+          }, h(Icon, { name: 'lock', size: 12 }))
+        )
+      );
 
-        h('div', { className: 'aicd-hero-actions' },
+      return h('div', { className: 'aicd-body aicd-protect' },
+        h('div', { className: 'aicd-stat' },
+          h('div', { className: 'aicd-stat-top' },
+            h('div', { className: 'aicd-stat-num' }, String(blockedReads)),
+            h('div', { className: 'aicd-stat-label' }, tr(blockedReads === 1 ? 'heroOne' : 'heroMany'))
+          ),
+          h('div', { className: 'aicd-stat-sub' }, blockedReads === 0
+            ? tr('heroNoneCaption')
+            : `${tr('heroAbout')} ${shortTokens(savedTokens)} ${tr('tokens')}`),
           h('button', {
             type: 'button',
             className: 'aicd-btn',
             'data-variant': 'primary',
+            'data-wide': 'true',
             disabled: progress !== null,
             onClick: optimize
           }, progress === null ? tr('optimizeNow') : tr('working')),
-          conversation === null ? null : h('div', { className: 'aicd-hero-meta' },
-            `${tr('sessionLine')} · ${conversation.turns} ${tr('turns')} · ${conversation.readFiles} ${tr('files')} · ${tr('heroAbout')} ${shortTokens(tokenTotal(conversation.tokens))} ${tr('tokens')}`)
+          progress === null ? null : h('div', { className: 'aicd-progress', role: 'progressbar', 'aria-valuenow': progress.pct, 'aria-valuemin': 0, 'aria-valuemax': 100 },
+            h('div', { className: 'aicd-progress-bar', style: { width: `${progress.pct}%` } }),
+            h('div', { className: 'aicd-progress-label' }, progress.label)
+          ),
+          conversation === null ? null : h('div', { className: 'aicd-stat-meta' },
+            `${conversation.turns} ${tr('turns')} · ${conversation.readFiles} ${tr('files')} · ${shortTokens(tokenTotal(conversation.tokens))} ${tr('tokens')}`)
         ),
 
-        progress === null ? null : h('div', { className: 'aicd-progress', role: 'progressbar', 'aria-valuenow': progress.pct, 'aria-valuemin': 0, 'aria-valuemax': 100 },
-          h('div', { className: 'aicd-progress-bar', style: { width: `${progress.pct}%` } }),
-          h('div', { className: 'aicd-progress-label' }, progress.label)
-        ),
-
-        potential === null ? null : h('div', { className: 'aicd-next' },
-          h('div', { className: 'aicd-next-text' },
-            `${tr('nextStep')} ${potential.extraFiles} ${tr('nextFiles')} (${tr('heroAbout')} ${shortTokens(potential.extraTokens)} ${tr('tokens')})`),
+        potential === null ? null : h('div', { className: 'aicd-hint' },
+          h('span', { className: 'aicd-hint-text' },
+            `${tr('nextStep')} ${potential.extraFiles} ${tr('nextFiles')} · ${tr('heroAbout')} ${shortTokens(potential.extraTokens)} ${tr('tokens')}`),
           h('button', {
             type: 'button',
-            className: 'aicd-btn',
+            className: 'aicd-textbtn',
             disabled: raised === 'busy',
             onClick: applyNext
           }, raised === 'done' ? tr('nextDone') : tr('applyNext'))
         ),
 
-        skipped.length === 0 ? null : h('div', { className: 'aicd-blocked-list' },
-          h('div', { className: 'aicd-blocked-title' }, tr('blockedTitle')),
-          skipped.map((item) => h('div', { key: item.path, className: 'aicd-block-row' },
-            h('span', { className: 'aicd-block-name', title: item.path }, item.path),
-            h('span', { className: 'aicd-block-meta' },
-              `${formatBytes(item.bytes)} · ${item.reason}${item.attempts > 1 ? ` · ${item.attempts}×` : ''}`)
-          ))
+        h('div', { className: 'aicd-list' },
+          h('div', { className: 'aicd-list-head' },
+            h('span', { className: 'aicd-list-title' }, tr('blockedTitle')),
+            h('span', { className: 'aicd-list-count' }, String(skipped.length))
+          ),
+          skipped.length === 0
+            ? h('div', { className: 'aicd-list-empty' }, tr('blockedNone'))
+            : skipped.map(row)
         ),
 
-        h('div', { className: 'aicd-hero-foot' },
+        h('div', { className: 'aicd-foot' },
           h('span', null, `${rules.length} ${tr('rulesOn')}`),
-          h('button', { type: 'button', className: 'aicd-link', onClick: onSettings }, tr('openSettings'))
+          h('button', { type: 'button', className: 'aicd-textbtn', onClick: onSettings }, tr('openSettings'))
         )
       );
     }
@@ -3359,49 +4002,37 @@ window.__ModuleLoader__.load({
     }
 
     /** The panel header: where you are, whether it follows the conversation, and the few actions. */
-    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, conv, view, setView, tabs, toast, rescanning, pinnedSession, onFollowConversation }) {
+    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, view, setView, tabs, toast, rescanning, pinnedSession, onFollowConversation }) {
       const workspace = data === null ? null : data.workspace;
-      const title = conv !== null && conv !== undefined && typeof conv.title === 'string' && conv.title.length > 0
-        ? conv.title
-        : (workspace === null || workspace === undefined ? tr('tabTitle') : shortPath(workspace));
-      const following = workspace !== null && workspace !== undefined && pinned === null;
+      const known = workspace !== null && workspace !== undefined;
+      const following = known && pinned === null;
 
       return (
         h('div', { className: 'aicd-head' },
-          h('div', { className: 'aicd-head-main' },
-            h('div', { className: 'aicd-head-text' },
-              h('span', { className: 'aicd-title', title: title }, title),
-              h('span', { className: 'aicd-sub' },
-                workspace === null || workspace === undefined ? '' : shortPath(workspace),
-                following ? h('span', { className: 'aicd-follow', title: tr('follow') }, tr('followOn')) : null,
-                pinnedSession === null || pinnedSession === undefined
-                  ? null
-                  : h('button', {
-                      type: 'button',
-                      className: 'aicd-follow',
-                      'data-state': 'pinned',
-                      title: tr('chatFollowBack'),
-                      onClick: onFollowConversation
-                    }, tr('chatPinned'))
-              )
+          h('div', { className: 'aicd-head-row' },
+            h('span', { className: 'aicd-brand' },
+              h(Icon, { name: 'lock', size: 13, className: 'aicd-brand-icon' }),
+              h('span', null, tr('tabTitle'))
             ),
-            h('button', {
-              type: 'button',
-              className: 'aicd-iconbtn',
-              title: tr('chooseFolder'),
-              'aria-label': tr('chooseFolder'),
-              'aria-expanded': menu === true ? 'true' : 'false',
-              onClick: () => setMenu(menu !== true)
-            }, h(Icon, { name: 'folder', size: 14 })),
-            h('button', {
-              type: 'button',
-              className: 'aicd-iconbtn',
-              title: tr('rescanHint'),
-              'aria-label': tr('rescanHint'),
-              'data-busy': rescanning === true ? 'true' : 'false',
-              disabled: rescanning === true ? 'true' : undefined,
-              onClick: rescan
-            }, h(Icon, { name: 'refresh', size: 14 })),
+            h('div', { className: 'aicd-head-tools' },
+              h('button', {
+                type: 'button',
+                className: 'aicd-iconbtn',
+                title: tr('rescanHint'),
+                'aria-label': tr('rescanHint'),
+                'data-busy': rescanning === true ? 'true' : 'false',
+                disabled: rescanning === true ? 'true' : undefined,
+                onClick: rescan
+              }, h(Icon, { name: 'refresh', size: 13 })),
+              h('button', {
+                type: 'button',
+                className: 'aicd-iconbtn',
+                title: tr('chooseFolder'),
+                'aria-label': tr('chooseFolder'),
+                'aria-expanded': menu === true ? 'true' : 'false',
+                onClick: () => setMenu(menu !== true)
+              }, h(Icon, { name: 'folder', size: 13 }))
+            ),
             menu === true
               ? h('div', { className: 'aicd-menu', role: 'menu' },
                   h('button', {
@@ -3428,6 +4059,21 @@ window.__ModuleLoader__.load({
                 )
               : null
           ),
+          h('div', { className: 'aicd-head-sub' },
+            known
+              ? h('span', { className: 'aicd-path', title: workspace }, shortPath(workspace))
+              : h('span', { className: 'aicd-path' }, tr('emptyTitle')),
+            following ? h('span', { className: 'aicd-chipdot' }, tr('followOn')) : null,
+            pinnedSession === null || pinnedSession === undefined
+              ? null
+              : h('button', {
+                  type: 'button',
+                  className: 'aicd-chipdot',
+                  'data-state': 'pinned',
+                  title: tr('chatFollowBack'),
+                  onClick: onFollowConversation
+                }, tr('chatPinned'))
+          ),
           toast === null || toast === undefined
             ? null
             : h('div', { className: 'aicd-toast', role: 'status' }, toast),
@@ -3444,7 +4090,7 @@ window.__ModuleLoader__.load({
                     onClick: () => setView(id)
                   }, label)
                 )
-              ),
+              )
         )
       );
     }

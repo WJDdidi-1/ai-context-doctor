@@ -1,3 +1,29 @@
+## 0.26.0
+
+**The panel, redrawn.**
+
+Nothing about what the plugin does changed; how it looks and reads did.
+
+- One header row: the name, then refresh and folder as icon buttons. The path
+  and a single follow/pinned chip sit underneath; a long chat title no longer
+  pushes the panel around.
+- Tabs are underlined rather than pill-shaped, and no longer change weight when
+  selected (the bold swap moved everything by a pixel).
+- **Protection** reads top to bottom: the counter and what it saved, one
+  full-width primary button, the conversation it belongs to, one hint about the
+  next notch, the files it kept out, the rules in force.
+- The blocked list is a list, not a table: reason and size on the second line,
+  hover to reveal "read once" / "never read", which stay visible on touch
+  devices.
+- **Files**: search alone in the toolbar, filters as small pills with a count,
+  sorting as one right-aligned control, section labels in small caps, rows on a
+  single 28px rhythm with tabular sizes.
+- **Settings**: one column of labelled blocks, the strength table as numbered
+  rows with the score each would produce, selection marked by a 2px accent
+  instead of a blue outline.
+- Every colour now comes from a host token with a fallback, so light and dark
+  are the same design rather than two guesses.
+
 ## 0.25.0
 
 **One number that moves, one button that does something.**

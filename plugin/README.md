@@ -33,6 +33,8 @@ one plugin covers both.
 
 ![The Protection tab, light theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-light.png)
 
+![The Files tab: what this session read and wrote](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
+
 Three tabs inside, and the first one exists to answer a single question: *is
 this doing anything?*
 
@@ -55,9 +57,9 @@ this doing anything?*
   with a preview of exactly the text it will read, and the five-dimension
   arithmetic folded away at the bottom.
 
-  At the bottom sits the note for the agent  At the bottom sits the note for the agent, and it no longer asks you to
-  imagine what it does: three one-click sentences, then a preview of **exactly
-  the text the agent will read** before your next message.
+  It no longer asks you to imagine what the note does: three one-click
+  sentences, then a preview of **exactly the text the agent will read** before
+  your next message.
 
 - **One button runs the job.** *Optimize now* rescans, writes the rules,
   re-scores and moves the number on screen — the progress bar only advances when
@@ -165,6 +167,8 @@ There is no authentication beyond a same-origin check: like every
 must not be exposed to a network.
 
 ![The Protection tab, dark theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-dark.png)
+
+![Settings, dark theme: strength, rules, and the note for the agent](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-settings-dark.png)
 
 ### Looking at the panel without a Harness
 
