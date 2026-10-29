@@ -158,7 +158,7 @@ export function sessionFiles(state) {
     .sort((left, right) => right.bytes - left.bytes);
 }
 
-export function buildReport({ cwd, state, policy }) {
+export function buildReport({ cwd, state, policy, rules = [] }) {
   const report = state.report;
   const saved = savedTokens(state);
 
@@ -191,6 +191,9 @@ export function buildReport({ cwd, state, policy }) {
           suggestedAiignore: report.suggestedAiignore,
           truncated: report.truncated === true
         },
+    // The lines in .aiignore, verbatim: the panel lists them so a rule can be
+    // removed one at a time instead of only "undo the whole batch".
+    rules,
     skipped: [...state.skipped.values()].map((item) => ({ ...item })),
     reads: [...state.reads.values()].map((item) => ({ ...item })),
     writes: [...state.writes.values()].map((item) => ({ ...item })),

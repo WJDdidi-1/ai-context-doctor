@@ -1,3 +1,24 @@
+## 0.24.5
+
+**The rules you are actually running, one removable line at a time.**
+
+Optimize could only say "4 rules added", and the only way back was to undo the
+whole batch. The Score tab now lists every line in `.aiignore`, with an × on
+each: removing one edits exactly that line and never touches the comments.
+
+- `GET /aiignore/report` carries `rules` (non-comment lines, verbatim).
+- `POST /aiignore/rules/delete` takes `{ rule }`, matches it against the file's
+  rules, and refuses anything that is not there (`404 no-such-rule`). The path
+  based `/aiignore/unignore` cannot express `dist/` or `*.log`, which is why the
+  rule route exists.
+- Empty state names what will fill it; the count sits in the card header.
+
+**Pinning a conversation now says so.** Choosing an older conversation in the
+Chat picker re-reads that conversation and puts a `showing an earlier
+conversation` chip in the header; the chip is the way back to the live one. The
+title, turn count and file list follow the pin instead of quietly describing the
+conversation you are not looking at.
+
 ## 0.24.4
 
 - A conversation that has not opened a file no longer shows a 0% bar under

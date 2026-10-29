@@ -64,6 +64,10 @@ Three tabs inside:
 - **One button runs the job.** *Optimize now*, under the tabs, rescans, writes
   the rules, re-scores and moves the number on screen — the progress bar only
   advances when the request behind that phase has come back.
+- **The rules are visible, and removable one at a time.** Under the score sits
+  **Rules in .aiignore**: every line that is in force, each with an ×. Removing
+  one edits exactly that line — comments and the other rules stay — so a rule
+  you disagree with is one click away instead of an all-or-nothing undo.
 - **The strength is part of the score, not a separate page.** Five buttons from
   *Off* to *Strict*, each already scored against your workspace before you commit
   to one, so the difference between *Balanced* and *Strict* is a number you read
@@ -82,6 +86,12 @@ front of you, and its header names the folder — no guessing from directory
 names, and no dependency on the workspace index ever having been told about that
 session. The header names the workspace; the guard, the score and the file list
 then all speak about that one folder.
+
+The Chat tab's picker shows the conversations this app knows about, newest
+first, with `current` on the live one. Picking an older one re-reads *that*
+conversation — header title, turn count and file list all switch — and a
+`showing an earlier conversation` chip appears in the header; clicking it takes
+you back to the live one.
 
 The folder button keeps a menu: **follow this conversation** (the default),
 **pick another folder…**, or **stop pinning** — so a choice made once is a choice
@@ -121,7 +131,7 @@ and size; the score on the left is the one your rules and strength leave behind,
 with the pre-rule number trailing behind it when the two differ, and a
 `N kept out` badge once a clean-up covers something. **Scan again** refreshes,
 **Clean up N** writes that conversation's suggestions, **Open the panel** jumps
-to it. It is served by `GET /aiignore/conversations` (nineteen routes in total).
+to it. It is served by `GET /aiignore/conversations` (twenty routes in total).
 
 Both numbers are computed from the session projection, never from a guess: the
 conversation score is what that chat was actually handed, and the effective
@@ -134,7 +144,7 @@ panel follows light and dark themes instead of shipping its own palette. Every
 control is reachable with `Tab`, and empty, loading and error states are real
 screens rather than blank space.
 
-The panel talks to the Host half over nineteen same-origin routes
+The panel talks to the Host half over twenty same-origin routes
 (`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET /aiignore/overview`,
 `GET /aiignore/sessions`, `GET /aiignore/workspaces`, `GET /aiignore/levels`,
 `GET /aiignore/debug`,
@@ -142,9 +152,12 @@ The panel talks to the Host half over nineteen same-origin routes
 `GET /aiignore/upload?digest=`, `POST /aiignore/scan`,
 `POST /aiignore/client-report`, `POST /aiignore/optimize`,
 `POST /aiignore/optimize/undo`, `POST /aiignore/allow`,
-`POST /aiignore/ignore`, `POST /aiignore/unignore`). The upload route serves a thumbnail and refuses
+`POST /aiignore/ignore`, `POST /aiignore/unignore`,
+`POST /aiignore/rules/delete`). The upload route serves a thumbnail and refuses
 anything that is not a 64-hex digest inside the attachment store; the unignore
-route removes exactly one rule line and refuses symlinks and directories. They
+route removes the rule that names a file and refuses symlinks and directories,
+while `rules/delete` removes one rule line by its exact text (`dist/`, `*.log`)
+and never touches a comment. They
 answer for the most recently scanned workspace and set `no-store`; the only one
 that returns file bytes is the upload thumbnail, and it only ever returns an
 image the user already handed to this session. The Host half installs them through `ctx.inject(['webServer'])`,
