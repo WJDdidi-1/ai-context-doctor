@@ -22,10 +22,7 @@
     {
       "name": "dsh-aiignore",
       "title": "AIignore",
-      "description": {
-        "en": "Counts the reads it refused, shows roughly how many tokens that kept out, and rewrites .aiignore in one click — rescanning before and after, so the number moves.",
-        "zh": "统计它挡下的读取次数与大致省下的 token，一键重写 .aiignore —— 前后各扫描一次，让分数真的会动。"
-      },
+      "description": "The folder dropdown closes like every other menu: Escape, a click outside it, and focus back on your button.",
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
       "repository": {
@@ -43,6 +40,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.26.2",
+          "publishTimestamp": 1793281848,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.26.1",
           "publishTimestamp": 1793259512,
