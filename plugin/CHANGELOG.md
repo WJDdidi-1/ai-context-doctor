@@ -1,3 +1,9 @@
+## 0.24.1
+
+- The line under the two scores still described them as "this conversation"
+  against "what reaches the model", left over from when the left card was the
+  chat. Both cards are folder scores now, and the line says so.
+
 ## 0.24.0
 
 - The Optimize button is the panel's centre. It sits under the tabs, and one
