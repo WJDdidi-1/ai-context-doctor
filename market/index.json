@@ -21,10 +21,10 @@
   "plugins": [
     {
       "name": "dsh-aiignore",
-      "title": "Context Budget",
+      "title": "AIignore",
       "description": {
-        "en": "See what a conversation feeds the model, what your rules keep out, and what one click would change.",
-        "zh": "看清一次对话喂给模型的内容、规则挡住了什么，以及一键优化会改变什么。"
+        "en": "Score what a conversation costs, block the files it does not need, and answer a blocked read with one click.",
+        "zh": "给一次对话的开销打分，挡住它不需要的文件，被拦下的读入也能一键放行。"
       },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
@@ -43,6 +43,36 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.24.4",
+          "publishTimestamp": 1793247073,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.24.3",
+          "publishTimestamp": 1793246691,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.24.2",
+          "publishTimestamp": 1793246476,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.24.1",
           "publishTimestamp": 1793245033,
