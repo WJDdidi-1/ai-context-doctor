@@ -25,7 +25,9 @@ test('each region holds a bounded amount of code', () => {
   // Bound per region, not per file: copy grows with every control (two
   // languages) and views grows with every page, but a region that doubles
   // without a new page is drift.
-  const bounds = { copy: 320, styles: 1120, helpers: 280, components: 200, views: 600, chat: 200, summary: 120, shell: 300, registration: 90 };
+  // `styles` is one region by design: the CSS is inlined verbatim, and a second
+// copy of it is a bug waiting to happen. It grows when the UI grows.
+const bounds = { copy: 360, styles: 1300, helpers: 280, components: 200, views: 640, chat: 200, summary: 160, shell: 300, registration: 120 };
   const lines = CLIENT.split('\n');
   let open = null;
   let start = 0;

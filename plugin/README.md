@@ -27,7 +27,7 @@ becomes noise itself.
 
 The bundle also ships a browser half. A folder button sits beside the add-files
 button in the composer; clicking it opens the **right sidebar** on the
-**Context** tab, and expands the sidebar if it was collapsed. On a Host without
+**Context budget** tab, and expands the sidebar if it was collapsed. On a Host without
 sidebar services the same button opens the panel as a floating card instead, so
 one plugin covers both.
 
@@ -51,16 +51,23 @@ Three tabs inside:
   | **Still reaches the model** | what is left after your `.aiignore` rules and your strength |
 
   Below them: one bar per noise category (what it cost, out of the weight it
-  could cost), the strength slider, and **Optimize from this conversation** —
-  which writes the rules that conversation needs, then reports the score before
-  and after plus how many of those reads the new rules now block. Undo puts the
-  file back byte for byte. At the bottom sits the optional note for the agent.
+  could cost) with **how the score is computed** folded away behind a summary
+  you can open, and **Optimize from this conversation** as a primary button that
+  names the rules it is about to write before you press it — then reports the
+  score before and after plus how many of those reads the new rules now block.
+  Undo puts the file back byte for byte.
+
+  At the bottom sits the note for the agent, and it no longer asks you to
+  imagine what it does: three one-click sentences, then a preview of **exactly
+  the text the agent will read** before your next message.
 
 - **The strength is part of the score, not a separate page.** One slider, five
-  notches, from *Off* to *Strict*. Each notch says what it stops and what that
-  costs, the Host stores it in `.aiignore.policy.json`, the read guard and the
-  scan share the same predicate, and saving a notch re-scans — so moving from 3
-  to 5 visibly changes the number instead of only the copy around it.
+  notches, from *Off* to *Strict* — and under it a table that scores **all five**
+  against your workspace before you commit to one, so the difference between
+  *Balanced* and *Strict* is a number you can read instead of a guess. Each
+  notch says what it stops and what that costs; the Host stores it in
+  `.aiignore.policy.json`; the read guard and the scan share the same predicate,
+  so saving a notch re-scans and the number moves.
 
 ### Following the conversation, not a folder
 
@@ -95,31 +102,31 @@ Two decisions per file, available from the tree, the session list and the report
   durable direction, because the file is the record: it survives restarts, shows
   up in review, and you can delete the line yourself.
 
-The panel follows the conversation. The Host half reads `~/.dsh/sessions` for the
-session whose log was written last, maps it through
-`~/.dsh/storages/workspace.json`, and audits that folder — so opening a
-conversation is enough, with nothing to pick. The folder button in the header
-pins a different one for as long as you want it, and the menu's **Stop pinning
-this folder** goes back to following; a choice you cannot leave is not a choice.
-When the session store cannot answer, the panel falls back to the directory the
-slot hands it (`?cwd=`), then to the agent and session registries, then to
-whatever was scanned last. Only an absolute path to an existing directory is
-accepted.
+One workspace can hold many conversations, so the panel never averages them:
+the **Chat** tab's picker lists the conversations this app knows, marks the one
+currently open, and every number above it is that conversation's. There is no
+separate "follow" entry in the picker — the folder button already means
+follow, and two controls for one state is one control too many. When the session
+store cannot answer, the panel falls back to the directory the slot hands it
+(`?cwd=`), then to the agent and session registries, then to whatever was
+scanned last. Only an absolute path to an existing directory is accepted.
 
 The aggregate view lives in the left rail, under New Session: **Context across
-your workspaces** scans every folder this app has been used in and ranks them by
-health, so a repo that is quietly feeding noise to every conversation shows up
-without opening it. It is served by `GET /aiignore/overview` and cached for five
-minutes.
+your workspaces** scans every folder this app has been used in, ranks them
+worst-first by the score your rules leave behind, and can act without opening
+any of them — **Scan again** refreshes, **Apply rules** writes that folder's
+suggestions, **Open the panel** jumps to the conversation view. It is served by
+`GET /aiignore/overview` and cached for five minutes.
 
 Styling comes from the Host's design tokens (`--dsw-*`) with fallbacks, so the
 panel follows light and dark themes instead of shipping its own palette. Every
 control is reachable with `Tab`, and empty, loading and error states are real
 screens rather than blank space.
 
-The panel talks to the Host half over seventeen same-origin routes
+The panel talks to the Host half over eighteen same-origin routes
 (`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET /aiignore/overview`,
-`GET /aiignore/sessions`, `GET /aiignore/workspaces`, `GET /aiignore/debug`,
+`GET /aiignore/sessions`, `GET /aiignore/workspaces`, `GET /aiignore/levels`,
+`GET /aiignore/debug`,
 `GET/POST /aiignore/notes`, `GET/POST /aiignore/policy`,
 `GET /aiignore/upload?digest=`, `POST /aiignore/scan`,
 `POST /aiignore/client-report`, `POST /aiignore/optimize`,
@@ -135,7 +142,7 @@ There is no authentication beyond a same-origin check: like every
 `ctx.webServer` route, this one inherits the loopback bind of the Harness and
 must not be exposed to a network.
 
-![The Insights tab, dark theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-insights-dark.png)
+![The Score tab, dark theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-insights-dark.png)
 
 ### Looking at the panel without a Harness
 
@@ -234,7 +241,14 @@ list what this session did not open.
   intercepted: the guard only sees the `read` tool.
 - `.gitignore` is ignored on purpose: the point is what the agent *would* read,
   not what git tracks.
-- The panel reports the last workspace scanned in this Host run. With several
-  workspaces open it can trail the one you are looking at.
+- The panel follows the conversation whose log was written last. Switching to a
+  conversation you have not touched since this Host run started moves it only
+  after that conversation writes something, so it can lag one click behind.
 - Switching the interface language takes effect the next time the panel opens;
   the open panel does not re-render.
+
+## License
+
+Apache-2.0. See `LICENSE` at the repository root and `NOTICE` beside this file:
+the plugin contains no third-party source, and its only runtime dependency is
+`ai-context-doctor` from the same repository.

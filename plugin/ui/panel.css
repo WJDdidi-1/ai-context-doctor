@@ -1111,3 +1111,135 @@
   color: var(--dsw-alias-label-secondary, inherit);
   font: var(--dsw-font-xxs-12, 12px/1.4 sans-serif);
 }
+
+/* ---------- fold: the scoring standard, on demand ---------- */
+
+.aicd-fold {
+  margin-top: 8px;
+  border-top: 1px solid var(--dsw-alias-border-l3, rgba(127, 127, 127, 0.18));
+  padding-top: 6px;
+}
+
+.aicd-fold-head {
+  cursor: pointer;
+  font: var(--dsw-font-xxxs-11, 11px/16px system-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dsw-alias-label-caption, currentColor);
+  padding: 2px 0;
+}
+
+.aicd-fold-head:hover { color: var(--dsw-alias-label-primary, currentColor); }
+
+.aicd-fold-head:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary, #4176e6);
+  outline-offset: 2px;
+  border-radius: var(--dsw-radius-xs, 4px);
+}
+
+.aicd-fold-body {
+  margin: 6px 0 0;
+  font: var(--dsw-font-xxxs-11, 11px/16px system-ui);
+  line-height: 16px;
+  color: var(--dsw-alias-label-secondary, currentColor);
+}
+
+/* ---------- strength: five notches, five numbers ---------- */
+
+.aicd-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.aicd-level-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.aicd-level-row:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12)); }
+
+.aicd-level-row[data-active="true"] {
+  border-color: var(--dsw-alias-state-business-primary, #4176e6);
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+}
+
+.aicd-level-row:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary, #4176e6);
+  outline-offset: 1px;
+}
+
+.aicd-level-num {
+  font: var(--dsw-font-xxs-12, 12px/18px system-ui);
+  color: var(--dsw-alias-label-tertiary, currentColor);
+  text-align: center;
+}
+
+.aicd-level-label {
+  font: var(--dsw-font-xxs-12, 12px/18px system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-level-score {
+  font: var(--dsw-font-xxs-12, 12px/18px system-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-secondary, currentColor);
+  text-align: right;
+}
+
+/* ---------- notes: the exact text the agent reads ---------- */
+
+.aicd-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dsw-alias-border-l3, rgba(127, 127, 127, 0.18));
+}
+
+.aicd-injected {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--dsw-alias-border-l3, rgba(127, 127, 127, 0.18));
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.06));
+  font-family: var(--ds-font-family-code, ui-monospace, SFMono-Regular, monospace);
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-secondary, currentColor);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- summary page: actions per row ---------- */
+
+.aicd-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.aicd-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}

@@ -1,3 +1,34 @@
+## 0.22.0
+
+A panel called what it does, told in the order a user needs it, and a licence that says what may be done with it.
+
+- **Renamed to Context Budget.** The panel is about the budget a conversation
+  spends on context, not an inventory of a folder, so the tab, the guide entry
+  and the manager entry now say so in English and Chinese. Nothing moved in the
+  protocol.
+- **All five notches are scored before you pick one.** `GET /aiignore/levels`
+  scans the workspace at 1–5 and returns `effectiveScore` per notch, so the
+  strength table shows "Off 22 / Balanced 49 / Strict 81" against your own
+  repository instead of describing the difference in prose.
+- **How the score is computed is folded away.** The bars stay; the weights and
+  the reason each category can cost at most its weight now sit behind a summary
+  you open when you want them.
+- **Optimize is a button, not a caption.** It is the primary action of the Score
+  tab, it names the rules it is about to write, and it reports the score before
+  and after plus how many of the conversation's reads those rules now block.
+- **The note shows what the agent will read.** The editor is three one-click
+  sentences plus a preview of the exact text injected before the next message,
+  with the account of what the note is for — not a command, background.
+- **The "follow" entry left the conversation picker.** The folder button already
+  means follow; the picker now only lists conversations and marks the current
+  one.
+- **The left-rail page acts.** *Context across your workspaces* ranks folders
+  worst-first by the score your rules leave behind, and offers Scan again,
+  Apply rules per folder, and Open the panel.
+- **Licence moved from MIT to Apache-2.0**, with a `NOTICE` file, because the
+  patent grant and the trademark clause are worth more to the people installing
+  this than brevity is. Earlier releases keep their MIT terms.
+
 ## 0.21.0
 
 One strength, one number that moves, and a header that says which conversation this is.

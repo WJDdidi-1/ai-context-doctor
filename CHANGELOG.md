@@ -2,6 +2,14 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.6.1
+
+- Licence from MIT to Apache-2.0, with a `NOTICE` file. The patent grant and
+  the trademark clause are worth more to the people depending on this than the
+  brevity of MIT is. Releases up to 0.6.0 keep their MIT terms.
+- No functional change: `scanRepository`, the CLI output and the JSON contract
+  are byte-for-byte what 0.6.0 shipped.
+
 ## 0.6.0
 
 - Score the repository as four independent losses instead of one byte ratio:

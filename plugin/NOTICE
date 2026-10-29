@@ -1,0 +1,8 @@
+Context budget (dsh-aiignore) and ai-context-doctor
+Copyright 2026 WJDdidi-1
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It was written from scratch for this repository and contains no third-party
+source code. The plugin's only runtime dependency is `ai-context-doctor`, from
+this same repository.
