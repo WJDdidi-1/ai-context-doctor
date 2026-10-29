@@ -2021,8 +2021,10 @@ export function apply(ctx, config = {}) {
       const asked = parsed !== null && typeof parsed === 'object' && typeof parsed.session === 'string' ? parsed.session : null;
       let conversation = null;
       if (asked !== null) {
+        // A conversation without a projection is not an error: the panel still
+        // knows which folder it is showing, and optimising that folder is a
+        // useful thing to do. Falling back beats a 404 the caller cannot use.
         conversation = conversationReport(asked);
-        if (conversation === null) return sendJson(res, 404, { error: 'no-projection', session: asked });
       }
 
       // The summary page acts on a row the panel is not showing, so it names the

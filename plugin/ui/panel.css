@@ -2155,3 +2155,29 @@
   font: var(--dsw-font-xxxs-11, 11px/15px system-ui);
   color: var(--dsw-alias-label-caption, currentColor);
 }
+
+/* Title first: the panel answers "which conversation", then "which folder". */
+
+.aicd-head-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xs-strong-13, 600 13px/18px system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-head-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-head-brand .aicd-brand-icon {
+  width: 11px;
+  height: 11px;
+}

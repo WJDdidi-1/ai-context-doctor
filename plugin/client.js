@@ -125,7 +125,7 @@ window.__ModuleLoader__.load({
         optimizeConversation: 'Optimize from this conversation',
         optimizeConversationHint: 'Writes the rules this conversation needs: the noise it read stays out next time. Your own lines are kept, and one click puts the file back.',
         optimizeNone: 'Nothing to add here — this folder is already lean.',
-        optimizeFailed: 'Could not write .aiignore. Check that the folder is writable.',
+        optimizeFailed: 'Could not finish that:',
         optimized: 'Added rules:',
         scoreNow: 'Score:',
         undoOptimize: 'Undo',
@@ -327,7 +327,7 @@ window.__ModuleLoader__.load({
         optimizeConversation: '按这个对话优化',
         optimizeConversationHint: '把这个对话读到的噪音写成规则，下次就不进了。你原有的行会保留，一次点击就能还原。',
         optimizeNone: '没有需要添加的规则：这个工作区已经很干净。',
-        optimizeFailed: '无法写入 .aiignore，请检查目录写权限。',
+        optimizeFailed: '没能完成这次操作：',
         optimized: '已添加规则：',
         scoreNow: '分数：',
         undoOptimize: '撤销',
@@ -2607,6 +2607,32 @@ window.__ModuleLoader__.load({
   font: var(--dsw-font-xxxs-11, 11px/15px system-ui);
   color: var(--dsw-alias-label-caption, currentColor);
 }
+
+/* Title first: the panel answers "which conversation", then "which folder". */
+
+.aicd-head-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xs-strong-13, 600 13px/18px system-ui);
+  color: var(--dsw-alias-label-primary, currentColor);
+}
+
+.aicd-head-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  font: var(--dsw-font-xxxs-11, 11px/14px system-ui);
+  color: var(--dsw-alias-label-caption, currentColor);
+}
+
+.aicd-head-brand .aicd-brand-icon {
+  width: 11px;
+  height: 11px;
+}
 `;
 
     //#endregion styles
@@ -2753,6 +2779,14 @@ window.__ModuleLoader__.load({
 
     /** Token amounts arrive as a range from the scanner and as plain counts from
      *  the counters; both belong on screen as one short string. */
+    /** Turn whatever a failed fetch threw into something a person can read. */
+    function errorMessage(error) {
+      if (error === null || error === undefined) return '';
+      if (typeof error === 'string') return error;
+      if (typeof error.message === 'string') return error.message;
+      return String(error);
+    }
+
     function shortTokens(value) {
       if (typeof value === 'number') {
         const count = Math.max(0, Math.round(value));
@@ -4002,18 +4036,23 @@ window.__ModuleLoader__.load({
     }
 
     /** The panel header: where you are, whether it follows the conversation, and the few actions. */
-    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, view, setView, tabs, toast, rescanning, pinnedSession, onFollowConversation }) {
+    function PanelHead({ data, conv, pinned, menu, setMenu, follow, choose, setPinned, rescan, view, setView, tabs, toast, rescanning, pinnedSession, onFollowConversation }) {
       const workspace = data === null ? null : data.workspace;
       const known = workspace !== null && workspace !== undefined;
       const following = known && pinned === null;
+      // The title answers "which conversation is this", the path answers
+      // "which folder" — a truncated path alone never told anyone the first.
+      const conversationTitle = conv !== null && conv !== undefined && typeof conv.title === 'string' && conv.title.trim().length > 0
+        ? conv.title.trim()
+        : null;
+      const heading = conversationTitle !== null
+        ? conversationTitle
+        : (known ? shortPath(workspace) : tr('tabTitle'));
 
       return (
         h('div', { className: 'aicd-head' },
           h('div', { className: 'aicd-head-row' },
-            h('span', { className: 'aicd-brand' },
-              h(Icon, { name: 'lock', size: 13, className: 'aicd-brand-icon' }),
-              h('span', null, tr('tabTitle'))
-            ),
+            h('span', { className: 'aicd-head-title', title: heading }, heading),
             h('div', { className: 'aicd-head-tools' },
               h('button', {
                 type: 'button',
@@ -4060,6 +4099,10 @@ window.__ModuleLoader__.load({
               : null
           ),
           h('div', { className: 'aicd-head-sub' },
+            h('span', { className: 'aicd-head-brand' },
+              h(Icon, { name: 'lock', size: 11, className: 'aicd-brand-icon' }),
+              h('span', null, tr('tabTitle'))
+            ),
             known
               ? h('span', { className: 'aicd-path', title: workspace }, shortPath(workspace))
               : h('span', { className: 'aicd-path' }, tr('emptyTitle')),
@@ -4167,6 +4210,14 @@ window.__ModuleLoader__.load({
 
       const [scanError, setScanError] = useState(false);
       const [toast, setToast] = useState(null);
+
+      // A toast is a receipt, not a notice board: it clears itself, so one
+      // failed click cannot look like a permanent state of the panel.
+      useEffect(() => {
+        if (toast === null || toast === undefined) return undefined;
+        const timer = setTimeout(() => setToast(null), 7000);
+        return () => clearTimeout(timer);
+      }, [toast]);
       const scan = () => {
         setPending('scan');
         setScanError(false);
@@ -4278,7 +4329,7 @@ window.__ModuleLoader__.load({
             reloadTree();
             return null;
           })
-          .catch(() => setToast(tr('optimizeFailed')))
+          .catch((error) => setToast(`${tr('optimizeFailed')} ${errorMessage(error)}`))
           .finally(() => setProgress(null));
       };
 
