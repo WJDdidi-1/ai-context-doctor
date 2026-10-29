@@ -44,9 +44,9 @@ window.__ModuleLoader__.load({
 
     const COPY = {
       en: {
-        entry: 'Context budget',
-        tabTitle: 'Context budget',
-        guideTitle: 'Context budget',
+        entry: 'AIignore',
+        tabTitle: 'AIignore',
+        guideTitle: 'AIignore',
         guideDesc: 'What this session read, what was blocked, and the note you leave for the agent.',
         score: 'Health',
         scoreHint: 'out of 100',
@@ -71,10 +71,10 @@ window.__ModuleLoader__.load({
         chatPick: 'Conversation',
         scoreConv: 'This conversation',
         scoreFolder: 'Reaches the model',
-        scoreTwoHint: 'Left is what this conversation read. Right is what is left after your rules and your strength — that is the number Optimize moves.',
+        scoreTwoHint: 'The left number is what this conversation actually read. The right one is what still reaches the model once your rules and your strength are applied — that is the number the button below moves.',
         scoreRaw: 'without your rules the same folder scores',
         rescan: 'Scan again',
-        noteWhy: 'The agent reads this before it starts working. Use it to say what matters here, in your own words.',
+        noteWhy: 'A few words in your own voice, read by the agent before it starts on this folder. Nothing here is enforced — it is context, not a command.',
         chatCurrent: 'current',
         chatEmpty: 'No conversation data yet.',
         chatComposition: 'What this conversation spent tokens on',
@@ -82,7 +82,7 @@ window.__ModuleLoader__.load({
         scoreTitle: 'Why this score',
         scoreHow: 'How the score is computed',
         scoreFormula: 'Start at 100. Each category can cost at most its weight, and what it costs is how much of the folder it occupies: build output 40, large files 25, lockfiles 20, logs 15. Your rules and your strength remove categories from the count, which is why the right-hand number is higher.',
-        strengthTable: 'What each notch would score',
+        strengthTable: 'What each notch would score here',
         strengthNow: 'current',
         strengthUse: 'Use notch',
         strengthPreview: 'not saved yet',
@@ -91,17 +91,17 @@ window.__ModuleLoader__.load({
         noteToggleAvoid: 'what not to open',
         noteToggleTests: 'how to check itself',
         optimizeTitle: 'Make it better',
-        optimizeHint: 'Writes the suggested rules into .aiignore. Your existing lines are kept, and one click puts the file back.',
+        optimizeHint: 'Writes these rules into .aiignore so the same files stop reaching the model. Your own lines stay untouched, and Undo puts the file back exactly as it was.',
         optimize: 'Optimize this workspace',
         optimizeConversation: 'Optimize from this conversation',
         optimizeConversationHint: 'Writes the rules this conversation needs: the noise it read stays out next time. Your own lines are kept, and one click puts the file back.',
-        optimizeNone: 'Nothing worth adding: this workspace is already lean.',
+        optimizeNone: 'Nothing to add here — this folder is already lean.',
         optimizeFailed: 'Could not write .aiignore. Check that the folder is writable.',
         optimized: 'Added rules:',
         scoreNow: 'Score:',
         undoOptimize: 'Undo',
         strategyTitle: 'How strict should I be?',
-        strategyHint: 'Left keeps everything. Right filters harder. The recommended notch is 3.',
+        strategyHint: 'Each notch trades detail for cleanliness. The numbers are computed against this folder before you commit, so pick the one whose trade you can live with — 3 is the balance we recommend.',
         strategySave: 'Use this setting',
         strategyWarning: 'At this strength small but real source files can be skipped. Check the blocked list after a session.',
         strategyOff: 'At this strength nothing is filtered except your own .aiignore rules.',
@@ -116,9 +116,9 @@ window.__ModuleLoader__.load({
         filesCount: '{n} files',
         loading: 'Reading this workspace…',
         emptyTitle: 'No workspace yet',
-        emptyHint: 'Scan the workspace of this conversation to see what the agent could read here.',
+        emptyHint: 'Give it a folder and it will show you what the agent could be reading.',
         scanNow: 'Scan this conversation',
-        scanFailed: 'The scan did not run. The conversation may not have a workspace yet.',
+        scanFailed: 'That scan did not run — this conversation may not have a folder yet.',
         pickTitle: 'Pick the folder to audit',
         pickHint: 'The panel could not tell which folder this conversation runs in. Choose one:',
         pickSessions: 'sessions',
@@ -126,15 +126,24 @@ window.__ModuleLoader__.load({
         followOn: 'following this conversation',
         chooseFolder: 'Choose another folder…',
         clearChoice: 'Stop pinning this folder',
-        panelLabel: 'AI context',
-        overviewTitle: 'Context across your workspaces',
-        overviewHint: 'Every folder this app has been used in, scanned with the same rules as the panel.',
-        overviewNone: 'No workspaces yet.',
-        overviewCurrent: 'current',
+        panelLabel: 'AIignore',
+        overviewTitle: 'AIignore',
+        overviewHint: 'Every conversation this app has run, ranked by how much of what it read was noise. Fix the worst one first — you can undo any of it.',
+        overviewNone: 'No conversations yet. Start one, and it will show up here.',
+        overviewCurrent: 'open now',
         overviewOpen: 'Open the panel',
-        overviewApply: 'Apply rules',
-        overviewWorst: 'Worst first:',
+        overviewApply: 'Clean up',
+        overviewWorst: 'Needs attention:',
         overviewFiles: 'files',
+        overviewConversations: 'conversations',
+        files: 'files',
+        scanned: 'Scanned',
+        scanning: 'Scanning this folder…',
+        scoreMoved: 'Score moved',
+        coveredTitle: 'No longer reaching the model',
+        optimizeUpToDate: 'Nothing left to add — your rules already cover what this scan found.',
+        strengthSaved: 'Saved. The score above now reflects it.',
+        rescanHint: 'Scan this folder again',
         webTitle: 'No workspace yet',
         errorTitle: 'Could not read the report',
         errorHint: 'The panel could not reach the plugin server in this window.',
@@ -195,9 +204,9 @@ window.__ModuleLoader__.load({
         verdictAllowed: 'you allowed it'
       },
       zh: {
-        entry: '上下文预算',
-        tabTitle: '上下文预算',
-        guideTitle: '上下文预算',
+        entry: 'AIignore',
+        tabTitle: 'AIignore',
+        guideTitle: 'AIignore',
         guideDesc: '本次会话读了什么、挡了什么，以及你留给 AI 的说明。',
         score: '健康度',
         scoreHint: '满分 100',
@@ -222,7 +231,7 @@ window.__ModuleLoader__.load({
         chatPick: '对话',
         scoreConv: '本对话',
         scoreFolder: '还会进模型',
-        scoreTwoHint: '左边是这个对话真读进去的；右边是你写的规则和筛选力度之后还剩多少会进模型——优化要推动的就是右边这个数。',
+        scoreTwoHint: '左边是这个对话真读进去的；右边是写进规则、加上筛选力度之后，还有多少会进模型——下面那个按钮推动的就是右边这个数。',
         scoreRaw: '不应用你的规则时，同一个文件夹是',
         rescan: '重新扫描',
         noteWhy: 'AI 每次开始干活前都会先读这段话。用它说明「这个仓库里什么重要」，用你自己的话就行。',
@@ -233,7 +242,7 @@ window.__ModuleLoader__.load({
         scoreTitle: '评分从哪来',
         scoreHow: '评分是怎么算的',
         scoreFormula: '从 100 分起扣。每类最多扣掉它的权重，实际扣多少取决于它占这个文件夹的比例：构建产物 40、大文件 25、锁文件 20、日志 15。你写的规则和筛选力度会把相应类别从扣分里去掉，所以右边那个数会更高。',
-        strengthTable: '每一档会得多少分',
+        strengthTable: '这个仓库在每一档下的分数',
         strengthNow: '当前',
         strengthUse: '使用第',
         strengthPreview: '尚未保存',
@@ -242,7 +251,7 @@ window.__ModuleLoader__.load({
         noteToggleAvoid: '哪些不要打开',
         noteToggleTests: '怎么自检',
         optimizeTitle: '一键优化',
-        optimizeHint: '把建议规则写进 .aiignore。你原有的行会保留，一次点击就能还原。',
+        optimizeHint: '把这些规则写进 .aiignore，同一批文件就不会再进模型了。你自己写的行不会动，撤销会把文件逐字节还原。',
         optimize: '优化这个工作区',
         optimizeConversation: '按这个对话优化',
         optimizeConversationHint: '把这个对话读到的噪音写成规则，下次就不进了。你原有的行会保留，一次点击就能还原。',
@@ -252,7 +261,7 @@ window.__ModuleLoader__.load({
         scoreNow: '分数：',
         undoOptimize: '撤销',
         strategyTitle: '筛选力度',
-        strategyHint: '往左保留更多，往右过滤更强。推荐档位是 3。',
+        strategyHint: '每一档都是拿细节换整洁。选中之前就先把这个仓库在每档下的分数算给你看，挑一个你愿意接受的取舍——我们推荐第 3 档。',
         strategySave: '使用这个档位',
         strategyWarning: '这个档位可能跳过体积不大但确实有用的源文件，会话结束后请看一眼被拦列表。',
         strategyOff: '这个档位只应用你自己写的 .aiignore 规则，其余一律放行。',
@@ -277,15 +286,24 @@ window.__ModuleLoader__.load({
         followOn: '跟随当前对话',
         chooseFolder: '选择其它文件夹…',
         clearChoice: '取消固定文件夹',
-        panelLabel: 'AI 上下文',
-        overviewTitle: '各工作区的上下文状况',
-        overviewHint: '这个应用用过的每个文件夹，用和面板相同的规则扫一遍。',
-        overviewNone: '还没有工作区。',
-        overviewCurrent: '当前',
+        panelLabel: 'AIignore',
+        overviewTitle: 'AIignore',
+        overviewHint: '这里汇总这个应用跑过的每个对话，按「读进来的东西里有多少是噪音」排序。先处理最差的，每一步都能撤销。',
+        overviewNone: '还没有对话。开一个对话，它就会出现在这里。',
+        overviewCurrent: '正在打开',
         overviewOpen: '打开面板',
-        overviewApply: '应用规则',
+        overviewApply: '清理',
         overviewWorst: '最该先处理：',
         overviewFiles: '个文件',
+        overviewConversations: '个对话',
+        files: '个文件',
+        scanned: '已扫描',
+        scanning: '正在扫描这个文件夹…',
+        scoreMoved: '评分变化',
+        coveredTitle: '不再进模型的内容',
+        optimizeUpToDate: '没有可加的了——现有规则已经覆盖这次扫描发现的东西。',
+        strengthSaved: '已保存，上面的分数已经按这一档重算。',
+        rescanHint: '重新扫描这个文件夹',
         webTitle: '还没有工作区',
         errorTitle: '读取报告失败',
         errorHint: '面板无法连接插件服务，可能是插件还没加载完成。',
@@ -1596,6 +1614,41 @@ window.__ModuleLoader__.load({
   gap: 6px;
   flex: none;
 }
+
+.aicd-toast {
+  margin: 0 12px 6px;
+  padding: 5px 8px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, 0.1));
+  color: var(--dsw-alias-label-secondary, inherit);
+  font: var(--dsw-font-xxxs-11, 11px/14px inherit);
+}
+
+.aicd-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: var(--dsw-radius-md, 12px);
+  background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, 0.06));
+}
+
+.aicd-result-score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.aicd-covered {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aicd-covered .aicd-row {
+  cursor: default;
+}
 `;
 
     //#endregion styles
@@ -1931,7 +1984,14 @@ window.__ModuleLoader__.load({
         loadTree(at);
       }, [at, loadTree]);
 
-      return { data, error, at, setAt, tree, reload: loadReport, reloadTree: () => loadTree(at) };
+      const applyReport = useCallback((payload) => {
+        if (payload !== null && payload !== undefined) {
+          setData(payload);
+          setError(null);
+        }
+      }, []);
+
+      return { data, error, at, setAt, tree, reload: loadReport, reloadTree: () => loadTree(at), applyReport };
     }
 
     function Detail({ item, pending, onAllow, onIgnore }) {
@@ -2318,18 +2378,26 @@ window.__ModuleLoader__.load({
       );
     }
 
-    /** One click: append the suggested rules, show the new score, keep undo. */
-    function OptimizeCard({ data, conv, onDone }) {
+    /**
+     * The one click that actually writes something.
+     *
+     * It says what it is about to write before you press it, then reports the
+     * number it moved and names the files that stopped being noise — a button
+     * that only claims success is a button you learn to distrust.
+     */
+    function OptimizeCard({ data, conv, onDone, onOptimized }) {
       const [busy, setBusy] = useState(false);
       const [result, setResult] = useState(null);
       const convRules = conv !== null && conv !== undefined && Array.isArray(conv.suggestedAiignore) ? conv.suggestedAiignore : [];
-      const suggested = convRules.length > 0
-        ? convRules
-        : (Array.isArray(data.suggestedAiignore) ? data.suggestedAiignore : []);
+      const scannedRules = data.scanned !== undefined && data.scanned !== null && Array.isArray(data.scanned.suggestedAiignore)
+        ? data.scanned.suggestedAiignore
+        : [];
+      const suggested = convRules.length > 0 ? convRules : scannedRules;
       const session = conv !== null && conv !== undefined && typeof conv.id === 'string' ? conv.id : null;
 
       const run = () => {
         setBusy(true);
+        setResult(null);
         fetch('/aiignore/optimize', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -2338,7 +2406,8 @@ window.__ModuleLoader__.load({
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => {
             setResult(payload);
-            if (typeof onDone === 'function') onDone();
+            if (typeof onOptimized === 'function') onOptimized(payload);
+            else if (typeof onDone === 'function') onDone();
           })
           .catch(() => setResult({ error: true }))
           .then(() => setBusy(false));
@@ -2356,56 +2425,67 @@ window.__ModuleLoader__.load({
       };
 
       const added = result !== null && Array.isArray(result.added) ? result.added : [];
-      const stillBlocked = result !== null && Array.isArray(result.blockedNow)
-        ? result.blockedNow.filter((item) => item.blocked === true).length
-        : 0;
+      const covered = result !== null && Array.isArray(result.covered) ? result.covered : [];
+      const nothingToAdd = result !== null && result.error !== true && added.length === 0;
+      const moved = result !== null && result.error !== true && added.length > 0;
 
       return h('div', { className: 'aicd-opt' },
         h('div', { className: 'aicd-opt-head' },
           h('span', { className: 'aicd-opt-title' }, tr('optimizeTitle')),
-          h('span', { className: 'aicd-count' }, String(suggested.length))
+          suggested.length > 0 ? h('span', { className: 'aicd-count' }, `${suggested.length}`) : null
         ),
         h('div', { className: 'aicd-note' }, session === null ? tr('optimizeHint') : tr('optimizeConversationHint')),
         suggested.length > 0
           ? h('div', { className: 'aicd-chips' },
-              suggested.slice(0, 6).map((rule) => h('span', { key: rule, className: 'aicd-chip', 'data-static': 'true' }, rule)))
+              suggested.slice(0, 8).map((rule) => h('span', { key: rule, className: 'aicd-chip', 'data-static': 'true' }, rule)))
           : null,
-        result !== null && result.error !== true && added.length > 0
-          ? h('div', null,
-              h('div', { className: 'aicd-note', 'data-tone': 'ok' },
-                `${tr('optimized')} ${added.join(', ')}`),
-              h('div', { className: 'aicd-note', 'data-tone': 'ok' },
-                `${tr('scoreNow')} ${result.before} → ${result.after}`),
-              result.blockedNow === undefined || result.blockedNow.length === 0
+        moved === true
+          ? h('div', { className: 'aicd-result' },
+              h('div', { className: 'aicd-result-score' },
+                h('span', { className: 'aicd-card-value', 'data-tone': toneFor(result.after) }, String(result.after)),
+                h('span', { className: 'aicd-card-label' }, `${tr('scoreMoved')} ${result.before} → ${result.after}`)
+              ),
+              h('div', { className: 'aicd-note', 'data-tone': 'ok' }, `${tr('optimized')} ${added.join(', ')}`),
+              covered.length === 0
                 ? null
-                : h('div', { className: 'aicd-note' },
-                    `${stillBlocked} / ${result.blockedNow.length} ${tr('chatBlocked')}`),
+                : h('div', { className: 'aicd-covered' },
+                    h('div', { className: 'aicd-section-title' }, `${tr('coveredTitle')} · ${covered.length}`),
+                    covered.map((item) =>
+                      h('div', { key: item.path, className: 'aicd-row', 'data-static': 'true' },
+                        h(Icon, { name: 'lock', size: 14 }),
+                        h('span', { className: 'aicd-row-name' }, item.path),
+                        h('span', { className: 'aicd-row-meta' }, formatBytes(item.bytes))
+                      )
+                    )
+                  ),
               h('div', { className: 'aicd-btn-row' },
                 h('button', { type: 'button', className: 'aicd-btn', disabled: busy, onClick: undo }, tr('undoOptimize'))
               )
             )
           : result !== null && result.error === true
             ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('optimizeFailed'))
-            : suggested.length === 0
-              ? h('div', { className: 'aicd-note' }, tr('optimizeNone'))
-              : h('div', { className: 'aicd-btn-row' },
-                  h('button', {
-                    type: 'button',
-                    className: 'aicd-btn',
-                    'data-variant': 'primary',
-                    disabled: busy ? 'true' : undefined,
-                    onClick: run
-                  }, busy === true ? tr('working') : (session === null ? tr('optimize') : tr('optimizeConversation')))
-                )
+            : nothingToAdd === true
+              ? h('div', { className: 'aicd-note' }, tr('optimizeUpToDate'))
+              : suggested.length === 0
+                ? h('div', { className: 'aicd-note' }, tr('optimizeNone'))
+                : h('div', { className: 'aicd-btn-row' },
+                    h('button', {
+                      type: 'button',
+                      className: 'aicd-btn',
+                      'data-variant': 'primary',
+                      disabled: busy ? 'true' : undefined,
+                      onClick: run
+                    }, busy === true ? tr('working') : (session === null ? tr('optimize') : tr('optimizeConversation')))
+                  )
       );
     }
 
     /**
-     * The Score tab: two labelled numbers, why they are what they are, the
-     * strength that decides how much reaches the model, and one button that
-     * turns the conversation's reads into rules you can take back.
+     * The Score tab, in the order the decision is actually made: what this
+     * conversation cost, what your rules leave behind, why, how strict you want
+     * to be, and the one click that writes the rules — with the number it moved.
      */
-    function InsightsView({ data, conv, onDone, onRescan }) {
+    function InsightsView({ data, conv, onDone, onRescan, onOptimized }) {
       const scanned = data.scanned || {};
       const effective = typeof scanned.effectiveScore === 'number'
         ? scanned.effectiveScore
@@ -2430,14 +2510,17 @@ window.__ModuleLoader__.load({
           : null,
         h(ScoreBreakdown, { data }),
         h(StrategyCard, { data, onSaved: onRescan }),
-        h(OptimizeCard, { data, conv, onDone }),
+        h(OptimizeCard, { data, conv, onDone, onOptimized }),
         h(NoteView, { data, onSaved: onDone })
       );
     }
 
     /**
-     * One slider for the whole policy. Each notch names what it stops and what
-     * that costs, so a stronger setting is a decision, not a mystery.
+     * The strength, as five buttons that already show what each one scores.
+     *
+     * There used to be a slider here too. It added a second way to say the same
+     * thing, and the only number that mattered was in the table underneath —
+     * so the table became the control.
      */
     function StrategyCard({ data, onSaved }) {
       const levels = Array.isArray(data.levels) ? data.levels : [];
@@ -2452,6 +2535,7 @@ window.__ModuleLoader__.load({
       const entry = levels.find((item) => item.level === level) || levels[0] || { label: '', note: '', maxBytes: 0 };
 
       const save = () => {
+        setStatus('saving');
         fetch('/aiignore/policy', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -2471,30 +2555,6 @@ window.__ModuleLoader__.load({
           h('span', { className: 'aicd-count' }, `${level} / 5`)
         ),
         h('div', { className: 'aicd-note' }, tr('strategyHint')),
-        h('input', {
-          className: 'aicd-slider',
-          type: 'range',
-          min: 1,
-          max: 5,
-          step: 1,
-          value: level,
-          'aria-label': tr('strategyTitle'),
-          onChange: (event) => {
-            setLevel(Number(event.target.value));
-            setStatus(null);
-          }
-        }),
-        h('div', { className: 'aicd-scale' },
-          levels.map((item) =>
-            h('button', {
-              key: item.level,
-              type: 'button',
-              className: 'aicd-scale-step',
-              'data-active': item.level === level ? 'true' : 'false',
-              onClick: () => { setLevel(item.level); setStatus(null); }
-            }, String(item.level))
-          )
-        ),
         h(LevelsTable, {
           data,
           draft: level,
@@ -2507,12 +2567,17 @@ window.__ModuleLoader__.load({
           h('span', { className: 'aicd-level-name' }, entry.label),
           h('span', { className: 'aicd-level-note' }, entry.note)
         ),
-        level !== stored ? h('div', { className: 'aicd-note' }, `${tr('strengthPreview')} — ${tr('strengthUse')} ${level}`) : null,
         level >= 4 ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('strategyWarning')) : null,
         level <= 1 ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('strategyOff')) : null,
         h('div', { className: 'aicd-btn-row' },
-          h('button', { type: 'button', className: 'aicd-btn', 'data-variant': level === stored ? undefined : 'primary', disabled: level === stored, onClick: save }, tr('strategySave')),
-          status === 'saved' ? h('span', { className: 'aicd-note', 'data-tone': 'ok' }, tr('noteSaved')) : null,
+          h('button', {
+            type: 'button',
+            className: 'aicd-btn',
+            'data-variant': level === stored ? undefined : 'primary',
+            disabled: level === stored || status === 'saving',
+            onClick: save
+          }, status === 'saving' ? tr('working') : tr('strategySave')),
+          status === 'saved' ? h('span', { className: 'aicd-note', 'data-tone': 'ok' }, tr('strengthSaved')) : null,
           status === 'failed' ? h('span', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
         )
       );
@@ -2691,9 +2756,10 @@ window.__ModuleLoader__.load({
     //#region summary
 
     /**
-     * The left sidebar's own page: every folder this app has been used in, with
-     * the same health score the panel shows. It is the aggregate view — the
-     * panel answers "this conversation", this answers "all of them".
+     * The left sidebar's own page: every conversation this app has run, side by
+     * side. The panel answers "this conversation"; this answers "all of them" —
+     * which one read the most, which one read the most noise, and which one is
+     * worth fixing first.
      */
     function SummaryPage(props) {
       const [data, setData] = useState(null);
@@ -2706,37 +2772,38 @@ window.__ModuleLoader__.load({
       const load = (fresh) => {
         setFailed(false);
         const suffix = fresh === true ? '?fresh=1' : '';
-        fetch(`/aiignore/overview${suffix}`, { headers: { accept: 'application/json' } })
+        fetch(`/aiignore/conversations${suffix}`, { headers: { accept: 'application/json' } })
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-          .then((payload) => setData(Array.isArray(payload.workspaces) ? payload : { workspaces: [] }))
+          .then((payload) => setData(Array.isArray(payload.conversations) ? payload : { conversations: [], current: null }))
           .catch(() => setFailed(true))
           .then(() => setBusy(null));
       };
       useEffect(() => load(false), []);
 
       const apply = (row) => {
-        setBusy(row.path);
+        setBusy(row.id);
         setNotice(null);
         fetch('/aiignore/optimize', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ cwd: row.path })
+          body: JSON.stringify({ session: row.id })
         })
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => {
-            setNotice(`${shortPath(row.path)} · ${payload.before} → ${payload.after}`);
+            setNotice(`${tr('scoreMoved')} ${payload.before} → ${payload.after}${payload.added !== undefined && payload.added.length > 0 ? ` · ${payload.added.join(', ')}` : ''}`);
             load(true);
           })
           .catch(() => {
             setBusy(null);
-            setNotice(`${shortPath(row.path)} · ${tr('optimizeFailed')}`);
+            setNotice(tr('optimizeFailed'));
           });
       };
 
       const rows = data === null
         ? []
-        : data.workspaces.slice().sort((left, right) => (left.effectiveScore ?? 101) - (right.effectiveScore ?? 101));
-      const worst = rows.filter((row) => typeof row.effectiveScore === 'number').slice(0, 3);
+        : data.conversations.slice().sort((left, right) => (left.score ?? 101) - (right.score ?? 101));
+      const totalFiles = rows.reduce((sum, row) => sum + (typeof row.readFiles === 'number' ? row.readFiles : 0), 0);
+      const totalBytes = rows.reduce((sum, row) => sum + (typeof row.readBytes === 'number' ? row.readBytes : 0), 0);
 
       return h('div', { className: 'aicd-page' },
         h('div', { className: 'aicd-page-inner' },
@@ -2754,40 +2821,42 @@ window.__ModuleLoader__.load({
           ),
           failed === true ? h('p', { className: 'aicd-note', 'data-tone': 'bad' }, tr('errorHint')) : null,
           notice !== null ? h('p', { className: 'aicd-note' }, notice) : null,
-          worst.length > 0
-            ? h('p', { className: 'aicd-page-hint' }, `${tr('overviewWorst')} ${worst.map((row) => `${row.title} ${row.effectiveScore}`).join(' · ')}`)
+          rows.length > 0
+            ? h('p', { className: 'aicd-page-hint' },
+                `${rows.length} ${tr('overviewConversations')} · ${totalFiles} ${tr('files')} · ${formatBytes(totalBytes)}`)
             : null,
           rows.length === 0 && data !== null
             ? h('p', { className: 'aicd-page-hint' }, tr('overviewNone'))
             : null,
           rows.map((row) =>
-            h('div', { key: row.path, className: 'aicd-page-row' },
+            h('div', { key: row.id, className: 'aicd-page-row' },
               h('span', {
                 className: 'aicd-page-score',
-                'data-tone': typeof row.effectiveScore === 'number' ? toneFor(row.effectiveScore) : 'bad'
-              }, typeof row.effectiveScore === 'number' ? String(row.effectiveScore) : '—'),
+                'data-tone': typeof row.score === 'number' ? toneFor(row.score) : 'bad'
+              }, typeof row.score === 'number' ? String(row.score) : '—'),
               h('span', { className: 'aicd-page-text' },
                 h('span', { className: 'aicd-page-name' },
                   row.title,
-                  row.path === (data === null ? null : data.current)
-                    ? h('span', { className: 'aicd-page-badge' }, tr('overviewCurrent'))
+                  row.id === (data === null ? null : data.current)
+                    ? h('span', { className: 'aicd-page-badge' }, tr('chatCurrent'))
                     : null
                 ),
                 h('span', { className: 'aicd-page-meta' },
-                  typeof row.files === 'number'
-                    ? `${row.files} ${tr('overviewFiles')} · ${formatBytes(row.bytes)} · ${tr('noise')} ${row.noisePercent}%`
-                    : row.path
+                  `${shortPath(row.cwd)} · ${row.turns} ${tr('chatTurns')} · ${row.readFiles} ${tr('files')} · ${formatBytes(row.readBytes)}`
+                    + (row.noise > 0 ? ` · ${row.noise} ${tr('noise')}` : '')
                 )
               ),
               h('span', { className: 'aicd-page-actions' },
-                h('button', {
-                  type: 'button',
-                  className: 'aicd-btn',
-                  'data-variant': typeof row.suggested === 'number' && row.suggested > 0 ? 'primary' : undefined,
-                  disabled: busy !== null ? 'true' : undefined,
-                  title: row.path,
-                  onClick: () => apply(row)
-                }, typeof row.suggested === 'number' && row.suggested > 0 ? `${tr('overviewApply')} ${row.suggested}` : tr('overviewApply'))
+                row.noise > 0
+                  ? h('button', {
+                      type: 'button',
+                      className: 'aicd-btn',
+                      'data-variant': 'primary',
+                      disabled: busy !== null ? 'true' : undefined,
+                      title: row.cwd,
+                      onClick: () => apply(row)
+                    }, `${tr('overviewApply')} ${row.noise}`)
+                  : h('span', { className: 'aicd-count' }, '—')
               )
             )
           )
@@ -2874,7 +2943,7 @@ window.__ModuleLoader__.load({
     }
 
     /** The panel header: where you are, whether it follows the conversation, and the few actions. */
-    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, conv, view, setView, tabs }) {
+    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, conv, view, setView, tabs, toast, rescanning }) {
       const workspace = data === null ? null : data.workspace;
       const title = conv !== null && conv !== undefined && typeof conv.title === 'string' && conv.title.length > 0
         ? conv.title
@@ -2902,8 +2971,10 @@ window.__ModuleLoader__.load({
             h('button', {
               type: 'button',
               className: 'aicd-iconbtn',
-              title: tr('rescan'),
-              'aria-label': tr('rescan'),
+              title: tr('rescanHint'),
+              'aria-label': tr('rescanHint'),
+              'data-busy': rescanning === true ? 'true' : 'false',
+              disabled: rescanning === true ? 'true' : undefined,
               onClick: rescan
             }, h(Icon, { name: 'refresh', size: 14 })),
             menu === true
@@ -2932,6 +3003,9 @@ window.__ModuleLoader__.load({
                 )
               : null
           ),
+          toast === null || toast === undefined
+            ? null
+            : h('div', { className: 'aicd-toast', role: 'status' }, toast),
           data === null
             ? null
             : h('div', { className: 'aicd-tabs', role: 'tablist' },
@@ -2961,7 +3035,7 @@ window.__ModuleLoader__.load({
       const [menu, setMenu] = useState(false);
       const [choosing, setChoosing] = useState(false);
       const cwd = pinned === null ? sessionCwd(props) : pinned;
-      const { data, error, at, setAt, tree, reload, reloadTree } = useReport(cwd);
+      const { data, error, at, setAt, tree, reload, reloadTree, applyReport } = useReport(cwd);
       const spaces = useClientFacts(props, cwd, data, error, choosing);
 
       const pick = (dir) => {
@@ -3021,6 +3095,7 @@ window.__ModuleLoader__.load({
       };
 
       const [scanError, setScanError] = useState(false);
+      const [toast, setToast] = useState(null);
       const scan = () => {
         setPending('scan');
         setScanError(false);
@@ -3075,15 +3150,36 @@ window.__ModuleLoader__.load({
       // so the numbers on screen are read again rather than redrawn.
       const rescan = () => {
         const target = typeof cwd === 'string' && cwd.length > 0 ? `/aiignore/scan?cwd=${encodeURIComponent(cwd)}` : '/aiignore/scan';
+        setToast(tr('scanning'));
         fetch(target, { method: 'POST', headers: { 'content-type': 'application/json' } })
-          .catch(() => {})
-          .then(() => { reload(); reloadTree(); });
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then((payload) => {
+            const fresh = payload !== null && payload !== undefined && payload.scanned !== undefined ? payload : null;
+            if (fresh !== null) {
+              reload();
+              reloadTree();
+              setToast(`${tr('scanned')} ${fresh.scanned.files} ${tr('files')} · ${tr('scoreFolder')} ${fresh.scanned.effectiveScore}`);
+            } else {
+              setToast(tr('scanFailed'));
+            }
+          })
+          .catch(() => setToast(tr('scanFailed')));
+      };
+
+      const onOptimized = (payload) => {
+        if (payload !== null && payload !== undefined && payload.report !== undefined) {
+          applyReport(payload.report);
+          reloadTree();
+          setToast(`${tr('scoreMoved')} ${payload.before} → ${payload.after}`);
+        } else {
+          reload();
+        }
       };
 
       return h('div', { className: 'aicd-panel' },
         h(PanelHead, {
           data, pinned, menu, setMenu, follow, setChoosing, setPinned, rescan, conv,
-          view, setView, tabs, choose
+          view, setView, tabs, choose, toast, rescanning: pending === 'scan'
         }),
         error !== null
           ? h('div', { className: 'aicd-body', 'data-center': 'true' },
@@ -3113,7 +3209,7 @@ window.__ModuleLoader__.load({
                     data, tree, at, setAt, pending, onAllow, onIgnore,
                     lastIgnored, onUndo
                   })
-                  : h(InsightsView, { data, conv, onDone: reload, onRescan: rescan }),
+                  : h(InsightsView, { data, conv, onDone: reload, onRescan: rescan, onOptimized }),
         postError !== null ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
       );
     }

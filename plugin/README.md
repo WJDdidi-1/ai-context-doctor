@@ -27,7 +27,7 @@ becomes noise itself.
 
 The bundle also ships a browser half. A folder button sits beside the add-files
 button in the composer; clicking it opens the **right sidebar** on the
-**Context budget** tab, and expands the sidebar if it was collapsed. On a Host without
+**AIignore** tab, and expands the sidebar if it was collapsed. On a Host without
 sidebar services the same button opens the panel as a floating card instead, so
 one plugin covers both.
 
@@ -61,13 +61,13 @@ Three tabs inside:
   imagine what it does: three one-click sentences, then a preview of **exactly
   the text the agent will read** before your next message.
 
-- **The strength is part of the score, not a separate page.** One slider, five
-  notches, from *Off* to *Strict* — and under it a table that scores **all five**
-  against your workspace before you commit to one, so the difference between
-  *Balanced* and *Strict* is a number you can read instead of a guess. Each
-  notch says what it stops and what that costs; the Host stores it in
-  `.aiignore.policy.json`; the read guard and the scan share the same predicate,
-  so saving a notch re-scans and the number moves.
+- **The strength is part of the score, not a separate page.** Five buttons from
+  *Off* to *Strict*, each already scored against your workspace before you commit
+  to one, so the difference between *Balanced* and *Strict* is a number you read
+  instead of a slider you drag. There is no slider any more: two ways to say the
+  same thing was one too many. Each notch says what it stops and what that costs;
+  the Host stores it in `.aiignore.policy.json`; the read guard and the scan share
+  the same predicate, so saving a notch re-scans and the number moves.
 
 ### Following the conversation, not a folder
 
@@ -123,7 +123,7 @@ panel follows light and dark themes instead of shipping its own palette. Every
 control is reachable with `Tab`, and empty, loading and error states are real
 screens rather than blank space.
 
-The panel talks to the Host half over eighteen same-origin routes
+The panel talks to the Host half over nineteen same-origin routes
 (`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET /aiignore/overview`,
 `GET /aiignore/sessions`, `GET /aiignore/workspaces`, `GET /aiignore/levels`,
 `GET /aiignore/debug`,

@@ -154,7 +154,7 @@ console.log(report.healthScore, report.topNoise);
 dsh plugin --profile web add dsh-aiignore
 ```
 
-插件还会在右侧栏加一个 **上下文预算** 标签（从输入框旁的文件夹按钮打开），按顺序回答三件事：这次对话到底喂了模型什么、在你的规则与力度之后还剩多少、点一下能改变什么。分数下面是它的算法、力度滑块、一张先把五档都算给你看的对照表，以及一个会先报出要写哪些规则、再给出优化前后分数的按钮。面板跟随 Harness 的浅色与深色主题。
+插件还会在右侧栏加一个 **AIignore** 标签（从输入框旁的文件夹按钮打开），按顺序回答三件事：这次对话到底喂了模型什么、在你的规则与力度之后还剩多少、点一下能改变什么。分数下面是折叠起来的算法、五个各自标出本仓库得分的力度按钮，以及一个会先说明要写哪些规则、再给出新分数与「不再进模型的文件」清单的优化按钮。面板跟随 Harness 的浅色与深色主题。
 
 ![右侧栏里的上下文标签](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
 

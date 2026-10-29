@@ -100,6 +100,35 @@ test('allowing a path removes it from the skipped list', () => {
   assert.deepEqual(buildReport({ cwd: '/w', state, policy: 'deny' }).skipped, []);
 });
 
+test('the summary keeps the numbers Optimize is supposed to move', () => {
+  const state = createWorkspaceState();
+  state.report = {
+    scannedFiles: 10,
+    scannedBytes: 1000,
+    healthScore: 40,
+    noisePercent: 70,
+    effectiveScore: 88,
+    effectiveLost: 12,
+    effectiveBreakdown: [['build', 10]],
+    blockedBytes: 4000,
+    blocked: [{ path: 'dist/app.js', bytes: 4000, reason: 'generated build output' }],
+    topNoise: [{ label: 'dist/', size: 4000, reason: 'generated build output' }],
+    suggestedAiignore: ['dist/'],
+    truncated: false
+  };
+
+  const scanned = buildReport({ cwd: '/w', state, policy: 'deny' }).scanned;
+
+  // Dropping these once made Optimize look inert: the rules were written, the
+  // folder improved, and the panel kept showing the raw number.
+  assert.equal(scanned.effectiveScore, 88);
+  assert.equal(scanned.effectiveLost, 12);
+  assert.equal(scanned.blockedBytes, 4000);
+  assert.deepEqual(scanned.suggestedAiignore, ['dist/']);
+  assert.equal(scanned.blocked.length, 1);
+  assert.deepEqual(scanned.topNoise, [{ label: 'dist/', size: 4000, reason: 'generated build output' }]);
+});
+
 test('saved tokens cover the bytes of every skipped read', () => {
   const state = createWorkspaceState();
   recordSkip(state, { relativePath: 'a.js', bytes: 3080, reason: 'large file' });
@@ -125,7 +154,7 @@ test('the ledger separates what was read from what was refused', () => {
 test('report handler answers with the scanned workspace, then the allow route edits it', async () => {
   const { routes, listeners, guards } = harness();
   assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/client-report',
-    '/aiignore/conversation', '/aiignore/debug', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
+    '/aiignore/conversation', '/aiignore/conversations', '/aiignore/debug', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
 
   const root = tempWorkspace();
   const agent = { session: { meta: { cwd: root } }, inject() {} };
@@ -256,8 +285,8 @@ test('a service that mounts late still gets the routes and the guard', async () 
 
   assert.equal(guards.length, 1, 'the guard installs once the tool registry appears');
   assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/client-report',
-    '/aiignore/conversation', '/aiignore/debug', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
-  assert.equal(late.routes.size, 18, 'a context with both services installs eagerly');
+    '/aiignore/conversation', '/aiignore/conversations', '/aiignore/debug', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
+  assert.equal(late.routes.size, 19, 'a context with both services installs eagerly');
 });
 
 test('the tree route lists the scanned workspace, one directory at a time', () => {

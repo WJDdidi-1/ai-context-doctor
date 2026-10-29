@@ -1,3 +1,30 @@
+## 0.23.0
+
+The panel stops calling itself by the wrong name, Optimize proves what it did,
+and the left-rail page finally has a reason to exist.
+
+- **Why Optimize looked broken.** `buildReport` — the only thing the panel reads
+  — dropped `effectiveScore`, `effectiveBreakdown`, `blocked`, `blockedBytes`,
+  `topNoise` and `suggestedAiignore`. The rules were being written to disk and
+  the score kept showing the raw one. Every one of those fields now survives the
+  trip, and a regression test fails if any of them is dropped again.
+- **Optimize is a real button that reports back.** It sits *after* the strength
+  choice, names the rules it will write before you press it, then shows the new
+  score, the `before → after` it moved, and the files that stopped reaching the
+  model with their sizes. Undo still puts the file back byte for byte. The
+  response carries a fresh report, so the two numbers at the top move on the same
+  click instead of waiting for the next poll.
+- **The slider is gone.** Five buttons already score themselves against your
+  workspace; a sixth way to say the same thing was noise of its own kind.
+- **The left page lists conversations, not folders.** `GET /aiignore/conversations`
+  summarises every projected conversation (title, turns, files read, bytes,
+  noise aloud reads, score) and the page ranks them worst first with a one-click
+  clean-up per row. It is now called **AIignore**, like everything else.
+- **The refresh button says what it did.** It reports "Scanned N files ·
+  Reaches the model S" on success and disables itself while it runs.
+- **Copy pass, both languages.** Hints, empty states and button labels were
+  rewritten to explain in a sentence what a control does and what it costs.
+
 ## 0.22.0
 
 A panel called what it does, told in the order a user needs it, and a licence that says what may be done with it.
