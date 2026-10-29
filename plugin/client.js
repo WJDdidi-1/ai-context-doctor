@@ -56,6 +56,22 @@ window.__ModuleLoader__.load({
         refresh: 'Refresh',
         tabFiles: 'Files',
         tabInsights: 'Score',
+        tabProtect: 'Protection',
+        tabSettings: 'Settings',
+        heroOne: 'read blocked',
+        heroMany: 'reads blocked',
+        heroAbout: 'about',
+        heroKept: 'kept out of context',
+        heroNoneCaption: 'Nothing has been blocked yet — the moment something is, it shows up here.',
+        sessionLine: 'This conversation',
+        turns: 'turns',
+        nextStep: 'One notch stricter would block',
+        nextFiles: 'more files',
+        applyNext: 'Do that',
+        nextDone: 'Turned up',
+        rulesOn: 'rules in effect',
+        openSettings: 'Change',
+        tokens: 'tokens',
         tabNote: 'Note',
         tabChat: 'Chat',
         tabStrategy: 'Strategy',
@@ -225,6 +241,9 @@ window.__ModuleLoader__.load({
         close: 'Close',
         verdictAllowed: 'you allowed it'
       },
+    //#endregion copy
+
+      //#region copyZh
       zh: {
         entry: 'AIignore',
         tabTitle: 'AIignore',
@@ -238,6 +257,22 @@ window.__ModuleLoader__.load({
         refresh: '刷新',
         tabFiles: '文件',
         tabInsights: '评分',
+        tabProtect: '保护',
+        tabSettings: '设置',
+        heroOne: '次读取被挡下',
+        heroMany: '次读取被挡下',
+        heroAbout: '约',
+        heroKept: 'tokens 没有进入上下文',
+        heroNoneCaption: '还没有挡下任何读取——一旦挡下，就会显示在这里。',
+        sessionLine: '本次对话',
+        turns: '轮',
+        nextStep: '再严格一档会多挡下',
+        nextFiles: '个文件',
+        applyNext: '就这样做',
+        nextDone: '已调高',
+        rulesOn: '条规则在生效',
+        openSettings: '修改',
+        tokens: 'tokens',
         tabNote: '说明',
         tabChat: '对话',
         tabStrategy: '策略',
@@ -410,7 +445,7 @@ window.__ModuleLoader__.load({
     };
 
     // Single source of truth: this text must match ui/panel.css byte for byte.
-    //#endregion copy
+    //#endregion copyZh
 
     //#region styles
     const CSS = String.raw`/*
@@ -1801,6 +1836,153 @@ window.__ModuleLoader__.load({
 .aicd-covered .aicd-row {
   cursor: default;
 }
+
+/* --- Protection: one number, one action ------------------------------- */
+.aicd-protect {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.aicd-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0 2px;
+}
+
+.aicd-hero-num {
+  font: var(--dsw-font-xl-24-strong, 600 24px/1.1 inherit);
+  font-size: 40px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-state-business-primary, #4a7cf7);
+}
+
+.aicd-hero-label {
+  font: var(--dsw-font-xxs-12, 12px/1.4 inherit);
+  color: var(--dsw-alias-label-secondary, rgba(127, 127, 127, 0.95));
+}
+
+.aicd-hero-sub {
+  margin-top: 6px;
+  max-width: 280px;
+  text-align: center;
+  font: var(--dsw-font-xxxs-11, 11px/1.5 inherit);
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.8));
+}
+
+.aicd-hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.aicd-hero-meta {
+  font: var(--dsw-font-xxxs-11, 11px/1.5 inherit);
+  color: var(--dsw-alias-label-tertiary, rgba(127, 127, 127, 0.85));
+  text-align: center;
+}
+
+.aicd-next {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--dsw-radius-md, 12px);
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.22));
+  background: var(--dsw-alias-bg-layer-1, transparent);
+}
+
+.aicd-next-text {
+  font: var(--dsw-font-xxs-12, 12px/1.5 inherit);
+  color: var(--dsw-alias-label-secondary, rgba(127, 127, 127, 0.95));
+}
+
+.aicd-next .aicd-btn {
+  align-self: flex-start;
+}
+
+.aicd-hero-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+  font: var(--dsw-font-xxxs-11, 11px/1.4 inherit);
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.8));
+}
+
+.aicd-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--dsw-alias-state-business-primary, #4a7cf7);
+  font: inherit;
+  cursor: pointer;
+}
+
+.aicd-link:hover {
+  text-decoration: underline;
+}
+
+.aicd-block-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.14));
+}
+
+.aicd-block-row:last-child {
+  border-bottom: none;
+}
+
+.aicd-block-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xxs-12, 12px/1.4 inherit);
+  color: var(--dsw-alias-label-primary, inherit);
+}
+
+.aicd-block-meta {
+  flex: none;
+  white-space: nowrap;
+  font: var(--dsw-font-xxxs-11, 11px/1.4 inherit);
+  color: var(--dsw-alias-label-caption, rgba(127, 127, 127, 0.8));
+}
+
+.aicd-section-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A list, not a header line: .aicd-section is a flex row and flattens these. */
+.aicd-blocked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 6px;
+}
+
+.aicd-blocked-title {
+  font: var(--dsw-font-xxxs-strong-11, 500 11px/14px system-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dsw-alias-label-caption, currentColor);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-bottom: 2px;
+}
 `;
 
     //#endregion styles
@@ -1931,6 +2113,27 @@ window.__ModuleLoader__.load({
       } catch (error) {
         if (onDone) onDone(error);
       }
+    }
+
+    /** A conversation reports its tokens per surface; the cards want one number. */
+    function tokenTotal(tokens) {
+      if (typeof tokens === 'number') return tokens;
+      if (tokens === null || typeof tokens !== 'object') return 0;
+      let total = 0;
+      for (const value of Object.values(tokens)) {
+        if (typeof value === 'number') total += value;
+      }
+      return total;
+    }
+
+    /** Token amounts arrive as a range from the scanner and as plain counts from
+     *  the counters; both belong on screen as one short string. */
+    function shortTokens(value) {
+      if (typeof value === 'number') {
+        const count = Math.max(0, Math.round(value));
+        return count >= 10000 ? `${Math.round(count / 1000)}k` : count.toLocaleString();
+      }
+      return formatTokensCompact(value).replace(/^~/, '');
     }
 
     function formatTokensCompact(range) {
@@ -2633,55 +2836,31 @@ window.__ModuleLoader__.load({
      * conversation cost, what your rules leave behind, why, how strict you want
      * to be, and the one click that writes the rules — with the number it moved.
      */
-    function InsightsView({ data, conv, onDone, onRescan, onOptimized }) {
+    /**
+     * Everything you can change. Kept off the first screen on purpose: the
+     * question that panel answers is "is this thing doing anything", and a
+     * setting has no business in that answer.
+     */
+    function SettingsView({ data, conv, onDone, onRescan }) {
       const scanned = data.scanned || {};
-      const effective = typeof scanned.effectiveScore === 'number'
-        ? scanned.effectiveScore
-        : (typeof scanned.healthScore === 'number' ? scanned.healthScore : null);
+      const effective = typeof scanned.effectiveScore === 'number' ? scanned.effectiveScore : null;
       const raw = typeof scanned.healthScore === 'number' ? scanned.healthScore : null;
-      const [side, setSide] = useState('effective');
-
-      const card = (label, value, tone) =>
-        h('div', { className: 'aicd-card' },
-          h('span', { className: 'aicd-card-value', 'data-tone': tone === undefined ? undefined : tone }, value),
-          h('span', { className: 'aicd-card-label' }, label)
-        );
-
-      const showingEffective = side !== 'raw';
-      const rows = showingEffective ? scanned.effectiveBreakdown : scanned.scoreBreakdown;
-      const lost = showingEffective ? scanned.effectiveLost : scanned.scoreLost;
-      const letThrough = typeof scanned.allowedBytes === 'number' && typeof scanned.bytes === 'number'
-        ? `${formatBytes(scanned.allowedBytes)} ${tr('of')} ${formatBytes(scanned.bytes)}`
-        : null;
 
       return h('div', { className: 'aicd-body' },
-        h('div', { className: 'aicd-cards' },
-          card(tr('scoreOnDisk'), raw === null ? '—' : String(raw), raw === null ? undefined : toneFor(raw)),
-          card(tr('scoreFolder'), effective === null ? '—' : String(effective), effective === null ? undefined : toneFor(effective))
-        ),
-        h('div', { className: 'aicd-note' }, tr('scoreTwoHint')),
-        letThrough === null ? null : h('div', { className: 'aicd-note' }, `${letThrough} ${tr('letThrough')}`),
-        h('div', { className: 'aicd-chips', role: 'tablist' },
-          h('button', {
-            type: 'button',
-            className: 'aicd-chip',
-            'data-active': showingEffective ? 'true' : 'false',
-            'aria-selected': showingEffective ? 'true' : 'false',
-            onClick: () => setSide('effective')
-          }, tr('scoreFolder')),
-          h('button', {
-            type: 'button',
-            className: 'aicd-chip',
-            'data-active': showingEffective ? 'false' : 'true',
-            'aria-selected': showingEffective ? 'false' : 'true',
-            onClick: () => setSide('raw')
-          }, tr('scoreOnDisk'))
-        ),
-        h(ScoreBreakdown, { rows, lost, title: tr('scoreTitle'), formula: tr('scoreFormula') }),
         h(StrategyCard, { data, onSaved: onRescan }),
-        h(OptimizeCard, { data, conv, onDone, onOptimized }),
         h(RulesCard, { data, onDone }),
-        h(NoteView, { data, onSaved: onDone })
+        h(NoteView, { data, onSaved: onDone }),
+        h('div', { className: 'aicd-section' },
+          h('div', { className: 'aicd-section-title' }, tr('scoreTitle')),
+          h('div', { className: 'aicd-note' },
+            `${tr('scoreOnDisk')} ${raw === null ? '—' : raw} · ${tr('scoreFolder')} ${effective === null ? '—' : effective}`),
+          h(ScoreBreakdown, {
+            rows: scanned.effectiveBreakdown,
+            lost: scanned.effectiveLost,
+            title: tr('scoreHow'),
+            formula: tr('scoreFormula')
+          })
+        )
       );
     }
 
@@ -2894,129 +3073,90 @@ window.__ModuleLoader__.load({
      * spent tokens on, which files it read, and one button that turns those reads
      * into `.aiignore` rules — with the before/after score right there.
      */
-    function ChatView({ conv, data, error, pinnedSession, onPin, onAllow, onIgnore }) {
-      if (error !== null) {
-        return h('div', { className: 'aicd-body', 'data-center': 'true' },
-          h(Empty, { icon: 'warn', title: tr('errorTitle'), hint: tr('chatEmpty') }));
-      }
-      if (conv === null) return h('div', { className: 'aicd-body' }, h(Skeleton, null));
+    /**
+     * The first screen: one number that grows because the plugin is working.
+     *
+     * A score describes a folder and stops moving once the rules cover it —
+     * that is why it never felt like anything happened. This counts the reads
+     * the guard refused, which only goes up when there was something to refuse.
+     */
+    function ProtectView({ data, conv, progress, optimize, onAllow, onIgnore, onSettings }) {
+      const stats = data.stats !== null && typeof data.stats === 'object' ? data.stats : {};
+      const blockedReads = typeof stats.blockedReads === 'number' ? stats.blockedReads : 0;
+      const savedTokens = typeof stats.savedTokens === 'number' ? stats.savedTokens : 0;
+      const skipped = Array.isArray(data.skipped) ? data.skipped.filter((item) => item.attempts > 0) : [];
+      const potential = data.potential !== null && typeof data.potential === 'object' ? data.potential : null;
+      const rules = Array.isArray(data.rules) ? data.rules : [];
+      const conversation = conv !== null && conv !== undefined && typeof conv.turns === 'number' ? conv : null;
+      const [raised, setRaised] = useState(null);
 
-      const tokens = conv.tokens !== undefined && conv.tokens !== null ? conv.tokens : {};
-      const parts = [
-        ['assistant', tokens.assistant || 0],
-        ['tool', tokens.tool || 0],
-        ['user', tokens.user || 0],
-        ['inject', (tokens.inject || 0) + (tokens.skill || 0)]
-      ];
-      const total = parts.reduce((sum, [, value]) => sum + value, 0);
-      const blocked = Array.isArray(conv.noise) ? conv.noise : [];
-      const skipped = data !== null && data !== undefined && Array.isArray(data.skipped) ? data.skipped : [];
-      // A read the guard refused is the one place the model was told "no" —
-      // showing it here is what lets the user answer that "no" with a yes.
-      const blockedReads = skipped.filter((item) => item.attempts > 0);
-      const available = Array.isArray(conv.available) ? conv.available : [];
-      const reads = Array.isArray(conv.reads) ? conv.reads.slice(0, 6) : [];
-      // A brand-new conversation has no composition and nothing to list. Saying
-      // so once beats three empty sections and a 0% bar.
-      const nothingYet = total === 0 && blockedReads.length === 0 && reads.length === 0;
+      const applyNext = () => {
+        if (potential === null || raised !== null) return;
+        setRaised('busy');
+        fetch('/aiignore/policy', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ level: potential.level })
+        })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then(() => {
+            setRaised('done');
+            optimize();
+          })
+          .catch(() => setRaised('failed'));
+      };
 
-      if (nothingYet === true) {
-        return h('div', { className: 'aicd-body' },
-          h(Empty, {
-            icon: 'spark',
-            title: tr('chatNothing'),
-            hint: tr('chatNothingHint')
-          }),
-          available.length > 1
-            ? h('div', { className: 'aicd-section' },
-                h('div', { className: 'aicd-section-title' }, tr('chatPick')),
-                h('select', { className: 'aicd-select', 'aria-label': tr('chatPick'), value: pinnedSession === null ? conv.id : pinnedSession, onChange: (event) => onPin(event.target.value) },
-                  available.map((entry) => h('option', { key: entry.id, value: entry.id }, entry.id === conv.id ? `${entry.id} · ${tr('chatCurrent')}` : entry.id))))
-            : null);
-      }
+      return h('div', { className: 'aicd-body aicd-protect' },
+        h('div', { className: 'aicd-hero' },
+          h('div', { className: 'aicd-hero-num' }, String(blockedReads)),
+          h('div', { className: 'aicd-hero-label' }, tr(blockedReads === 1 ? 'heroOne' : 'heroMany')),
+          h('div', { className: 'aicd-hero-sub' }, blockedReads === 0
+            ? tr('heroNoneCaption')
+            : `${tr('heroAbout')} ${shortTokens(savedTokens)} ${tr('tokens')} ${tr('heroKept')}`)
+        ),
 
-      return h('div', { className: 'aicd-body' },
-        h('div', { className: 'aicd-chat' },
-          h('div', { className: 'aicd-chat-meta' },
-            `${conv.turns || 0} ${tr('chatTurns')} · ${bytesShort(conv.readBytes)} ${tr('chatRead')} · ${conv.readFiles || 0} ${tr('chatFiles')}`),
+        h('div', { className: 'aicd-hero-actions' },
+          h('button', {
+            type: 'button',
+            className: 'aicd-btn',
+            'data-variant': 'primary',
+            disabled: progress !== null,
+            onClick: optimize
+          }, progress === null ? tr('optimizeNow') : tr('working')),
+          conversation === null ? null : h('div', { className: 'aicd-hero-meta' },
+            `${tr('sessionLine')} · ${conversation.turns} ${tr('turns')} · ${conversation.readFiles} ${tr('files')} · ${tr('heroAbout')} ${shortTokens(tokenTotal(conversation.tokens))} ${tr('tokens')}`)
+        ),
 
-          h('div', { className: 'aicd-section-title' }, tr('chatComposition')),
-          h('div', { className: 'aicd-comp', role: 'img', 'aria-label': tr('chatComposition') },
-            parts.map(([name, value]) => h('span', {
-              key: name,
-              className: 'aicd-comp-seg',
-              'data-seg': name,
-              title: `${name} ${value.toLocaleString()}`,
-              style: { flexGrow: String(total === 0 ? 1 : Math.max(value, 1)), flexBasis: '0px' }
-            }))),
-          h('div', { className: 'aicd-legend' },
-            parts.map(([name, value]) => h('span', { key: name, className: 'aicd-legend-item' },
-              h('span', { className: 'aicd-swatch', 'data-seg': name }),
-              `${name} ${total === 0 ? 0 : Math.round((value / total) * 100)}%`))),
+        progress === null ? null : h('div', { className: 'aicd-progress', role: 'progressbar', 'aria-valuenow': progress.pct, 'aria-valuemin': 0, 'aria-valuemax': 100 },
+          h('div', { className: 'aicd-progress-bar', style: { width: `${progress.pct}%` } }),
+          h('div', { className: 'aicd-progress-label' }, progress.label)
+        ),
 
-          blocked.length > 0
-            ? h('div', { className: 'aicd-section' },
-                h('div', { className: 'aicd-section-title' }, tr('chatNoise')),
-                blocked.slice(0, 4).map((item) => h(Row, {
-                  key: item.path,
-                  icon: 'warn',
-                  name: item.relativePath || item.path,
-                  badge: [{ text: (item.reason || 'noise').replace(/^(generated|local) /, ''), tone: 'noise' }],
-                  meta: bytesShort(item.bytes)
-                })))
-            : null,
+        potential === null ? null : h('div', { className: 'aicd-next' },
+          h('div', { className: 'aicd-next-text' },
+            `${tr('nextStep')} ${potential.extraFiles} ${tr('nextFiles')} (${tr('heroAbout')} ${shortTokens(potential.extraTokens)} ${tr('tokens')})`),
+          h('button', {
+            type: 'button',
+            className: 'aicd-btn',
+            disabled: raised === 'busy',
+            onClick: applyNext
+          }, raised === 'done' ? tr('nextDone') : tr('applyNext'))
+        ),
 
-          blockedReads.length > 0
-            ? h('div', { className: 'aicd-section' },
-                h('div', { className: 'aicd-section-title' }, tr('blockedTitle')),
-                blockedReads.slice(0, 4).map((item) => h('div', { key: item.path, className: 'aicd-blocked' },
-                  h(Row, {
-                    icon: 'lock',
-                    name: item.path,
-                    badge: [{ text: (item.reason || 'noise').replace(/^(generated|local) /, ''), tone: 'noise' }],
-                    meta: bytesShort(item.bytes)
-                  }),
-                  h('div', { className: 'aicd-blocked-actions' },
-                    h('button', {
-                      type: 'button',
-                      className: 'aicd-btn',
-                      onClick: () => { if (typeof onAllow === 'function') onAllow(item.path); }
-                    }, tr('readOnce')),
-                    h('button', {
-                      type: 'button',
-                      className: 'aicd-btn',
-                      onClick: () => { if (typeof onIgnore === 'function') onIgnore(item.path); }
-                    }, tr('neverRead'))))),
-                blockedReads.length > 4
-                  ? h('p', { className: 'aicd-note' }, `${blockedReads.length - 4} ${tr('more')}`)
-                  : null)
-            : null,
+        skipped.length === 0 ? null : h('div', { className: 'aicd-blocked-list' },
+          h('div', { className: 'aicd-blocked-title' }, tr('blockedTitle')),
+          skipped.map((item) => h('div', { key: item.path, className: 'aicd-block-row' },
+            h('span', { className: 'aicd-block-name', title: item.path }, item.path),
+            h('span', { className: 'aicd-block-meta' },
+              `${formatBytes(item.bytes)} · ${item.reason}${item.attempts > 1 ? ` · ${item.attempts}×` : ''}`)
+          ))
+        ),
 
-          reads.length > 0
-            ? h('div', { className: 'aicd-section' },
-                h('div', { className: 'aicd-section-title' }, tr('chatRead')),
-                reads.map((item) => h(Row, {
-                  key: item.path,
-                  icon: 'file',
-                  name: item.relativePath || item.path,
-                  meta: bytesShort(item.bytes)
-                })))
-            : null,
-
-          available.length > 1
-            ? h('div', { className: 'aicd-section' },
-                h('div', { className: 'aicd-section-title' }, tr('chatPick')),
-                h('select', {
-                  className: 'aicd-select',
-                  'aria-label': tr('chatPick'),
-                  value: pinnedSession === null ? conv.id : pinnedSession,
-                  onChange: (event) => onPin(event.target.value)
-                },
-                  available.map((entry) => h('option', {
-                    key: entry.id,
-                    value: entry.id
-                  }, `${entry.id.slice(-8)} · ${shortPath(entry.cwd || '')}${entry.id === conv.id ? ` · ${tr('chatCurrent')}` : ''}`))))
-            : null));
+        h('div', { className: 'aicd-hero-foot' },
+          h('span', null, `${rules.length} ${tr('rulesOn')}`),
+          h('button', { type: 'button', className: 'aicd-link', onClick: onSettings }, tr('openSettings'))
+        )
+      );
     }
 
     //#endregion chat
@@ -3219,7 +3359,7 @@ window.__ModuleLoader__.load({
     }
 
     /** The panel header: where you are, whether it follows the conversation, and the few actions. */
-    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, conv, view, setView, tabs, toast, rescanning, optimize, progress, pinnedSession, onFollowConversation }) {
+    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, conv, view, setView, tabs, toast, rescanning, pinnedSession, onFollowConversation }) {
       const workspace = data === null ? null : data.workspace;
       const title = conv !== null && conv !== undefined && typeof conv.title === 'string' && conv.title.length > 0
         ? conv.title
@@ -3305,29 +3445,6 @@ window.__ModuleLoader__.load({
                   }, label)
                 )
               ),
-          // The one button the panel is built around. It never reports "done"
-          // without having rescanned, written and re-scored in that order.
-          h('div', { className: 'aicd-action' },
-            progress === null || progress === undefined
-              ? h('button', {
-                  type: 'button',
-                  className: 'aicd-btn',
-                  'data-variant': 'primary',
-                  disabled: data === null || typeof optimize !== 'function' ? 'true' : undefined,
-                  onClick: optimize
-                }, tr('optimizeNow'))
-              : h('div', {
-                  className: 'aicd-progress',
-                  role: 'progressbar',
-                  'aria-valuenow': String(progress.pct),
-                  'aria-valuemin': '0',
-                  'aria-valuemax': '100',
-                  'aria-label': progress.label
-                },
-                  h('div', { className: 'aicd-progress-bar', style: { width: `${progress.pct}%` } }),
-                  h('span', { className: 'aicd-progress-label' }, progress.label)
-                )
-          )
         )
       );
     }
@@ -3380,7 +3497,7 @@ window.__ModuleLoader__.load({
       // Which conversation the Chat tab looks at. null follows the open one.
       const [pinnedSession, setPinnedSession] = useState(null);
       const { conv, error: convError } = useConversation(pinnedSession);
-      const [view, setView] = useState('chat');
+      const [view, setView] = useState('protect');
       const [pending, setPending] = useState(null);
       const [postError, setPostError] = useState(null);
       const [lastIgnored, setLastIgnored] = useState(null);
@@ -3449,9 +3566,9 @@ window.__ModuleLoader__.load({
       const score = typeof scanned.healthScore === 'number' ? scanned.healthScore : null;
 
       const tabs = [
-        ['chat', tr('tabChat')],
+        ['protect', tr('tabProtect')],
         ['files', tr('tabFiles')],
-        ['insights', tr('tabInsights')]
+        ['settings', tr('tabSettings')]
       ];
 
       // Refresh has to mean something: re-read the folder *and* the conversation,
@@ -3533,7 +3650,6 @@ window.__ModuleLoader__.load({
         h(PanelHead, {
           data, pinned, menu, setMenu, follow, setChoosing, setPinned, rescan, conv,
           view, setView, tabs, choose, toast, rescanning: pending === 'scan',
-          optimize: optimizeNow, progress,
           pinnedSession, onFollowConversation: () => setPinnedSession(null)
         }),
         error !== null
@@ -3551,20 +3667,22 @@ window.__ModuleLoader__.load({
             )
           : data === null
             ? h('div', { className: 'aicd-body' }, h(Skeleton, null))
-            : data.workspace === null || data.workspace === undefined || choosing === true
-              // The Chat tab needs no workspace: it reads the conversation itself.
-              ? (view === 'chat' && choosing !== true
-                  ? h(ChatView, { conv, data, error: convError, pinnedSession, onPin: setPinnedSession, onAllow, onIgnore })
-                  : h('div', { className: 'aicd-body', 'data-center': 'true' },
-                      h(NoWorkspace, { spaces, pending, scan, pick, scanError, choosing })))
-              : view === 'chat'
-                ? h(ChatView, { conv, data, error: convError, pinnedSession, onPin: setPinnedSession, onAllow, onIgnore })
-                : view === 'files'
-                  ? h(FilesView, {
-                    data, tree, at, setAt, pending, onAllow, onIgnore,
-                    lastIgnored, onUndo
-                  })
-                  : h(InsightsView, { data, conv, onDone: reload, onRescan: rescan, onOptimized }),
+            : (data.workspace === null || data.workspace === undefined || choosing === true) && view === 'files'
+              ? h('div', { className: 'aicd-body', 'data-center': 'true' },
+                  h(NoWorkspace, { spaces, pending, scan, pick, scanError, choosing }))
+              : view === 'files'
+                ? h(FilesView, {
+                  data, tree, at, setAt, pending, onAllow, onIgnore,
+                  lastIgnored, onUndo
+                })
+                : view === 'settings'
+                  ? h(SettingsView, { data, conv, onDone: reload, onRescan: rescan })
+                  // Protection needs no workspace of its own: it reads counters
+                  // and the conversation, both of which exist without a scan.
+                  : h(ProtectView, {
+                    data, conv, progress, optimize: optimizeNow, onAllow, onIgnore,
+                    onSettings: () => setView('settings')
+                  }),
         postError !== null ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
       );
     }

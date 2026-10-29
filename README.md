@@ -160,9 +160,19 @@ console.log(report.healthScore, report.topNoise);
 dsh plugin --profile web add dsh-aiignore
 ```
 
-The plugin also adds a **AIignore** tab to the right sidebar, opened from a folder button in the composer. It answers three questions in that order: what this conversation actually fed the model, what is left after your rules and your strength, and what one click would change. Under the score sit the arithmetic behind it (folded away), five strength buttons that each show what they would score on your repository, and an optimize button that names the rules it will write, then reports the new score and the files that stopped reaching the model. It follows the Harness light and dark themes.
+The plugin also adds an **AIignore** tab to the right sidebar, opened from a
+folder button in the composer. It opens on **Protection**: how many reads the
+guard has refused for this workspace and roughly how many tokens that kept out
+of the model — a number that counts up while you work, because a score stops
+moving once the rules cover a folder. One primary button, *Optimize now*,
+rescans, writes what is missing, and reports the score before and after; when
+nothing is missing it says so. A second line offers **one notch stricter** with
+the number attached, so "raise the strength" is a decision instead of advice.
+**Files** browses the workspace a directory at a time; **Settings** holds the
+strength buttons, the `.aiignore` lines with an × each, the note for the agent,
+and the five-dimension arithmetic. It follows the Harness light and dark themes.
 
-![The AIignore tab in the right sidebar](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
+![The AIignore tab in the right sidebar](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-light.png)
 
 It declares `engines.dsh: ">=0.2.0"`, and the Harness checks that range before installing. The source, its configuration and its limits are in [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
 

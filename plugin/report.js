@@ -158,7 +158,7 @@ export function sessionFiles(state) {
     .sort((left, right) => right.bytes - left.bytes);
 }
 
-export function buildReport({ cwd, state, policy, rules = [] }) {
+export function buildReport({ cwd, state, policy, rules = [], stats = null }) {
   const report = state.report;
   const saved = savedTokens(state);
 
@@ -194,6 +194,9 @@ export function buildReport({ cwd, state, policy, rules = [] }) {
     // The lines in .aiignore, verbatim: the panel lists them so a rule can be
     // removed one at a time instead of only "undo the whole batch".
     rules,
+    // Lifetime-of-the-workspace counters. The score cannot move once the rules
+    // cover everything; this can, and it is what makes the panel worth opening.
+    stats: stats === null ? { blockedReads: 0, savedTokens: 0, since: null, lastAt: null } : stats,
     skipped: [...state.skipped.values()].map((item) => ({ ...item })),
     reads: [...state.reads.values()].map((item) => ({ ...item })),
     writes: [...state.writes.values()].map((item) => ({ ...item })),

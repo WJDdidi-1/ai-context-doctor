@@ -2,6 +2,21 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.7.2
+
+- **Fix: `.aiignore` rules never changed a score.** `parseRules` returns a
+  `Set`, and the scanner only accepted an `Array` — so every rule the panel
+  wrote was dropped before scoring, and `effectiveScore` moved only with the
+  strength. This is why Optimize could report "4 rules added" and leave the
+  number where it was.
+- **Fix: with an array of rules, every file was blocked.** `matchesAiignore`
+  returns the matched rule's text (or `undefined`), and the caller compared it
+  to `null`, which is always true. One rule meant the whole folder counted as
+  handled.
+- `blockedBytes` now means what `blockedFiles` means: every byte the policy
+  keeps out, not only the noise entries. A 300 KB file refused for its size was
+  counted as blocked but reported as zero bytes.
+
 ## 0.7.1
 
 - Add `scanLevels(root, { levels })`: the same reports for several strengths

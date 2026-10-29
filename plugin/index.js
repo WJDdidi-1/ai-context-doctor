@@ -348,6 +348,51 @@ export function writeNotes(cwd, text) {
 const headerCache = new Map();
 
 /** The user's filtering strength, stored next to the rules it complements. */
+export const STATS_FILE = '.aiignore.stats.json';
+
+/**
+ * Running totals for one workspace: how often the guard said no, and roughly
+ * how much context that kept out. A score is a property of a folder and does
+ * not move once the rules are complete; this counter is the number that grows
+ * while someone works, which is the only reason the panel is worth opening
+ * twice.
+ */
+export function readStats(cwd) {
+  const empty = { blockedReads: 0, savedTokens: 0, since: null, lastAt: null };
+  try {
+    const parsed = JSON.parse(fs.readFileSync(path.join(cwd, STATS_FILE), 'utf8'));
+    if (parsed === null || typeof parsed !== 'object') return empty;
+    return {
+      blockedReads: Number.isFinite(parsed.blockedReads) ? parsed.blockedReads : 0,
+      savedTokens: Number.isFinite(parsed.savedTokens) ? parsed.savedTokens : 0,
+      since: typeof parsed.since === 'string' ? parsed.since : null,
+      lastAt: typeof parsed.lastAt === 'string' ? parsed.lastAt : null
+    };
+  } catch {
+    return empty;
+  }
+}
+
+export function bumpStats(cwd, { tokens = 0, at = new Date().toISOString() } = {}) {
+  const current = readStats(cwd);
+  // Callers hand over what the scanner returned, which is a range, not a count.
+  const added = typeof tokens === 'number'
+    ? tokens
+    : (tokens !== null && typeof tokens === 'object' && typeof tokens.max === 'number' ? tokens.max : 0);
+  const next = {
+    blockedReads: current.blockedReads + 1,
+    savedTokens: current.savedTokens + Math.max(0, Math.round(added)),
+    since: current.since === null ? at : current.since,
+    lastAt: at
+  };
+  try {
+    fs.writeFileSync(path.join(cwd, STATS_FILE), `${JSON.stringify(next)}\n`);
+  } catch {
+    // A read-only workspace still gets the in-memory count, just not the file.
+  }
+  return next;
+}
+
 export const POLICY_FILE = '.aiignore.policy.json';
 
 /**
@@ -1135,6 +1180,7 @@ export function apply(ctx, config = {}) {
           return undefined;
         }
         recordSkip(state, decision);
+        bumpStats(cwd, { tokens: estimateTokens(decision.bytes) });
         return formatDenial(decision);
       }
 
@@ -1411,6 +1457,30 @@ export function apply(ctx, config = {}) {
     return value;
   };
 
+  // What the next notch would add, with a number on it. "Raise the strength"
+  // is advice; "one more step blocks 3 more files" is a decision.
+  const nextRung = (cwd, level) => {
+    const rungs = levelsFor(cwd);
+    const index = rungs.findIndex((entry) => entry.level === level);
+    if (index === -1 || index >= rungs.length - 1) return null;
+    const current = rungs[index];
+    const above = rungs[index + 1];
+    if (current.blockedFiles === null || above.blockedFiles === null) return null;
+    const extraFiles = above.blockedFiles - current.blockedFiles;
+    if (extraFiles <= 0) return null;
+    const extraBytes = Math.max(0, (above.blockedBytes ?? 0) - (current.blockedBytes ?? 0));
+    return {
+      level: above.level,
+      label: above.label,
+      extraFiles,
+      extraBytes,
+      extraTokens: estimateTokens(extraBytes),
+      gain: current.effectiveScore === null || above.effectiveScore === null
+        ? 0
+        : above.effectiveScore - current.effectiveScore
+    };
+  };
+
   const sendJson = (res, status, body) => {
     res.writeHead(status, {
       'content-type': 'application/json; charset=utf-8',
@@ -1447,9 +1517,20 @@ export function apply(ctx, config = {}) {
   const reportHandler = (req, res) => {
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
     if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
-    if (bindWorkspace(req) === undefined) return sendJson(res, 200, { workspace: null, source: 'none', skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
+    if (bindWorkspace(req) === undefined) {
+      return sendJson(res, 200, {
+        workspace: null,
+        source: 'none',
+        skipped: [],
+        allowed: [],
+        savedTokens: { min: 0, max: 0, bytes: 0 },
+        stats: { blockedReads: 0, savedTokens: 0, since: null, lastAt: null },
+        potential: null
+      });
+    }
     return sendJson(res, 200, {
-      ...buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy, rules: aiignoreRules(latestCwd) }),
+      ...buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy, rules: aiignoreRules(latestCwd), stats: readStats(latestCwd) }),
+      potential: nextRung(latestCwd, readPolicy(latestCwd)),
       source: resolvedSource,
       session: resolvedSource === 'session' && latestSession !== null
         ? { id: latestSession.id, at: latestSession.at }
@@ -1978,7 +2059,7 @@ export function apply(ctx, config = {}) {
           }
           for (const item of conversation.noise) {
             const relative = item.relativePath;
-            blockedNow.push({ path: relative, blocked: relative !== undefined && matchesAiignore(written, relative) !== null });
+            blockedNow.push({ path: relative, blocked: relative !== undefined && matchesAiignore(written, relative) !== undefined });
           }
         }
 

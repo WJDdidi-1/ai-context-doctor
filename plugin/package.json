@@ -1,6 +1,6 @@
 {
   "name": "dsh-aiignore",
-  "version": "0.24.5",
+  "version": "0.25.0",
   "description": "See what a conversation feeds the model, what your rules keep out, and what one click would change.",
   "license": "Apache-2.0",
   "type": "module",
@@ -36,7 +36,7 @@
     }
   },
   "dependencies": {
-    "ai-context-doctor": "^0.7.1"
+    "ai-context-doctor": "^0.7.2"
   },
   "repository": {
     "type": "git",

@@ -154,9 +154,9 @@ console.log(report.healthScore, report.topNoise);
 dsh plugin --profile web add dsh-aiignore
 ```
 
-插件还会在右侧栏加一个 **AIignore** 标签（从输入框旁的文件夹按钮打开），按顺序回答三件事：这次对话到底喂了模型什么、在你的规则与力度之后还剩多少、点一下能改变什么。分数下面是折叠起来的算法、五个各自标出本仓库得分的力度按钮，以及一个会先说明要写哪些规则、再给出新分数与「不再进模型的文件」清单的优化按钮。面板跟随 Harness 的浅色与深色主题。
+插件还会在右侧栏加一个 **AIignore** 标签（从输入框旁的文件夹按钮打开）。它一打开就是 **保护** 页：这个工作区里被挡下的读取次数，以及这些内容大约多少 tokens 因此没有进入模型——这个数字会随着你干活往上走，而分数是一旦规则覆盖了目录就不再变的东西。下面只有一个主按钮「一键优化」：重新扫描、补上缺的规则、重新评分，并给出分数前后对比；没有可补的时候它会直说，而不是假装做了什么。再下面一行是「再严格一档」，直接带上数字（「会多挡下 2 个文件，约 65k–81k tokens」），点一下就设定并重扫。**文件** 页按目录浏览工作区；**设置** 页放力度按钮、`.aiignore` 的逐行清单（每行带 ×）、给 AI 的说明，以及折叠在底部的五维算法。面板跟随 Harness 的浅色与深色主题。
 
-![右侧栏里的上下文标签](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-files-light.png)
+![右侧栏里的上下文标签](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-light.png)
 
 它声明了 `engines.dsh: ">=0.2.0"`，Harness 会在安装前检查这个范围。源码、配置项与限制见 [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md)。
 
