@@ -226,6 +226,10 @@
       // The real report carries the suggestion inside `scanned`, next to the
       // effective score it explains.
       scenario.scanned.suggestedAiignore = scenario.suggestedAiignore;
+      scenario.rules = Array.isArray(scenario.rules) ? scenario.rules : undefined;
+      if (!Array.isArray(scenario.rules)) {
+        scenario.rules = scenario.rulesSeed ? scenario.rulesSeed.slice() : (name === 'noisy' ? ['dist/', 'package-lock.json'] : []);
+      }
       if (!scenario.scanned.scoreBreakdown) {
         const rows = name === 'noisy' ? BREAKDOWN_NOISY : BREAKDOWN_CLEAN;
         scenario.scanned.scoreBreakdown = rows;
@@ -342,8 +346,8 @@
         const workspace = asked !== null ? decodeURIComponent(asked[1]) : (bound === null ? data.workspace : bound);
         const source = asked !== null ? 'request' : (bound === null ? 'session' : 'last');
         const answer = blind
-          ? Object.assign({}, data, { workspace: null, policy: null, source: 'none' })
-          : Object.assign({}, data, { workspace: workspace, source: source });
+          ? Object.assign({}, data, { workspace: null, policy: null, source: 'none', rules: [] })
+          : Object.assign({}, data, { workspace: workspace, source: source, rules: (data.rules || []).slice() });
         window.__lastReport = answer;
         return slow(answer);
       }
@@ -377,6 +381,30 @@
         return record({ current: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50', conversations: conversationRows });
       }
       if (url.indexOf('/aiignore/conversation') === 0) {
+        // A pinned conversation must answer with ITS numbers, otherwise the
+        // preview cannot tell a working picker from a decorative one.
+        const asked = url.match(/[?&]session=([^&]+)/);
+        if (asked !== null) {
+          const picked = conversationRows.find((row) => row.id === decodeURIComponent(asked[1]));
+          if (picked !== undefined) {
+            return record({
+              id: picked.id,
+              title: picked.title,
+              cwd: picked.cwd,
+              turns: picked.turns,
+              steps: picked.turns * 20,
+              score: picked.score,
+              readFiles: picked.readFiles,
+              readBytes: picked.readBytes,
+              noiseBytes: 0,
+              tokens: { user: 900, inject: 8000, skill: 0, assistant: 120000, tool: 40000 },
+              noise: [],
+              suggestedAiignore: [],
+              reads: [],
+              available: conversationRows.map((row) => ({ id: row.id, at: row.at || 1793190000000, cwd: row.cwd }))
+            });
+          }
+        }
         if (scenario === 'fresh') {
           return record({
             id: 'session-new-0000-0000-0000-000000000000',
@@ -415,10 +443,7 @@
             { path: 'src/index.js', relativePath: 'src/index.js', bytes: 24000 },
             { path: 'src/legacy.js', relativePath: 'src/legacy.js', bytes: 90000 }
           ],
-          available: [
-            { id: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50', at: 1793190000000, cwd: '/Users/you/code/demo-noise' },
-            { id: 'session-97885bb9-1111-2222-3333-444444444444', at: 1793180000000, cwd: '/Users/you/code/other' }
-          ]
+          available: conversationRows.map((row) => ({ id: row.id, at: row.at || 1793190000000, cwd: row.cwd }))
         });
       }
       if (url.indexOf('/aiignore/client-report') === 0) return record({ received: true });
@@ -473,6 +498,17 @@
           target.scanned.level = next;
         }
         return record({ level: next, levels: LEVELS, policy: 'deny' });
+      }
+      if (url === '/aiignore/rules/delete') {
+        let rule = '';
+        try {
+          rule = JSON.parse((init && init.body) || '{}').rule || '';
+        } catch {}
+        const list = Array.isArray(data.rules) ? data.rules : (data.rules = []);
+        const at = list.indexOf(rule);
+        if (at < 0) return record({ error: 'no-such-rule' }, 404);
+        list.splice(at, 1);
+        return slow({ removed: true, rule });
       }
       if (url === '/aiignore/optimize') {
         const asked = body === null || body === undefined ? {} : body;

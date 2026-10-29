@@ -157,6 +157,13 @@ window.__ModuleLoader__.load({
         coveredBadge: 'kept out',
         beforeRules: 'before your rules',
         optimizeUpToDate: 'Nothing left to add — your rules already cover what this scan found.',
+        rulesTitle: 'Rules in .aiignore',
+        rulesHint: 'Each line here keeps a kind of noise out. Remove one and those files can come back.',
+        rulesNone: 'No rules yet. Optimize writes them for you, and you can always remove one here.',
+        rulesRemove: 'Remove this rule',
+        rulesRemoved: 'Removed.',
+        chatPinned: 'showing an earlier conversation',
+        chatFollowBack: 'Back to this conversation',
         strengthSaved: 'Saved. The score above now reflects it.',
         rescanHint: 'Scan this folder again',
         webTitle: 'No workspace yet',
@@ -332,6 +339,13 @@ window.__ModuleLoader__.load({
         coveredBadge: '已挡下',
         beforeRules: '规则前',
         optimizeUpToDate: '没有可加的了——现有规则已经覆盖这次扫描发现的东西。',
+        rulesTitle: '.aiignore 里的规则',
+        rulesHint: '这里每一行都挡住一类噪音。删掉一行，那些文件就会重新进入上下文。',
+        rulesNone: '还没有规则。点「优化」会自动写入，也可以在这里逐条删除。',
+        rulesRemove: '删除这条规则',
+        rulesRemoved: '已删除。',
+        chatPinned: '正在查看较早的对话',
+        chatFollowBack: '回到当前对话',
         strengthSaved: '已保存，上面的分数已经按这一档重算。',
         rescanHint: '重新扫描这个文件夹',
         webTitle: '还没有工作区',
@@ -1606,6 +1620,67 @@ window.__ModuleLoader__.load({
   white-space: nowrap;
 }
 
+.aicd-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aicd-follow[data-state='pinned'] {
+  border: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.35));
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.aicd-follow[data-state='pinned']:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.1));
+  color: var(--dsw-alias-label-primary, inherit);
+}
+
+.aicd-rule {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 2px 4px 2px 6px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  border: 1px solid var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.3));
+  background: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, 0.06));
+}
+
+.aicd-rule-text {
+  font-family: var(--ds-font-family-code, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary, #6b6b6b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-rule-x {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: var(--dsw-radius-xs, 4px);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary, #8a8a8a);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.aicd-rule-x:hover {
+  background: var(--dsw-alias-interactive-bg-hover-danger, rgba(200, 60, 60, 0.12));
+  color: var(--dsw-alias-state-error-primary, #c83c3c);
+}
+
+.aicd-rule-x:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
 .aicd-level-meta {
   margin-left: 6px;
   color: var(--dsw-alias-label-tertiary, #8a8a8a);
@@ -2447,6 +2522,10 @@ window.__ModuleLoader__.load({
       );
     }
 
+    //#endregion views
+
+    //#region score
+
     /**
      * The one click that actually writes something.
      *
@@ -2601,6 +2680,7 @@ window.__ModuleLoader__.load({
         h(ScoreBreakdown, { rows, lost, title: tr('scoreTitle'), formula: tr('scoreFormula') }),
         h(StrategyCard, { data, onSaved: onRescan }),
         h(OptimizeCard, { data, conv, onDone, onOptimized }),
+        h(RulesCard, { data, onDone }),
         h(NoteView, { data, onSaved: onDone })
       );
     }
@@ -2663,6 +2743,60 @@ window.__ModuleLoader__.load({
           status === 'saved' ? h('span', { className: 'aicd-note', 'data-tone': 'ok' }, tr('strengthSaved')) : null,
           status === 'failed' ? h('span', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
         )
+      );
+    }
+
+    /**
+     * The rules actually in force, one removable line at a time.
+     *
+     * Optimize can only tell you "4 rules added"; this is the plate they landed
+     * on. Deleting a rule here is the same edit you would make by hand, minus
+     * the risk of deleting a comment.
+     */
+    function RulesCard({ data, onDone }) {
+      const rules = Array.isArray(data.rules) ? data.rules : [];
+      const [busy, setBusy] = useState(null);
+      const [notice, setNotice] = useState(null);
+
+      const remove = (rule) => {
+        setBusy(rule);
+        setNotice(null);
+        fetch('/aiignore/rules/delete', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ rule })
+        })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then(() => {
+            setNotice(tr('rulesRemoved'));
+            if (typeof onDone === 'function') onDone();
+          })
+          .catch(() => setNotice(tr('noteFailed')))
+          .then(() => setBusy(null));
+      };
+
+      return h('div', { className: 'aicd-opt' },
+        h('div', { className: 'aicd-opt-head' },
+          h('span', { className: 'aicd-opt-title' }, tr('rulesTitle')),
+          h('span', { className: 'aicd-count' }, String(rules.length))
+        ),
+        h('div', { className: 'aicd-note' }, tr('rulesHint')),
+        rules.length === 0
+          ? h('div', { className: 'aicd-note' }, tr('rulesNone'))
+          : h('div', { className: 'aicd-rules' },
+              rules.map((rule) => h('span', { className: 'aicd-rule', key: rule },
+                h('code', { className: 'aicd-rule-text' }, rule),
+                h('button', {
+                  type: 'button',
+                  className: 'aicd-rule-x',
+                  title: tr('rulesRemove'),
+                  'aria-label': `${tr('rulesRemove')}: ${rule}`,
+                  disabled: busy === rule,
+                  onClick: () => remove(rule)
+                }, '×')
+              ))
+            ),
+        notice === null ? null : h('div', { className: 'aicd-note', 'data-tone': notice === tr('rulesRemoved') ? 'ok' : 'bad' }, notice)
       );
     }
 
@@ -2751,7 +2885,7 @@ window.__ModuleLoader__.load({
       );
     }
 
-    //#endregion views
+    //#endregion score
 
     //#region chat
 
@@ -3085,7 +3219,7 @@ window.__ModuleLoader__.load({
     }
 
     /** The panel header: where you are, whether it follows the conversation, and the few actions. */
-    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, conv, view, setView, tabs, toast, rescanning, optimize, progress }) {
+    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, conv, view, setView, tabs, toast, rescanning, optimize, progress, pinnedSession, onFollowConversation }) {
       const workspace = data === null ? null : data.workspace;
       const title = conv !== null && conv !== undefined && typeof conv.title === 'string' && conv.title.length > 0
         ? conv.title
@@ -3099,7 +3233,16 @@ window.__ModuleLoader__.load({
               h('span', { className: 'aicd-title', title: title }, title),
               h('span', { className: 'aicd-sub' },
                 workspace === null || workspace === undefined ? '' : shortPath(workspace),
-                following ? h('span', { className: 'aicd-follow', title: tr('follow') }, tr('followOn')) : null
+                following ? h('span', { className: 'aicd-follow', title: tr('follow') }, tr('followOn')) : null,
+                pinnedSession === null || pinnedSession === undefined
+                  ? null
+                  : h('button', {
+                      type: 'button',
+                      className: 'aicd-follow',
+                      'data-state': 'pinned',
+                      title: tr('chatFollowBack'),
+                      onClick: onFollowConversation
+                    }, tr('chatPinned'))
               )
             ),
             h('button', {
@@ -3390,7 +3533,8 @@ window.__ModuleLoader__.load({
         h(PanelHead, {
           data, pinned, menu, setMenu, follow, setChoosing, setPinned, rescan, conv,
           view, setView, tabs, choose, toast, rescanning: pending === 'scan',
-          optimize: optimizeNow, progress
+          optimize: optimizeNow, progress,
+          pinnedSession, onFollowConversation: () => setPinnedSession(null)
         }),
         error !== null
           ? h('div', { className: 'aicd-body', 'data-center': 'true' },

@@ -89,7 +89,30 @@ function formatTokens(range) {
  * @returns {Array<{ path: string, bytes: number, reason: string, attempts: number }>}
  */
 export function getSkippedReads(cwd) {
-  return buildReport({ cwd, state: stateFor(cwd), policy: 'deny' }).skipped;
+  return buildReport({ cwd, state: stateFor(cwd), policy: 'deny', rules: aiignoreRules(cwd) }).skipped;
+}
+
+/**
+ * The rules actually in force for a workspace, as written in `.aiignore`.
+ *
+ * Comments and blank lines are dropped: this is the list the panel shows, and
+ * it is what `POST /aiignore/rules/delete` matches against (so removing one
+ * rule can never touch a comment).
+ *
+ * @param {string} cwd
+ * @returns {string[]}
+ */
+export function aiignoreRules(cwd) {
+  let text;
+  try {
+    text = fs.readFileSync(path.join(cwd, '.aiignore'), 'utf8');
+  } catch {
+    return [];
+  }
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && line.startsWith('#') !== true);
 }
 
 /** Test seam: forget everything recorded so far. */
@@ -1426,7 +1449,7 @@ export function apply(ctx, config = {}) {
     if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
     if (bindWorkspace(req) === undefined) return sendJson(res, 200, { workspace: null, source: 'none', skipped: [], allowed: [], savedTokens: { min: 0, max: 0, bytes: 0 } });
     return sendJson(res, 200, {
-      ...buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy }),
+      ...buildReport({ cwd: latestCwd, state: stateFor(latestCwd), policy: options.readPolicy, rules: aiignoreRules(latestCwd) }),
       source: resolvedSource,
       session: resolvedSource === 'session' && latestSession !== null
         ? { id: latestSession.id, at: latestSession.at }
@@ -1514,6 +1537,45 @@ export function apply(ctx, config = {}) {
         const result = writeAiignore(path.join(latestCwd, '.aiignore'), [inspected.relativePath]);
         ruleCache.delete(latestCwd);
         return sendJson(res, 200, { ignored: true, rule: inspected.relativePath, created: result.created, added: result.added });
+      } catch {
+        return sendJson(res, 500, { error: 'write-failed' });
+      }
+    });
+  };
+
+  /**
+   * Remove one rule, matched against the exact line in `.aiignore`.
+   *
+   * `POST /aiignore/unignore` takes a file path, which cannot express a rule
+   * like `dist/` or `*.log` — the panel lists rules, so it needs to delete a
+   * rule. Comments and other lines are never touched.
+   */
+  const rulesDeleteHandler = (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    const cwd = askedCwd(req) !== undefined ? askedCwd(req) : resolveWorkspace();
+    if (cwd === undefined) return sendJson(res, 404, { error: 'no-workspace' });
+
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 4096) req.destroy();
+    });
+    req.on('end', () => {
+      let rule;
+      try {
+        rule = JSON.parse(body).rule;
+      } catch {
+        return sendJson(res, 400, { error: 'bad-json' });
+      }
+      if (typeof rule !== 'string' || rule.trim().length === 0) return sendJson(res, 400, { error: 'bad-rule' });
+      if (aiignoreRules(cwd).includes(rule.trim()) !== true) return sendJson(res, 404, { error: 'no-such-rule' });
+      try {
+        const result = removeAiignoreRule(cwd, rule.trim());
+        ruleCache.delete(cwd);
+        overviewCache.delete(cwd);
+        levelsCache.delete(cwd);
+        return sendJson(res, 200, { workspace: cwd, removed: result.removed, rule: rule.trim() });
       } catch {
         return sendJson(res, 500, { error: 'write-failed' });
       }
@@ -1934,7 +1996,7 @@ export function apply(ctx, config = {}) {
           covered: Array.isArray(after.blocked) ? after.blocked : [],
           // The fresh report, so the panel's headline numbers move on the same
           // click that wrote the file — without it they waited for a poll.
-          report: buildReport({ cwd, state: stateFor(cwd), policy: readPolicy(cwd) })
+          report: buildReport({ cwd, state: stateFor(cwd), policy: readPolicy(cwd), rules: aiignoreRules(cwd) })
         });
       } catch {
         return sendJson(res, 400, { error: 'optimize-failed' });
@@ -1963,6 +2025,7 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/ignore', handler: ignoreHandler });
       server.register({ kind: 'exact', path: '/aiignore/upload', handler: uploadHandler });
       server.register({ kind: 'exact', path: '/aiignore/unignore', handler: unignoreHandler });
+      server.register({ kind: 'exact', path: '/aiignore/rules/delete', handler: rulesDeleteHandler });
       server.register({ kind: 'exact', path: '/aiignore/scan', handler: scanHandler });
       server.register({ kind: 'exact', path: '/aiignore/workspaces', handler: workspacesHandler });
       server.register({ kind: 'exact', path: '/aiignore/overview', handler: overviewHandler });

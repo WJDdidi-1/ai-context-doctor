@@ -154,7 +154,7 @@ test('the ledger separates what was read from what was refused', () => {
 test('report handler answers with the scanned workspace, then the allow route edits it', async () => {
   const { routes, listeners, guards } = harness();
   assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/client-report',
-    '/aiignore/conversation', '/aiignore/conversations', '/aiignore/debug', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
+    '/aiignore/conversation', '/aiignore/conversations', '/aiignore/debug', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/rules/delete', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
 
   const root = tempWorkspace();
   const agent = { session: { meta: { cwd: root } }, inject() {} };
@@ -285,8 +285,8 @@ test('a service that mounts late still gets the routes and the guard', async () 
 
   assert.equal(guards.length, 1, 'the guard installs once the tool registry appears');
   assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/client-report',
-    '/aiignore/conversation', '/aiignore/conversations', '/aiignore/debug', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
-  assert.equal(late.routes.size, 19, 'a context with both services installs eagerly');
+    '/aiignore/conversation', '/aiignore/conversations', '/aiignore/debug', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/rules/delete', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
+  assert.equal(late.routes.size, 20, 'a context with both services installs eagerly');
 });
 
 test('the tree route lists the scanned workspace, one directory at a time', () => {
