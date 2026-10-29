@@ -77,6 +77,9 @@
   }
   #panel-root { flex: 1; min-height: 0; display: flex; }
   #panel-root > * { flex: 1; min-width: 0; }
+
+/* Screenshot mode: add data-shot="1" to <html> to hide preview chrome. */
+html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot='1'] .rail-note { display: none !important; }
 </style>
 </head>
 <body>
@@ -358,7 +361,7 @@
         const source = asked !== null ? 'request' : (bound === null ? 'session' : 'last');
         const answer = blind
           ? Object.assign({}, data, { workspace: null, policy: null, source: 'none', rules: [] })
-          : Object.assign({}, data, { workspace: workspace, source: source, rules: (data.rules || []).slice() });
+          : Object.assign({}, data, { workspace: workspace, source: source, rules: (data.rules || []).slice(), level: window.__level ? window.__level.level : 3 });
         window.__lastReport = answer;
         return slow(answer);
       }
@@ -375,7 +378,16 @@
         document.querySelectorAll('[data-scenario]').forEach(function (button) {
           button.setAttribute('aria-pressed', button.getAttribute('data-scenario') === 'noisy' ? 'true' : 'false');
         });
+        // Score the rescan with the CURRENT strength, exactly like the Host:
+        // otherwise the toast can announce a number that the levels table
+        // never showed, and the preview stops being able to prove anything.
         const scanned = SCENARIOS.noisy;
+        const factors = [0, 0, 0.15, 0.35, 0.55, 0.75, 0.9];
+        const level = window.__level ? window.__level.level : 3;
+        const raw = scanned.scanned.healthScore;
+        const factor = factors[level] || 0;
+        scanned.scanned.effectiveScore = Math.round(raw + (100 - raw) * factor);
+        scanned.scanned.level = level;
         window.__lastReport = scanned;
         return slow(scanned);
       }
@@ -472,10 +484,10 @@
       if (url === '/aiignore/ignore') return record({ ignored: true, rule: String((body && body.path) || '') });
       if (url === '/aiignore/unignore') return record({ removed: true });
       if (url === '/aiignore/notes') return record({ written: true, removed: false });
+      const FACTORS = [0, 0, 0.15, 0.35, 0.55, 0.75, 0.9];
       if (url.indexOf('/aiignore/levels') === 0) {
         const target = SCENARIOS[scenario];
         const raw = target && target.scanned ? target.scanned.healthScore : 22;
-        const factors = { 1: 0, 2: 0.15, 3: 0.35, 4: 0.55, 5: 0.75 };
         return record({
           workspace: '/Users/you/code/demo-noise',
           level: window.__level ? window.__level.level : 3,
@@ -484,7 +496,7 @@
             label: entry.label,
             note: entry.note,
             maxBytes: entry.maxBytes,
-            effectiveScore: Math.round(raw + (100 - raw) * (factors[entry.level] || 0)),
+            effectiveScore: Math.round(raw + (100 - raw) * (FACTORS[entry.level] || 0)),
             blockedFiles: entry.level === 1 ? 0 : Math.round(entry.level * 1.6),
             blockedBytes: entry.level === 1 ? 0 : entry.level * 380 * 1024
           }))
@@ -497,7 +509,7 @@
         const target = SCENARIOS[scenario];
         if (target && target.scanned) {
           const raw = target.scanned.healthScore;
-          const factor = [0, 0.15, 0.35, 0.55, 0.75, 0.9][next] || 0.55;
+          const factor = FACTORS[next] || 0;
           target.scanned.effectiveScore = Math.round(raw + (100 - raw) * factor);
           target.scanned.effectiveBreakdown = target.scanned.scoreBreakdown.map((row) => ({
             ...row,

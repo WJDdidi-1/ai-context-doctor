@@ -85,6 +85,13 @@
     }
   }
 
+  function useRef(initial) {
+    const key = currentPath + '#ref' + hookIndex++;
+    const slot = slotFor(key);
+    if (!('value' in slot)) slot.value = (initial === undefined) ? { current: null } : { current: initial };
+    return slot.value;
+  }
+
   function setAttribute(el, name, value) {
     if (value === undefined || value === null || value === false) return;
     if (name === 'className') return void el.setAttribute('class', value);
@@ -160,10 +167,11 @@
       : document.createElement(type);
     el.setAttribute('data-preview-path', path);
     Object.keys(props).forEach(function (name) {
-      if (name === 'children' || name === 'value' || name === 'checked') return;
+      if (name === 'children' || name === 'value' || name === 'checked' || name === 'ref') return;
       setAttribute(el, name, props[name]);
     });
     bindEvents(el, props);
+    if (props.ref && typeof props.ref === 'object' && 'current' in props.ref) props.ref.current = el;
 
     const children = props.children;
     if (children !== undefined && children !== null) {
@@ -253,6 +261,7 @@
     useState: useState,
     useEffect: useEffect,
     useCallback: useCallback,
+    useRef: useRef,
     render: render,
     rerender: renderAll
   };
