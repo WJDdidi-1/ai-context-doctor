@@ -22,7 +22,10 @@
     {
       "name": "dsh-aiignore",
       "title": "Context Budget",
-      "description": "See what a conversation feeds the model, what your rules keep out, and what one click would change.",
+      "description": {
+        "en": "See what a conversation feeds the model, what your rules keep out, and what one click would change.",
+        "zh": "看清一次对话喂给模型的内容、规则挡住了什么，以及一键优化会改变什么。"
+      },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
       "repository": {
@@ -40,6 +43,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.24.0",
+          "publishTimestamp": 1793244120,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.23.1",
           "publishTimestamp": 1793239937,
