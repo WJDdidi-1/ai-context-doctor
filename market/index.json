@@ -23,8 +23,8 @@
       "name": "dsh-aiignore",
       "title": "AIignore",
       "description": {
-        "en": "Score what a conversation costs, block the files it does not need, and answer a blocked read with one click.",
-        "zh": "给一次对话的开销打分，挡住它不需要的文件，被拦下的读入也能一键放行。"
+        "en": "Lists the rules in force and lets you remove one line at a time; the panel says when you are looking at an older conversation.",
+        "zh": "列出正在生效的规则，可逐条删除；查看较早对话时面板会明确标注。"
       },
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
@@ -43,6 +43,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.24.5",
+          "publishTimestamp": 1793249914,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.24.4",
           "publishTimestamp": 1793247073,
