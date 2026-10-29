@@ -93,6 +93,16 @@ window.__ModuleLoader__.load({
         optimizeTitle: 'Make it better',
         optimizeHint: 'Writes these rules into .aiignore so the same files stop reaching the model. Your own lines stay untouched, and Undo puts the file back exactly as it was.',
         optimize: 'Optimize this workspace',
+        optimizeNow: 'Optimize now',
+        rules: 'rules',
+        scoreOnDisk: 'On disk',
+        of: 'of',
+        letThrough: 'let through by your rules and strength',
+        phaseScan: 'Reading the folder…',
+        phaseScore: 'Scoring what is left…',
+        phaseWrite: 'Writing rules…',
+        phaseVerify: 'Checking the result…',
+        optimizeNothing: 'Nothing to add — your rules already cover it.',
         optimizeConversation: 'Optimize from this conversation',
         optimizeConversationHint: 'Writes the rules this conversation needs: the noise it read stays out next time. Your own lines are kept, and one click puts the file back.',
         optimizeNone: 'Nothing to add here — this folder is already lean.',
@@ -255,6 +265,16 @@ window.__ModuleLoader__.load({
         optimizeTitle: '一键优化',
         optimizeHint: '把这些规则写进 .aiignore，同一批文件就不会再进模型了。你自己写的行不会动，撤销会把文件逐字节还原。',
         optimize: '优化这个工作区',
+        optimizeNow: '立即优化',
+        rules: '条规则',
+        scoreOnDisk: '磁盘上',
+        of: '共',
+        letThrough: '会进入模型（规则与力度之后）',
+        phaseScan: '正在读取目录…',
+        phaseScore: '正在计算剩余噪音…',
+        phaseWrite: '正在写入规则…',
+        phaseVerify: '正在核对结果…',
+        optimizeNothing: '没有可加的规则——现有的规则已经覆盖了。',
         optimizeConversation: '按这个对话优化',
         optimizeConversationHint: '把这个对话读到的噪音写成规则，下次就不进了。你原有的行会保留，一次点击就能还原。',
         optimizeNone: '没有需要添加的规则：这个工作区已经很干净。',
@@ -1619,6 +1639,37 @@ window.__ModuleLoader__.load({
   flex: none;
 }
 
+.aicd-action {
+  padding: 0 10px 8px;
+}
+
+.aicd-progress {
+  position: relative;
+  height: 28px;
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12));
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aicd-progress-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--dsw-alias-state-business-primary, #4a7edb);
+  opacity: 0.28;
+  transition: width 220ms ease;
+}
+
+.aicd-progress-label {
+  position: relative;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary, rgba(127, 127, 127, 0.95));
+}
+
 .aicd-toast {
   margin: 0 12px 6px;
   padding: 5px 8px;
@@ -2302,27 +2353,20 @@ window.__ModuleLoader__.load({
     }
 
     /** Where the score comes from, category by category. */
-    function ScoreBreakdown({ data }) {
-      const scanned = data.scanned || {};
-      const rows = Array.isArray(scanned.effectiveBreakdown)
-        ? scanned.effectiveBreakdown
-        : (Array.isArray(scanned.scoreBreakdown) ? scanned.scoreBreakdown : []);
-      const lost = typeof scanned.effectiveLost === 'number'
-        ? scanned.effectiveLost
-        : (typeof scanned.scoreLost === 'number' ? scanned.scoreLost : null);
-
+    function ScoreBreakdown({ rows, lost, title, formula }) {
+      const list = Array.isArray(rows) ? rows : [];
       return h('div', { className: 'aicd-opt' },
         h('div', { className: 'aicd-opt-head' },
-          h('span', { className: 'aicd-opt-title' }, tr('scoreTitle')),
-          h('span', { className: 'aicd-count' }, lost === null ? '' : `−${lost}`)
+          h('span', { className: 'aicd-opt-title' }, title),
+          h('span', { className: 'aicd-count' }, typeof lost === 'number' ? `−${lost}` : '')
         ),
-        rows.map((row) =>
-          h('div', { key: row.id, className: 'aicd-bar-row' },
+        list.map((row) =>
+          h('div', { key: row.id, className: 'aicd-bar-row', title: row.hint === undefined ? undefined : row.hint },
             h('span', { className: 'aicd-bar-name' }, row.label),
             h('div', { className: 'aicd-bar' },
               h('div', {
                 className: 'aicd-bar-fill',
-                style: { width: `${Math.min(100, Math.round((row.lost / row.weight) * 100))}%` },
+                style: { width: `${row.weight > 0 ? Math.min(100, Math.round((row.lost / row.weight) * 100)) : 0}%` },
                 'data-empty': row.lost === 0 ? 'true' : 'false'
               })
             ),
@@ -2331,15 +2375,11 @@ window.__ModuleLoader__.load({
         ),
         h('details', { className: 'aicd-fold' },
           h('summary', { className: 'aicd-fold-head' }, tr('scoreHow')),
-          h('p', { className: 'aicd-fold-body' }, tr('scoreFormula'))
+          h('p', { className: 'aicd-fold-body' }, formula)
         )
       );
     }
 
-    /**
-     * The five notches with the score each one would produce. "How strict" stops
-     * being a feeling once the numbers sit in a column.
-     */
     function LevelsTable({ data, draft, onPick }) {
       const [levels, setLevels] = useState(null);
       const cwd = data !== null && data !== undefined && typeof data.workspace === 'string' ? data.workspace : '';
@@ -2495,7 +2535,7 @@ window.__ModuleLoader__.load({
         ? scanned.effectiveScore
         : (typeof scanned.healthScore === 'number' ? scanned.healthScore : null);
       const raw = typeof scanned.healthScore === 'number' ? scanned.healthScore : null;
-      const convScore = conv !== null && conv !== undefined && typeof conv.score === 'number' ? conv.score : null;
+      const [side, setSide] = useState('effective');
 
       const card = (label, value, tone) =>
         h('div', { className: 'aicd-card' },
@@ -2503,29 +2543,43 @@ window.__ModuleLoader__.load({
           h('span', { className: 'aicd-card-label' }, label)
         );
 
+      const showingEffective = side !== 'raw';
+      const rows = showingEffective ? scanned.effectiveBreakdown : scanned.scoreBreakdown;
+      const lost = showingEffective ? scanned.effectiveLost : scanned.scoreLost;
+      const letThrough = typeof scanned.allowedBytes === 'number' && typeof scanned.bytes === 'number'
+        ? `${formatBytes(scanned.allowedBytes)} ${tr('of')} ${formatBytes(scanned.bytes)}`
+        : null;
+
       return h('div', { className: 'aicd-body' },
         h('div', { className: 'aicd-cards' },
-          card(tr('scoreConv'), convScore === null ? '—' : String(convScore), convScore === null ? undefined : toneFor(convScore)),
+          card(tr('scoreOnDisk'), raw === null ? '—' : String(raw), raw === null ? undefined : toneFor(raw)),
           card(tr('scoreFolder'), effective === null ? '—' : String(effective), effective === null ? undefined : toneFor(effective))
         ),
         h('div', { className: 'aicd-note' }, tr('scoreTwoHint')),
-        raw !== null && effective !== null && raw !== effective
-          ? h('div', { className: 'aicd-note' }, `${tr('scoreRaw')} ${raw}.`)
-          : null,
-        h(ScoreBreakdown, { data }),
+        letThrough === null ? null : h('div', { className: 'aicd-note' }, `${letThrough} ${tr('letThrough')}`),
+        h('div', { className: 'aicd-chips', role: 'tablist' },
+          h('button', {
+            type: 'button',
+            className: 'aicd-chip',
+            'data-active': showingEffective ? 'true' : 'false',
+            'aria-selected': showingEffective ? 'true' : 'false',
+            onClick: () => setSide('effective')
+          }, tr('scoreFolder')),
+          h('button', {
+            type: 'button',
+            className: 'aicd-chip',
+            'data-active': showingEffective ? 'false' : 'true',
+            'aria-selected': showingEffective ? 'false' : 'true',
+            onClick: () => setSide('raw')
+          }, tr('scoreOnDisk'))
+        ),
+        h(ScoreBreakdown, { rows, lost, title: tr('scoreTitle'), formula: tr('scoreFormula') }),
         h(StrategyCard, { data, onSaved: onRescan }),
         h(OptimizeCard, { data, conv, onDone, onOptimized }),
         h(NoteView, { data, onSaved: onDone })
       );
     }
 
-    /**
-     * The strength, as five buttons that already show what each one scores.
-     *
-     * There used to be a slider here too. It added a second way to say the same
-     * thing, and the only number that mattered was in the table underneath —
-     * so the table became the control.
-     */
     function StrategyCard({ data, onSaved }) {
       const levels = Array.isArray(data.levels) ? data.levels : [];
       const stored = typeof data.level === 'number' ? data.level : 3;
@@ -2955,7 +3009,7 @@ window.__ModuleLoader__.load({
     }
 
     /** The panel header: where you are, whether it follows the conversation, and the few actions. */
-    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, conv, view, setView, tabs, toast, rescanning }) {
+    function PanelHead({ data, pinned, menu, setMenu, follow, choose, setPinned, rescan, conv, view, setView, tabs, toast, rescanning, optimize, progress }) {
       const workspace = data === null ? null : data.workspace;
       const title = conv !== null && conv !== undefined && typeof conv.title === 'string' && conv.title.length > 0
         ? conv.title
@@ -3031,7 +3085,30 @@ window.__ModuleLoader__.load({
                     onClick: () => setView(id)
                   }, label)
                 )
-              )
+              ),
+          // The one button the panel is built around. It never reports "done"
+          // without having rescanned, written and re-scored in that order.
+          h('div', { className: 'aicd-action' },
+            progress === null || progress === undefined
+              ? h('button', {
+                  type: 'button',
+                  className: 'aicd-btn',
+                  'data-variant': 'primary',
+                  disabled: data === null || typeof optimize !== 'function' ? 'true' : undefined,
+                  onClick: optimize
+                }, tr('optimizeNow'))
+              : h('div', {
+                  className: 'aicd-progress',
+                  role: 'progressbar',
+                  'aria-valuenow': String(progress.pct),
+                  'aria-valuemin': '0',
+                  'aria-valuemax': '100',
+                  'aria-label': progress.label
+                },
+                  h('div', { className: 'aicd-progress-bar', style: { width: `${progress.pct}%` } }),
+                  h('span', { className: 'aicd-progress-label' }, progress.label)
+                )
+          )
         )
       );
     }
@@ -3178,6 +3255,51 @@ window.__ModuleLoader__.load({
           .catch(() => setToast(tr('scanFailed')));
       };
 
+      // One button, three real steps. Each phase is only announced once the
+      // request behind it has come back, so the bar cannot claim progress the
+      // Host has not made.
+      const [progress, setProgress] = useState(null);
+      const optimizeNow = () => {
+        if (progress !== null) return;
+        const target = typeof cwd === 'string' && cwd.length > 0 ? `/aiignore/scan?cwd=${encodeURIComponent(cwd)}` : '/aiignore/scan';
+        const body = typeof cwd === 'string' && cwd.length > 0
+          ? { cwd }
+          : (conv !== null && conv !== undefined && typeof conv.id === 'string' ? { session: conv.id } : {});
+        setToast(null);
+        setProgress({ pct: 8, label: tr('phaseScan') });
+
+        fetch(target, { method: 'POST', headers: { 'content-type': 'application/json' } })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then((payload) => {
+            if (payload === null || payload === undefined || payload.scanned === undefined) {
+              throw new Error('scan');
+            }
+            setProgress({ pct: 42, label: tr('phaseScore') });
+            return fetch('/aiignore/optimize', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(body)
+            });
+          })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then((payload) => {
+            setProgress({ pct: 74, label: tr('phaseWrite') });
+            if (payload !== null && payload !== undefined && payload.report !== undefined) {
+              applyReport(payload.report);
+            }
+            setProgress({ pct: 92, label: tr('phaseVerify') });
+            const added = Array.isArray(payload === null || payload === undefined ? undefined : payload.added) ? payload.added.length : 0;
+            setToast(added === 0
+              ? tr('optimizeNothing')
+              : `${tr('scoreMoved')} ${payload.before} → ${payload.after} · ${added} ${tr('rules')}`);
+            reload();
+            reloadTree();
+            return null;
+          })
+          .catch(() => setToast(tr('optimizeFailed')))
+          .finally(() => setProgress(null));
+      };
+
       const onOptimized = (payload) => {
         if (payload !== null && payload !== undefined && payload.report !== undefined) {
           applyReport(payload.report);
@@ -3191,7 +3313,8 @@ window.__ModuleLoader__.load({
       return h('div', { className: 'aicd-panel' },
         h(PanelHead, {
           data, pinned, menu, setMenu, follow, setChoosing, setPinned, rescan, conv,
-          view, setView, tabs, choose, toast, rescanning: pending === 'scan'
+          view, setView, tabs, choose, toast, rescanning: pending === 'scan',
+          optimize: optimizeNow, progress
         }),
         error !== null
           ? h('div', { className: 'aicd-body', 'data-center': 'true' },

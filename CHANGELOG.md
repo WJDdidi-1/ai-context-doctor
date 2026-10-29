@@ -2,6 +2,29 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.7.0
+
+- Score a repository on five dimensions instead of one, because "no noise" was
+  standing in for "nothing wrong". `noise` (30) is the part rules can move;
+  `volume` (25), `concentration` (20), `sprawl` (15) and `binary` (10) describe
+  the folder itself and no `.aiignore` rule can change them. A folder that is
+  clean but 400 MB of source now scores honestly instead of 100.
+- Every dimension is capped at its weight and reported in `scoreBreakdown` as
+  `{ id, label, hint, weight, lost, points, bytes, detail }`. Concentration and
+  binaries only count once a folder passes 256 KB, so a three-file fixture is
+  not punished for being small.
+- `effectiveScore` now runs the same model over the subset that rules and
+  strength let through, so it can no longer be 100 for every strength level.
+  Reports add `allowedFiles`, `allowedBytes`, `blockedFiles`, `largestBytes`
+  and `binaryBytes`.
+- `scanRepository` reads `.aiignore` and `.aiignore.policy.json` when it is
+  given a `rules`/`level`, so the number in the CLI is the number the guard
+  will enforce.
+- The CLI prints `What reaches the model`, the strength line and a per-dimension
+  breakdown under `Where the points go`.
+- `readPolicy`, `writePolicy`, `POLICY_FILE`, `contextScore`, `DIMENSIONS` and
+  `isBinaryPath` are exported.
+
 ## 0.6.1
 
 - Licence from MIT to Apache-2.0, with a `NOTICE` file. The patent grant and

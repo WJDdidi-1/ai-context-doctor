@@ -61,6 +61,9 @@ Three tabs inside:
   imagine what it does: three one-click sentences, then a preview of **exactly
   the text the agent will read** before your next message.
 
+- **One button runs the job.** *Optimize now*, under the tabs, rescans, writes
+  the rules, re-scores and moves the number on screen — the progress bar only
+  advances when the request behind that phase has come back.
 - **The strength is part of the score, not a separate page.** Five buttons from
   *Off* to *Strict*, each already scored against your workspace before you commit
   to one, so the difference between *Balanced* and *Strict* is a number you read
