@@ -151,10 +151,31 @@ test('the ledger separates what was read from what was refused', () => {
   assert.ok(report.readTokens.min > 0);
 });
 
+const PACKAGE_VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+
+test('diagnostics report the runtime facts, and never the home path', () => {
+  const { routes } = harness();
+  const home = os.homedir();
+  const response = fakeResponse();
+  routes.get('/aiignore/diagnostics')(fakeRequest(), response);
+  const payload = JSON.parse(response.body);
+
+  assert.match(payload.node, /^v\d+\./);
+  assert.match(payload.platform, /^(darwin|linux|win32) (x64|arm64|ia32)$/);
+  assert.equal(payload.plugin, PACKAGE_VERSION, 'the version a bug report quotes is the one installed');
+  // The string is meant to be pasted in public: no home directory anywhere.
+  // A test home lives outside the real one, so it is reported verbatim; what
+  // must never happen is the user's own home ending up in a public paste.
+  assert.equal(payload.home.startsWith(home), false, `home leaked into ${payload.home}`);
+  assert.equal(payload.workspace !== null && payload.workspace.startsWith(home), false);
+  assert.equal(typeof payload.sessions, 'number');
+  assert.equal(typeof payload.rules, 'number');
+});
+
 test('report handler answers with the scanned workspace, then the allow route edits it', async () => {
   const { routes, listeners, guards } = harness();
   assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/client-report',
-    '/aiignore/conversation', '/aiignore/conversations', '/aiignore/debug', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/rules', '/aiignore/rules/delete', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
+    '/aiignore/conversation', '/aiignore/conversations', '/aiignore/debug', '/aiignore/diagnostics', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/rules', '/aiignore/rules/delete', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
 
   const root = tempWorkspace();
   const agent = { session: { meta: { cwd: root } }, inject() {} };
@@ -285,8 +306,8 @@ test('a service that mounts late still gets the routes and the guard', async () 
 
   assert.equal(guards.length, 1, 'the guard installs once the tool registry appears');
   assert.deepEqual([...routes.keys()].sort(), ['/aiignore/allow', '/aiignore/client-report',
-    '/aiignore/conversation', '/aiignore/conversations', '/aiignore/debug', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/rules', '/aiignore/rules/delete', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
-  assert.equal(late.routes.size, 21, 'a context with both services installs eagerly');
+    '/aiignore/conversation', '/aiignore/conversations', '/aiignore/debug', '/aiignore/diagnostics', '/aiignore/ignore', '/aiignore/levels', '/aiignore/notes', '/aiignore/optimize', '/aiignore/optimize/undo', '/aiignore/overview', '/aiignore/policy', '/aiignore/report', '/aiignore/rules', '/aiignore/rules/delete', '/aiignore/scan', '/aiignore/sessions', '/aiignore/tree', '/aiignore/unignore', '/aiignore/upload', '/aiignore/workspaces']);
+  assert.equal(late.routes.size, 22, 'a context with both services installs eagerly');
 });
 
 test('the tree route lists the scanned workspace, one directory at a time', () => {

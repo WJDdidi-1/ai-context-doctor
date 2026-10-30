@@ -1980,6 +1980,56 @@ export function apply(ctx, config = {}) {
     }
   };
 
+  /**
+   * What this install is: the plugin version, the runtime it found itself in,
+   * and the few numbers a bug report needs. Deliberately boring — no token, no
+   * absolute home path, no conversation titles — because it is meant to be
+   * pasted into an issue.
+   */
+  const diagnosticsHandler = (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+
+    let version = null;
+    try {
+      const file = new URL('./package.json', import.meta.url);
+      version = JSON.parse(fs.readFileSync(file, 'utf8')).version || null;
+    } catch {
+      version = null;
+    }
+
+    let cwd = null;
+    try {
+      cwd = resolveWorkspace() || null;
+    } catch {
+      cwd = null;
+    }
+
+    let sessions = 0;
+    try {
+      sessions = recentSessions().length;
+    } catch {
+      sessions = 0;
+    }
+
+    return sendJson(res, 200, {
+      plugin: version,
+      node: process.version,
+      platform: `${process.platform} ${process.arch}`,
+      // `~` rather than the user's name: this string gets pasted in public.
+      home: dshHome().replace(os.homedir(), '~'),
+      workspace: cwd === null ? null : cwd.replace(os.homedir(), '~'),
+      sessions,
+      rules: (() => {
+        try {
+          return cwd === null ? 0 : rulesFor(cwd).length;
+        } catch {
+          return 0;
+        }
+      })()
+    });
+  };
+
   /** The conversations on disk, newest first, each with the directory it runs in. */
   const sessionsHandler = (req, res) => {
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method-not-allowed' });
@@ -2187,6 +2237,7 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/overview', handler: overviewHandler });
       server.register({ kind: 'exact', path: '/aiignore/client-report', handler: clientReportHandler });
       server.register({ kind: 'exact', path: '/aiignore/debug', handler: debugHandler });
+      server.register({ kind: 'exact', path: '/aiignore/diagnostics', handler: diagnosticsHandler });
       server.register({ kind: 'exact', path: '/aiignore/sessions', handler: sessionsHandler });
       server.register({ kind: 'exact', path: '/aiignore/conversation', handler: conversationHandler });
       server.register({ kind: 'exact', path: '/aiignore/conversations', handler: conversationsHandler });

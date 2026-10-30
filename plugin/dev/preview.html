@@ -408,6 +408,18 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
           ]
         });
       }
+      if (url.indexOf('/aiignore/diagnostics') === 0) {
+        if (window.__failDiag === true) return record({ error: 'no' }, 503);
+        return record({
+          plugin: '0.31.0',
+          node: 'v24.15.0',
+          platform: 'darwin arm64',
+          home: '~/.dsh',
+          workspace: '~/you/code/demo-noise',
+          sessions: 2,
+          rules: 2
+        });
+      }
       if (url.indexOf('/aiignore/conversations') === 0) {
         if (window.__failConversations === true) return record({ error: 'no' }, 500);
         return record({ current: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50', conversations: conversationRows });
