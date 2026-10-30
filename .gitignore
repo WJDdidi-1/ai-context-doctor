@@ -2,3 +2,6 @@ node_modules/
 
 # Packed tarballs from local install rehearsals
 *.tgz
+
+# Screenshots taken while iterating on the panel belong in docs/assets or a tmp dir
+/*.png
