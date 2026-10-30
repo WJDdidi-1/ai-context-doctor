@@ -69,5 +69,11 @@
     "noise",
     "lockfile",
     "sidebar"
-  ]
+  ],
+  "devDependencies": {
+    "dsh-plugin-toolkit": "^0.2.2",
+    "jsdom": "^26.1.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
 }

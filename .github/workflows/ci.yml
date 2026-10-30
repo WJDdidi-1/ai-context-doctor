@@ -72,6 +72,10 @@ jobs:
       - name: Pack the library the plugin depends on
         run: npm pack --pack-destination "$RUNNER_TEMP"
 
+      - name: Install the bundle's own dev dependencies
+        working-directory: plugin
+        run: npm ci
+
       - name: Install the bundle against the packed library and test it
         working-directory: plugin
         run: |
