@@ -2181,3 +2181,52 @@
   width: 11px;
   height: 11px;
 }
+
+/* Loading, empty and failed share one shape: icon, one sentence, one action.
+   The detail line carries the reason a request failed — a status code, not a
+   guess about the user's setup. */
+.aicd-state {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aicd-state-skel {
+  padding: 4px 0;
+}
+
+.aicd-state-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.aicd-state-detail {
+  font-family: var(--ds-font-family-code, ui-monospace, monospace);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary, #8a8a8a);
+  overflow-wrap: anywhere;
+}
+
+/* The inline variant sits inside a card (the conversation line on Protection). */
+.aicd-state-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dsw-alias-border-l1, rgba(128, 128, 128, 0.16));
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary, #8a8a8a);
+}
+
+.aicd-state-inline[data-tone='bad'] {
+  color: var(--dsw-alias-state-warn-label, #b0741d);
+}
+
+.aicd-levels-state {
+  padding: 4px 0 2px;
+}

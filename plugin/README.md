@@ -141,8 +141,16 @@ afterwards, with the file named under **No longer reaching the model**.
 
 Styling comes from the Host's design tokens (`--dsw-*`) with fallbacks, so the
 panel follows light and dark themes instead of shipping its own palette. Every
-control is reachable with `Tab`, and empty, loading and error states are real
-screens rather than blank space.
+control is reachable with `Tab`.
+
+Loading, empty and failure are three states of one component, on all three
+surfaces that fetch anything (the panel, the left page, the strength table): a
+skeleton while a request is in flight, one sentence when there is nothing to
+show, and an error that names what failed, carries the real status
+(`status 500`), and offers a retry that repeats the same request. Nothing
+silently disappears — the strength table used to vanish while it loaded — and
+nothing invents a cause: an unreachable server says `network`, a rejected one
+says the status.
 
 The panel talks to the Host half over twenty same-origin routes
 (`GET /aiignore/report`, `GET /aiignore/tree?dir=`, `GET /aiignore/overview`,

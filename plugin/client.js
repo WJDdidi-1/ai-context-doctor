@@ -158,7 +158,13 @@ window.__ModuleLoader__.load({
         panelLabel: 'AIignore',
         overviewTitle: 'AIignore',
         overviewHint: 'Every conversation this app has run, ranked by how much of what it read was noise. Fix the worst one first — you can undo any of it.',
-        overviewNone: 'No conversations yet. Start one, and it will show up here.',
+        overviewNone: 'No conversations yet.',
+        overviewNoneHint: 'Start one, and it will show up here with what it read.',
+        overviewFailedTitle: 'Could not read the list',
+        overviewFailed: 'The conversation list could not be read. Nothing is broken in your setup — the page just could not ask.',
+        strengthFailedTitle: 'Could not read the table',
+        strengthFailed: 'The strength table could not be read, so it is hidden for now. Your saved setting is unchanged — the panel is only missing the preview numbers.',
+        chatUnavailable: 'This conversation could not be read',
         overviewCurrent: 'open now',
         overviewOpen: 'Open the panel',
         overviewApply: 'Clean up',
@@ -360,7 +366,13 @@ window.__ModuleLoader__.load({
         panelLabel: 'AIignore',
         overviewTitle: 'AIignore',
         overviewHint: '这里汇总这个应用跑过的每个对话，按「读进来的东西里有多少是噪音」排序。先处理最差的，每一步都能撤销。',
-        overviewNone: '还没有对话。开一个对话，它就会出现在这里。',
+        overviewNone: '还没有对话。',
+        overviewNoneHint: '开一个对话，它读过的文件就会显示在这里。',
+        overviewFailedTitle: '没能读到列表',
+        overviewFailed: '这次没能读到对话列表。不是你的设置有问题，只是这一次没拿到。',
+        strengthFailedTitle: '没能读到力度表',
+        strengthFailed: '这次没能读到力度表，所以先把它收起来。你已保存的设置没有改动，只是暂时看不到每一档的预览分数。',
+        chatUnavailable: '这次没能读到当前对话',
         overviewCurrent: '正在打开',
         overviewOpen: '打开面板',
         overviewApply: '清理',
@@ -2633,6 +2645,55 @@ window.__ModuleLoader__.load({
   width: 11px;
   height: 11px;
 }
+
+/* Loading, empty and failed share one shape: icon, one sentence, one action.
+   The detail line carries the reason a request failed — a status code, not a
+   guess about the user's setup. */
+.aicd-state {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aicd-state-skel {
+  padding: 4px 0;
+}
+
+.aicd-state-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.aicd-state-detail {
+  font-family: var(--ds-font-family-code, ui-monospace, monospace);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary, #8a8a8a);
+  overflow-wrap: anywhere;
+}
+
+/* The inline variant sits inside a card (the conversation line on Protection). */
+.aicd-state-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dsw-alias-border-l1, rgba(128, 128, 128, 0.16));
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary, #8a8a8a);
+}
+
+.aicd-state-inline[data-tone='bad'] {
+  color: var(--dsw-alias-state-warn-label, #b0741d);
+}
+
+.aicd-levels-state {
+  padding: 4px 0 2px;
+}
 `;
 
     //#endregion styles
@@ -2873,11 +2934,13 @@ window.__ModuleLoader__.load({
           ? '/aiignore/conversation'
           : `/aiignore/conversation?session=${encodeURIComponent(pinnedSession)}`;
         fetch(target, { headers: { accept: 'application/json' } })
-          .then((response) => (response.ok ? response.json() : null))
+          // Keep the status: "unavailable" told the reader nothing, while the
+          // status is the one fact that says whether retrying can help.
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => {
             if (!live) return;
             if (payload === null || typeof payload !== 'object' || payload.error !== undefined) {
-              setError({ message: payload !== null && typeof payload === 'object' ? payload.error : 'unavailable' });
+              setError({ message: typeof payload.error === 'string' ? payload.error : 'no conversation' });
               return;
             }
             setConv(payload);
@@ -2946,8 +3009,8 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function Skeleton() {
-      const widths = ['72%', '54%', '81%', '46%', '64%'];
+    function Skeleton({ rows }) {
+      const widths = ['72%', '54%', '81%', '46%', '64%'].slice(0, typeof rows === 'number' && rows > 0 ? rows : 5);
       return h('div', { 'aria-busy': 'true' },
         widths.map((width, index) =>
           h('div', { key: index, className: 'aicd-skel-row' },
@@ -2955,6 +3018,48 @@ window.__ModuleLoader__.load({
             h('div', { className: 'aicd-skel', style: { width } })
           )
         )
+      );
+    }
+
+    /**
+     * The reason a request failed, in the few words a reader can act on. A
+     * status code is the truth; "something went wrong" is not.
+     */
+    function reasonOf(error) {
+      if (error === null || error === undefined) return 'unknown';
+      const message = typeof error.message === 'string' && error.message.length > 0 ? error.message : String(error);
+      if (message === 'Failed to fetch' || message === 'Load failed') return 'network';
+      return message;
+    }
+
+    /**
+     * One renderer for the three things a request can be: still loading, empty,
+     * or failed. Before this each surface invented its own — the strength table
+     * simply disappeared while it loaded, a failed conversation lookup looked
+     * like "no conversation", and a 500 was reported as "cannot reach the
+     * server". A failure now always names its own reason and offers the retry.
+     */
+    function State({ kind, icon, title, errorTitle, hint, action, error, onRetry, retryLabel, rows }) {
+      if (kind === 'loading') {
+        return h('div', { className: 'aicd-state', 'aria-busy': 'true' },
+          h('div', { className: 'aicd-state-skel' }, h(Skeleton, { rows: rows }))
+        );
+      }
+      const failed = kind === 'error';
+      return h('div', { className: 'aicd-state' },
+        h(Empty, {
+          icon: failed ? 'warn' : (icon === undefined ? 'folder' : icon),
+          title: failed ? (errorTitle === undefined ? tr('errorTitle') : errorTitle) : title,
+          hint: failed ? (hint === undefined ? tr('errorHint') : hint) : hint,
+          action: failed
+            ? h('div', { className: 'aicd-state-actions' },
+                onRetry === undefined
+                  ? null
+                  : h('button', { type: 'button', className: 'aicd-btn', onClick: onRetry },
+                      retryLabel === undefined ? tr('retry') : retryLabel),
+                h('div', { className: 'aicd-state-detail' }, `${tr('errorStatus')} ${reasonOf(error)}`))
+            : action
+        })
       );
     }
 
@@ -3334,6 +3439,8 @@ window.__ModuleLoader__.load({
 
     function LevelsTable({ data, draft, onPick }) {
       const [levels, setLevels] = useState(null);
+      const [failed, setFailed] = useState(null);
+      const [attempt, setAttempt] = useState(0);
       const cwd = data !== null && data !== undefined && typeof data.workspace === 'string' ? data.workspace : '';
 
       useEffect(() => {
@@ -3342,17 +3449,32 @@ window.__ModuleLoader__.load({
         fetch(`/aiignore/levels?cwd=${encodeURIComponent(cwd)}`, { headers: { accept: 'application/json' } })
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => {
-            if (alive === true) setLevels(Array.isArray(payload.levels) ? payload.levels : []);
+            if (alive === true) {
+              setLevels(Array.isArray(payload.levels) ? payload.levels : []);
+              setFailed(null);
+            }
           })
-          .catch(() => {
-            if (alive === true) setLevels([]);
+          .catch((reason) => {
+            if (alive === true) setFailed(reason === undefined || reason === null ? new Error('unknown') : reason);
           });
         return () => {
           alive = false;
         };
-      }, [cwd]);
+      }, [cwd, attempt]);
 
-      if (levels === null || levels.length === 0) return null;
+      if (failed !== null) {
+        return h('div', { className: 'aicd-levels-state' },
+          h(State, {
+            kind: 'error',
+            errorTitle: tr('strengthFailedTitle'),
+            hint: tr('strengthFailed'),
+            error: failed,
+            onRetry: () => { setFailed(null); setLevels(null); setAttempt((value) => value + 1); }
+          })
+        );
+      }
+      if (levels === null) return h(State, { kind: 'loading', rows: 3 });
+      if (levels.length === 0) return null;
 
       return h('div', { className: 'aicd-levels' },
         h('div', { className: 'aicd-section-title' }, tr('strengthTable')),
@@ -3732,7 +3854,7 @@ window.__ModuleLoader__.load({
      * that is why it never felt like anything happened. This counts the reads
      * the guard refused, which only goes up when there was something to refuse.
      */
-    function ProtectView({ data, conv, progress, optimize, onAllow, onIgnore, onSettings }) {
+    function ProtectView({ data, conv, convError, progress, optimize, onAllow, onIgnore, onSettings }) {
       const stats = data.stats !== null && typeof data.stats === 'object' ? data.stats : {};
       const blockedReads = typeof stats.blockedReads === 'number' ? stats.blockedReads : 0;
       const savedTokens = typeof stats.savedTokens === 'number' ? stats.savedTokens : 0;
@@ -3805,7 +3927,15 @@ window.__ModuleLoader__.load({
             h('div', { className: 'aicd-progress-label' }, progress.label)
           ),
           conversation === null ? null : h('div', { className: 'aicd-stat-meta' },
-            `${conversation.turns} ${tr('turns')} · ${conversation.readFiles} ${tr('files')} · ${shortTokens(tokenTotal(conversation.tokens))} ${tr('tokens')}`)
+            `${conversation.turns} ${tr('turns')} · ${conversation.readFiles} ${tr('files')} · ${shortTokens(tokenTotal(conversation.tokens))} ${tr('tokens')}`),
+          // A conversation that could not be read is a fact the page owes the
+          // reader: the counter above is about this conversation, so a failed
+          // read must not look like a conversation that read nothing.
+          convError === null || convError === undefined
+            ? null
+            : h('div', { className: 'aicd-state-inline', 'data-tone': 'bad' },
+                h(Icon, { name: 'warn', size: 12 }),
+                h('span', null, `${tr('chatUnavailable')} · ${tr('errorStatus')} ${reasonOf(convError)}`))
         ),
 
         potential === null ? null : h('div', { className: 'aicd-hint' },
@@ -3848,19 +3978,19 @@ window.__ModuleLoader__.load({
      */
     function SummaryPage(props) {
       const [data, setData] = useState(null);
-      const [failed, setFailed] = useState(false);
+      const [failed, setFailed] = useState(null);
       const [busy, setBusy] = useState(null);
       const [notice, setNotice] = useState(null);
       const holder = props === null || props === undefined ? {} : props;
       const openPanel = typeof holder.openPanel === 'function' ? holder.openPanel : null;
 
       const load = (fresh) => {
-        setFailed(false);
+        setFailed(null);
         const suffix = fresh === true ? '?fresh=1' : '';
         fetch(`/aiignore/conversations${suffix}`, { headers: { accept: 'application/json' } })
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => setData(Array.isArray(payload.conversations) ? payload : { conversations: [], current: null }))
-          .catch(() => setFailed(true))
+          .catch((reason) => setFailed(reason === undefined || reason === null ? new Error('unknown') : reason))
           .then(() => setBusy(null));
       };
       useEffect(() => load(false), []);
@@ -3906,15 +4036,21 @@ window.__ModuleLoader__.load({
                 : h('button', { type: 'button', className: 'aicd-btn', 'data-variant': 'primary', onClick: () => openPanel() }, tr('overviewOpen'))
             )
           ),
-          failed === true ? h('p', { className: 'aicd-note', 'data-tone': 'bad' }, tr('errorHint')) : null,
+          failed !== null
+            ? h(State, { kind: 'error', errorTitle: tr('overviewFailedTitle'), hint: tr('overviewFailed'), error: failed, onRetry: () => load(true) })
+            : null,
           notice !== null ? h('p', { className: 'aicd-note' }, notice) : null,
-          rows.length > 0
+          failed === null && rows.length > 0
             ? h('p', { className: 'aicd-page-hint' },
                 `${rows.length} ${tr('overviewConversations')} · ${totalFiles} ${tr('files')} · ${formatBytes(totalBytes)}`)
             : null,
-          rows.length === 0 && data !== null
-            ? h('p', { className: 'aicd-page-hint' }, tr('overviewNone'))
-            : null,
+          failed !== null
+            ? null
+            : data === null
+              ? h(State, { kind: 'loading', rows: 3 })
+              : rows.length === 0
+                ? h(State, { kind: 'empty', icon: 'spark', title: tr('overviewNone'), hint: tr('overviewNoneHint') })
+                : null,
           rows.map((row) =>
             h('div', { key: row.id, className: 'aicd-page-row' },
               h('span', {
@@ -4411,19 +4547,9 @@ window.__ModuleLoader__.load({
         }),
         error !== null
           ? h('div', { className: 'aicd-body', 'data-center': 'true' },
-              h(Empty, {
-                icon: 'warn',
-                title: tr('errorTitle'),
-                hint: tr('errorHint'),
-                action: h('div', null,
-                  h('button', { type: 'button', className: 'aicd-btn', onClick: reload }, tr('retry')),
-                  h('div', { className: 'aicd-note' },
-                    `${tr('errorStatus')} ${String(error && error.message ? error.message : error)}`)
-                )
-              })
-            )
+              h(State, { kind: 'error', error, onRetry: reload }))
           : data === null
-            ? h('div', { className: 'aicd-body' }, h(Skeleton, null))
+            ? h('div', { className: 'aicd-body' }, h(State, { kind: 'loading' }))
             : (data.workspace === null || data.workspace === undefined || choosing === true) && view === 'files'
               ? h('div', { className: 'aicd-body', 'data-center': 'true' },
                   h(NoWorkspace, { spaces, pending, scan, pick, scanError, choosing }))
@@ -4437,7 +4563,7 @@ window.__ModuleLoader__.load({
                   // Protection needs no workspace of its own: it reads counters
                   // and the conversation, both of which exist without a scan.
                   : h(ProtectView, {
-                    data, conv, progress, optimize: optimizeNow, onAllow, onIgnore,
+                    data, conv, convError, progress, optimize: optimizeNow, onAllow, onIgnore,
                     onSettings: () => setView('settings')
                   }),
         postError !== null ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
