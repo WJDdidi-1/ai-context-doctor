@@ -368,7 +368,18 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
         const source = asked !== null ? 'request' : (bound === null ? 'session' : 'last');
         const answer = blind
           ? Object.assign({}, data, { workspace: null, policy: null, source: 'none', rules: [] })
-          : Object.assign({}, data, { workspace: workspace, source: source, rules: (data.rules || []).slice(), level: window.__level ? window.__level.level : 3 });
+          // `?first=1` models a folder nobody has written rules for yet, so the
+          // card can be checked in the state a new install actually opens in.
+          : Object.assign({}, data, {
+              workspace: workspace,
+              source: source,
+              // `?first=1` models a folder nobody has written rules for yet. Once
+              // Optimize has run here, the rules are real for the rest of the visit.
+              rules: window.__optimized === true || location.search.indexOf('first') === -1
+                ? (data.rules || []).slice()
+                : [],
+              level: window.__level ? window.__level.level : 3
+            });
         window.__lastReport = answer;
         return slow(answer);
       }
@@ -595,6 +606,12 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
           target.scanned.effectiveScore = Math.min(100, before + 6);
           target.scanned.suggestedAiignore = [];
           delete target.scanned.effectiveBreakdown;
+          // Rules now exist, so the card switches from "before" to "after".
+          window.__optimized = true;
+          if (!Array.isArray(target.rules)) target.rules = [];
+          ['dist/', 'package-lock.json'].forEach(function (rule) {
+            if (target.rules.indexOf(rule) === -1) target.rules.push(rule);
+          });
           window.__lastReport = null;
         }
         return slow({
@@ -716,7 +733,12 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
       }
     };
   </script>
-  <script src="../client.js"></script>
+  <script>
+    // The panel is a plain script, so the browser caches it by URL alone. The
+    // page's own `?v=` (used to bust preview.html) is forwarded here too, so a
+    // reloaded preview never runs yesterday's panel.
+    document.write('<script src="../client.js?v=' + (new URLSearchParams(location.search).get('v') || '0') + '"><\/script>');
+  </script>
   <script>
     // ---- controls -------------------------------------------------------
     document.querySelectorAll('[data-scenario]').forEach(function (button) {

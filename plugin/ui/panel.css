@@ -1811,32 +1811,23 @@
 }
 
 /* A conversation with nothing to hold back shows what it did read, not a 0. */
-.aicd-stat-quiet {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--aicd-s2, 8px);
-}
 
-.aicd-stat-quiet-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--dsw-alias-state-success-tertiary, rgba(0, 0, 0, 0.06));
-  color: var(--dsw-alias-state-success-primary, #4a7f5b);
+/* The strength ladder lives behind a disclosure now: the first screen offers a
+   score and one button, and the notches are an answer to "and if I want more?" */
+.aicd-strength-fold {
+  margin-top: var(--aicd-s4, 22px);
 }
-
-.aicd-quiet-title {
-  font: var(--dsw-font-xs-strong-13, 600 13px/1.4 system-ui, sans-serif);
-  color: var(--dsw-alias-label-primary, #1d1d1f);
+.aicd-strength-fold > .aicd-fold-head {
+  padding: 0;
+  border-top: 0;
 }
-
-.aicd-quiet-line {
-  margin-top: 2px;
-  font: var(--dsw-font-xxs-12, 400 12px/1.5 system-ui, sans-serif);
-  color: var(--dsw-alias-label-secondary, #55555a);
-  text-wrap: pretty;
+.aicd-strength-fold .aicd-strength {
+  margin-top: 10px;
+  border-top: 0;
+  padding-top: 0;
+}
+.aicd-strength-head-plain {
+  padding: 0 0 6px;
+  border-top: 0;
+  min-height: 0;
 }

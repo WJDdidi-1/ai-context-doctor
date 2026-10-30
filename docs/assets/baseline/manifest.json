@@ -2,41 +2,41 @@
   "crop": {
     "height": 660,
     "width": 420,
-    "x": 860,
-    "y": 66
+    "x": 861,
+    "y": 100
   },
   "files": {
     "broken-dark.png": {
-      "bytes": 24246,
-      "sha256": "5405e8095a7a2a6c4c5710434c214ee940ebc4fb676a2d57db185e6c813f34b2"
+      "bytes": 22877,
+      "sha256": "fd66ca926597d552c264cb100145fdced4d7c98135825c08ba8a70b1795785a6"
     },
     "broken-light.png": {
-      "bytes": 23586,
-      "sha256": "305e2a0ddb766e4dd8edd72fbeab6d6279f10a6c31b7e2c52f7a58610b08dbf9"
+      "bytes": 22028,
+      "sha256": "6f763a41c6e614dd993f42f06890fc261e96e7ab130702f5734dc4ee6894907b"
     },
     "fresh-dark.png": {
-      "bytes": 45075,
-      "sha256": "2dc5767aaa9648ffe588778dd92aca07242fa1aedb6ca62b12a377da46155698"
+      "bytes": 48012,
+      "sha256": "56058846343e4471d96ab0cbbb6d247e5409e03f29e58470c16519408afb4988"
     },
     "fresh-light.png": {
-      "bytes": 43736,
-      "sha256": "8fb8c1150dd513f8ae18764444b89a5539a7fe8c7887f74b518da5881f5d6446"
+      "bytes": 46598,
+      "sha256": "383faf50447babfc44a607c4cafc224dd27db558525496acf115ce3f30f828bc"
     },
     "healthy-dark.png": {
-      "bytes": 43250,
-      "sha256": "8eaeb3d7f3ecff2a9881ada38d1eab2e77639c3d4bcd92bf2fb7b4a872bef34e"
+      "bytes": 34889,
+      "sha256": "0857f827bb4235d0c372e54c2853cf66d14816423a9b6571c1e19105609166e8"
     },
     "healthy-light.png": {
-      "bytes": 41870,
-      "sha256": "109b071b969ed3b8f4404b16014b16b300b2c26d6f129eadee620c28db51c955"
+      "bytes": 33862,
+      "sha256": "bd86a893b56a0262b9269e77152a3ed22882051d3b30014d5567ce11c602fa78"
     },
     "noisy-dark.png": {
-      "bytes": 52102,
-      "sha256": "1d65c2a3d9ef7db80500410b7bc8d03a18e4e8b7123975bc5c2cbe5143292112"
+      "bytes": 45433,
+      "sha256": "bc80fcd4177893841fa131c217d60e297a1edef4820d14e8fcc8644b9d760610"
     },
     "noisy-light.png": {
-      "bytes": 50551,
-      "sha256": "2dae5acae3f1dcadccf887857c1746f137dd02640ee4887bd990ec345b2ec701"
+      "bytes": 44085,
+      "sha256": "0146cb106790444cbf616222c76859d3f0d7ae88908b33e1a3ca0c2c23bbef1d"
     }
   },
   "note": "Visual baselines of the panel in dev/preview.html. Re-capture after an intentional visual change; checkBaseline fails when a file drifts.",
