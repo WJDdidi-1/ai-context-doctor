@@ -1,3 +1,19 @@
+## 0.36.0
+
+**A counter with nothing to report says so, instead of printing zero.**
+
+- When a conversation read nothing worth holding back, the panel used to show
+  `0` with the label "reads held back by your rules" — the shape of a result
+  with none of the information. It now shows *Nothing worth holding back* and
+  what the conversation did read: files and a token range. When the token
+  estimate is missing the sentence drops that clause instead of printing a dash.
+- The Optimize button is hidden in that state: there is nothing for it to write,
+  and a button that does nothing is worse than no button.
+- `fill()` turns the one-sentence copy into `{files}` / `{tokens}` slots, so
+  each language keeps its own word order instead of being glued from fragments.
+- Tests: `plugin/test/quiet.test.mjs` asserts no branch renders a numeric zero,
+  the card names both facts, and the button is gone.
+
 ## 0.35.0
 
 **Eight screenshots the panel is measured against, and a check that they stay put.**

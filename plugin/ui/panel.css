@@ -1809,3 +1809,34 @@
 @media (prefers-reduced-motion: reduce) {
   .aicd-skel-row,
 }
+
+/* A conversation with nothing to hold back shows what it did read, not a 0. */
+.aicd-stat-quiet {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--aicd-s2, 8px);
+}
+
+.aicd-stat-quiet-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--dsw-alias-state-success-tertiary, rgba(0, 0, 0, 0.06));
+  color: var(--dsw-alias-state-success-primary, #4a7f5b);
+}
+
+.aicd-quiet-title {
+  font: var(--dsw-font-xs-strong-13, 600 13px/1.4 system-ui, sans-serif);
+  color: var(--dsw-alias-label-primary, #1d1d1f);
+}
+
+.aicd-quiet-line {
+  margin-top: 2px;
+  font: var(--dsw-font-xxs-12, 400 12px/1.5 system-ui, sans-serif);
+  color: var(--dsw-alias-label-secondary, #55555a);
+  text-wrap: pretty;
+}

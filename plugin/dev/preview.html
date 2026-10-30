@@ -486,7 +486,7 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
           // what the headline counter reports. `__covered` lets the preview
           // rehearse "after Optimize" without inventing a second scenario.
           coveredCount: window.__covered ? 2 : 0,
-          noiseCount: 2,
+          noiseCount: window.__quiet ? 0 : 2,
           coveredTokens: { min: 30000, max: 45000 },
           stillNoiseTokens: { min: 30000, max: 45000 },
           coveredBytes: window.__covered ? 180224 : 0,
@@ -737,6 +737,7 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
 
     // Failure switches as URL flags, so the three states can be opened cold
     // (a state that only appears after a retry hides the first impression).
+    if (location.search.indexOf('quiet') !== -1) window.__quiet = true;
     if (location.search.indexOf('failconv') !== -1) window.__failConversations = true;
     if (location.search.indexOf('faillevels') !== -1) window.__failLevels = true;
     if (location.search.indexOf('failreport') !== -1) window.__failReport = true;
