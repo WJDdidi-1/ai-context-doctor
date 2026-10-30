@@ -55,6 +55,13 @@ function describe({ root, relative, type, bytes, rules, state }) {
     reason = classified.review.reason;
   }
 
+  // `classifyPath` already knows the widest rule that covers this file — `dist/`
+  // for anything under it, `*.log` for logs, the exact name for a lockfile. The
+  // panel offers that rule instead of one line per file, and only when the file
+  // is not covered yet: proposing a rule that already exists teaches nothing.
+  const ignored = Boolean(matchesAiignore(rules, relative));
+  const suggestion = ignored === false && classified.suggestion !== null ? classified.suggestion : null;
+
   return {
     name: relative.split('/').pop(),
     path: relative,
@@ -64,7 +71,8 @@ function describe({ root, relative, type, bytes, rules, state }) {
     reason,
     // `matchesAiignore` returns the rule that matched (or undefined); the panel
     // only needs to know whether one did.
-    ignored: Boolean(matchesAiignore(rules, relative)),
+    ignored,
+    suggestion: badge === 'noise' ? suggestion : null,
     allowed: state !== undefined ? state.allowed.has(relative) : false,
     read: read !== undefined,
     blocked: skipped !== undefined,

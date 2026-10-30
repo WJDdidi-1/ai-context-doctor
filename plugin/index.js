@@ -695,7 +695,14 @@ export function conversationReport(sessionId, options = {}) {
     effectiveLost: effective.lost,
     effectiveBreakdown: effective.breakdown,
     covered: covered.slice(0, 8),
+    // The panel shows the head of these lists but counts the whole of them, so
+    // the number on the protection page is the conversation's, not the page's.
+    coveredCount: covered.length,
+    noiseCount: noiseFiles.length,
+    stillNoiseBytes: stillNoise.reduce((sum, file) => sum + file.bytes, 0),
+    stillNoiseTokens: estimateTokens(stillNoise.reduce((sum, file) => sum + file.bytes, 0)),
     coveredBytes: covered.reduce((sum, file) => sum + file.bytes, 0),
+    coveredTokens: estimateTokens(covered.reduce((sum, file) => sum + file.bytes, 0)),
     noise: noiseFiles.slice(0, 8).map((file) => ({
       path: file.relativePath === null ? file.path : file.relativePath,
       relativePath: file.relativePath,
@@ -1602,8 +1609,11 @@ export function apply(ctx, config = {}) {
     req.on('end', () => {
       if (tooLarge) return;
       let target;
+      let wanted;
       try {
-        target = JSON.parse(body).path;
+        const parsed = JSON.parse(body);
+        target = parsed.path;
+        wanted = parsed.rule;
       } catch {
         return sendJson(res, 400, { error: 'bad-json' });
       }
@@ -1612,12 +1622,26 @@ export function apply(ctx, config = {}) {
       const inspected = inspectRead({ root: latestCwd, filePath: target });
       if (inspected.inside !== true) return sendJson(res, 400, { error: 'outside-workspace' });
 
+      // A rule may be wider than the file it was suggested for (`dist/` covers
+      // `dist/bundle.js`), which is the whole point of suggesting it — but it
+      // must still be a rule that matches this file, never an arbitrary string.
+      let rule = inspected.relativePath;
+      if (wanted !== undefined && wanted !== null) {
+        if (typeof wanted !== 'string' || wanted.trim().length === 0) return sendJson(res, 400, { error: 'bad-rule' });
+        const candidate = wanted.trim();
+        // `matchesAiignore` answers with the matching rule, not a boolean.
+        if (matchesAiignore([candidate], inspected.relativePath) === undefined) {
+          return sendJson(res, 400, { error: 'rule-does-not-cover-file' });
+        }
+        rule = candidate;
+      }
+
       try {
         // Recorded in the workspace, not in plugin memory: the decision survives
         // a restart, shows up in review, and the user can delete the line.
-        const result = writeAiignore(path.join(latestCwd, '.aiignore'), [inspected.relativePath]);
+        const result = writeAiignore(path.join(latestCwd, '.aiignore'), [rule]);
         ruleCache.delete(latestCwd);
-        return sendJson(res, 200, { ignored: true, rule: inspected.relativePath, created: result.created, added: result.added });
+        return sendJson(res, 200, { ignored: true, rule, created: result.created, added: result.added });
       } catch {
         return sendJson(res, 500, { error: 'write-failed' });
       }
@@ -1631,6 +1655,54 @@ export function apply(ctx, config = {}) {
    * like `dist/` or `*.log` — the panel lists rules, so it needs to delete a
    * rule. Comments and other lines are never touched.
    */
+  /**
+   * Add one rule the panel suggested, without naming a file.
+   *
+   * Suggestions like `*.log` or `dist/` cover many files, so there may be no
+   * single path to hang them on. Validation is about shape, not intent: the
+   * string has to look like a repository-relative glob and must not escape the
+   * workspace, because it is written verbatim into a file the agent reads.
+   */
+  const rulesAddHandler = (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
+    if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
+    const cwd = askedCwd(req) !== undefined ? askedCwd(req) : resolveWorkspace();
+    if (cwd === undefined) return sendJson(res, 404, { error: 'no-workspace' });
+
+    let body = '';
+    let tooLarge = false;
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 4096) {
+        tooLarge = true;
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      if (tooLarge) return;
+      let rule;
+      try {
+        rule = JSON.parse(body).rule;
+      } catch {
+        return sendJson(res, 400, { error: 'bad-json' });
+      }
+      if (typeof rule !== 'string') return sendJson(res, 400, { error: 'bad-rule' });
+      const trimmed = rule.trim();
+      if (trimmed.length === 0 || trimmed.length > 200) return sendJson(res, 400, { error: 'bad-rule' });
+      if (trimmed.startsWith('/') || trimmed.split('/').includes('..')) return sendJson(res, 400, { error: 'outside-workspace' });
+      if (/^[\w.*?[\]/-]+$/.test(trimmed) !== true) return sendJson(res, 400, { error: 'bad-rule' });
+      try {
+        const result = writeAiignore(path.join(cwd, '.aiignore'), [trimmed]);
+        ruleCache.delete(cwd);
+        overviewCache.delete(cwd);
+        levelsCache.delete(cwd);
+        return sendJson(res, 200, { workspace: cwd, rule: trimmed, added: result.added, created: result.created });
+      } catch {
+        return sendJson(res, 500, { error: 'write-failed' });
+      }
+    });
+  };
+
   const rulesDeleteHandler = (req, res) => {
     if (req.method !== 'POST') return sendJson(res, 405, { error: 'method-not-allowed' });
     if (crossOrigin(req) === true) return sendJson(res, 403, { error: 'cross-origin' });
@@ -2108,6 +2180,7 @@ export function apply(ctx, config = {}) {
       server.register({ kind: 'exact', path: '/aiignore/ignore', handler: ignoreHandler });
       server.register({ kind: 'exact', path: '/aiignore/upload', handler: uploadHandler });
       server.register({ kind: 'exact', path: '/aiignore/unignore', handler: unignoreHandler });
+      server.register({ kind: 'exact', path: '/aiignore/rules', handler: rulesAddHandler });
       server.register({ kind: 'exact', path: '/aiignore/rules/delete', handler: rulesDeleteHandler });
       server.register({ kind: 'exact', path: '/aiignore/scan', handler: scanHandler });
       server.register({ kind: 'exact', path: '/aiignore/workspaces', handler: workspacesHandler });
