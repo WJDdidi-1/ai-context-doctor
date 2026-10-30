@@ -15,6 +15,12 @@
           "en": "Context quality",
           "zh-cn": "\u4e0a\u4e0b\u6587\u8d28\u91cf"
         }
+      },
+      "developer": {
+        "title": {
+          "en": "Developer tools",
+          "zh-cn": "\u5f00\u53d1\u8005\u5de5\u5177"
+        }
       }
     },
     "labels": {
@@ -522,6 +528,41 @@
         {
           "version": "0.2.0",
           "publishTimestamp": 1793088640,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-plugin-example",
+      "title": "Example plugin",
+      "description": "A ~70-line plugin to copy from: one sidebar tab, two languages, one behaviour test, and CI that runs doctor.",
+      "author": "WJDdidi-1",
+      "homepage": "https://github.com/WJDdidi-1/dsh-plugin-example",
+      "repository": {
+        "url": "https://github.com/WJDdidi-1/dsh-plugin-example"
+      },
+      "metadata": {
+        "category": "developer",
+        "keywords": [
+          "example",
+          "starter",
+          "sidebar",
+          "testing"
+        ],
+        "labels": [
+          "zero-setup",
+          "sidebar-tab"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.1",
+          "publishTimestamp": 1793381768,
           "source": {
             "type": "npm"
           },
