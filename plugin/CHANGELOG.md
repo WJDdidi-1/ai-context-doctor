@@ -1,3 +1,19 @@
+## 0.34.0
+
+**One word per idea, and no copy nobody reads.**
+
+- The list under the counter is now *Held back from the model*, and the badge
+  says *held back*, matching the counter's own sentence. It used to say
+  "blocked" in two places and "held back" in a third for the same event.
+- 54 copy keys that no view rendered are gone, in both languages. The panel had
+  been carrying labels for tabs and views that were replaced two versions ago;
+  a key nobody renders is a claim about the UI that is no longer true.
+- New guards: every declared key must be rendered somewhere, and the
+  held-back vocabulary cannot drift back.
+- `plugin/README.md` gains a short table fixing what *held back*, *rule*,
+  *notch*, *score* and *noise* mean, so the panel and the docs cannot describe
+  the same thing two ways.
+
 ## 0.33.0
 
 **The panel can be driven from the keyboard, and says where you are.**

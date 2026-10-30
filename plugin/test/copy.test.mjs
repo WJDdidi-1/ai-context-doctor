@@ -24,3 +24,26 @@ test('both locales declare exactly the same keys', () => {
   assert.deepEqual(zh.filter((key) => en.includes(key) === false), [], 'Chinese has no extra keys');
   assert.deepEqual(en.filter((key) => zh.includes(key) === false), [], 'Chinese is missing keys');
 });
+
+/**
+ * A key nobody renders is a lie about what the panel says: the copy table
+ * drifts from the UI, and the next reader cannot tell which half is real.
+ * `phase*` keys are built by template (`tr(`phase${phase}`)`), so they are
+ * checked by prefix rather than by literal.
+ */
+test('every declared key is actually rendered', () => {
+  const orphans = keys('en').filter((key) => {
+    if (key.startsWith('phase')) return CLIENT.includes('tr(`phase${phase}`)') === false;
+    return CLIENT.includes(`'${key}'`) === false && CLIENT.includes(`\`${key}\``) === false;
+  });
+  assert.deepEqual(orphans, [], 'copy keys nothing renders');
+});
+
+test('one vocabulary for what the rules stop', () => {
+  // "Held back" is the phrase a reader meets on the counter and in the list.
+  // Mixing it with "blocked" made the same event sound like two different ones.
+  assert.equal(CLIENT.includes("blockedTitle: 'Blocked from context'"), false);
+  assert.equal(CLIENT.includes("blockedBadge: 'blocked'"), false);
+  assert.match(CLIENT, /blockedTitle: 'Held back from the model'/);
+  assert.match(CLIENT, /blockedTitle: '挡在模型之外'/);
+});

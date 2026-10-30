@@ -105,6 +105,19 @@ this doing anything?*
   the Host stores it in `.aiignore.policy.json`; the read guard and the scan share
   the same predicate, so saving a notch re-scans and the number moves.
 
+### The words this panel uses
+
+Five terms carry most of the panel, and they are used the same way everywhere —
+in the tabs, the tooltips, the changelog and this file.
+
+| Term | Means | Not to be confused with |
+| --- | --- | --- |
+| **held back** | a read your rules stopped, or would stop. The counter, the list under it and the badge all say this. | *refused* — the guard turning a read away right now | 
+| **rule** | one line in `.aiignore`, matched against paths | a *note*, which is text for the agent, not a rule |
+| **notch** | one of the five strength settings, from Off to Strict | the *score*, which the notch changes |
+| **score** | two numbers: this conversation, and what still reaches the model | *tokens*, which are a byte-based estimate |
+| **noise** | build output, lockfiles, logs, generated files and anything over 1 MB | *review*, which means look before you decide |
+
 ### Following the conversation, not a folder
 
 The panel asks the Host who the current conversation is, and the Host reads the
