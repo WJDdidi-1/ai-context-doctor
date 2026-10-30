@@ -22,7 +22,7 @@
     {
       "name": "dsh-aiignore",
       "title": "AIignore",
-      "description": "The folder dropdown closes like every other menu: Escape, a click outside it, and focus back on your button.",
+      "description": "See what a conversation feeds the model, what your rules keep out, and what one click would change.",
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
       "repository": {
@@ -40,6 +40,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.27.0",
+          "publishTimestamp": 1793340538,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.26.3",
           "publishTimestamp": 1793326611,
