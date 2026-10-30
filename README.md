@@ -181,7 +181,7 @@ five-dimension arithmetic. It follows the Harness light and dark themes.
 
 ![The AIignore tab in the right sidebar](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-light.png)
 
-It declares `engines.dsh: ">=0.2.0"`, and the Harness checks that range before installing. The source, its configuration and its limits are in [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
+It declares `engines.dsh: ">=0.2.0"` — the Harness checks that range before installing, and refuses the plugin rather than half-loading it — and needs Node.js 18 or newer. In the [plugin market index](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/market/index.json) it is filed under **Context quality** with three labels: *No network calls*, *Works with no setup*, *Lives in the sidebar*. Without a sidebar service the same button opens the panel as a floating card. The source, its configuration and its limits are in [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
 
 ## What counts as noise
 

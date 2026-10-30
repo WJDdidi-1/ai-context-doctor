@@ -158,7 +158,7 @@ dsh plugin --profile web add dsh-aiignore
 
 ![右侧栏里的上下文标签](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-light.png)
 
-它声明了 `engines.dsh: ">=0.2.0"`，Harness 会在安装前检查这个范围。源码、配置项与限制见 [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md)。
+它声明了 `engines.dsh: ">=0.2.0"`：Harness 会在安装前检查这个范围，不符合就拒绝安装，而不是加载一半；同时需要 Node.js 18 或更新版本。在 [插件市场索引](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/market/index.json) 里它归在**上下文质量**分类下，带三个标签：*不联网*、*装好即用*、*在侧栏里*。没有侧栏服务时，同一个按钮会把面板打开成浮层卡片。源码、配置项与限制见 [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md)。
 
 ## 什么算噪音
 
