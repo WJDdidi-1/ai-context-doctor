@@ -1,3 +1,31 @@
+## 0.30.0
+
+**Density and hierarchy: one thing to look at first, everything else ranked under it.**
+
+- One elevated surface per view. On Protection that is the counter and the
+  single button that moves it; the strictness ladder, the next-step line and
+  the blocked list now sit flat on the page and are separated by space instead
+  of by three more boxes. Borders are kept only where a real boundary exists
+  (before the blocked list, between settings blocks).
+- A four-step interval (`4 / 8 / 14 / 22px`) and a four-step type ramp
+  (`11 / 12 / 13 / 30px`) replace the ad-hoc paddings, so a smaller gap always
+  means "same group" and a larger one always means "new group". The file list
+  uses the same rule: legend, suggestions, this session and the workspace are
+  four groups, and the rows inside each are not.
+- Text that was prose became captions: the six longest explanations
+  (why Optimize matters, how the ladder scores, what the legend means, what
+  the note is for, what a suggestion costs, what strictness moved) are now one
+  line each. Same information, half the height.
+- Settings lost a whole block: strictness is a one-row pointer to Protection
+  (`3 / 5 · Go to Protection`) instead of a paragraph saying the same thing.
+  "What the agent will read" is a fold that opens on demand, and the note
+  editor is three rows instead of four.
+- Files stopped printing the workspace path twice — the header already names
+  it; the path now appears only when you have walked into a subfolder, where
+  it is new information.
+- Four documentation screenshots retaken at the new density (Protection light
+  and dark, Files light, Settings dark).
+
 ## 0.29.1
 
 **The requirements are written down where a reader looks before installing.**
