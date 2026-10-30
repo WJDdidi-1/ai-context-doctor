@@ -1,3 +1,20 @@
+## 0.31.0
+
+**Settings can now tell you what this install is, in the words a bug report needs.**
+
+- A **Diagnostics** fold at the foot of Settings: plugin version, Node, platform,
+  data folder, workspace, how many conversations it can see, how many rules are
+  in effect, and which surface you are looking at (sidebar tab or floating card).
+  One button copies all of it.
+- It is written to be pasted in public: the home directory is shortened to `~`,
+  there is no token, no session id and no conversation title. A test asserts the
+  home path can never appear.
+- The server answers `/aiignore/diagnostics` with what it can verify itself
+  (runtime, counts); the panel adds the surface it actually got. No guessing at a
+  Harness version it cannot read.
+- Removed a leftover `blockedReads` read in the panel: the counter has come from
+  the conversation since 0.28.0, and the old variable was dead weight.
+
 ## 0.30.0
 
 **Density and hierarchy: one thing to look at first, everything else ranked under it.**

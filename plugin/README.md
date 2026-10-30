@@ -208,6 +208,16 @@ must not be exposed to a network.
 
 ![Settings, dark theme: rules and the note for the agent](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-settings-dark.png)
 
+### When something looks wrong
+
+Settings ends with a **Diagnostics** fold: plugin version, Node, platform, data
+folder, workspace, how many conversations it can see, how many rules are in
+effect, and which surface (sidebar tab or floating card) you got. One button
+copies it as plain text.
+
+It is built to be pasted in public — the home directory is shortened to `~` and
+there is no token, session id or conversation title anywhere in it.
+
 ### Looking at the panel without a Harness
 
 `dev/preview.html` renders the real panel against the Host's real design tokens

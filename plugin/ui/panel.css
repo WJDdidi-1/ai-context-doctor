@@ -1085,6 +1085,36 @@
   overflow-wrap: anywhere;
 }
 
+/* --------------------------------------------------------- diagnostics -- */
+
+/* A fold at the foot of Settings: the facts a bug report needs, and nothing
+ * that should not be pasted in public. */
+.aicd-diag {
+  padding-top: var(--aicd-s3, 14px);
+  border-top: 0.5px solid var(--aicd-hairline, rgba(127, 127, 127, 0.2));
+}
+
+.aicd-diag-rows {
+  margin: 0;
+}
+
+.aicd-diag .aicd-kv {
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 3px var(--aicd-s2, 8px);
+  font-size: var(--aicd-fs-eyebrow, 11px);
+}
+
+.aicd-diag-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-diag-loading {
+  color: var(--dsw-alias-label-caption, #9a9a9a);
+  font-size: var(--aicd-fs-eyebrow, 11px);
+}
+
 /* ------------------------------------------------------------ rules etc. -- */
 
 .aicd-rules {

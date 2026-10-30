@@ -261,7 +261,23 @@ window.__ModuleLoader__.load({
         policyDeny: 'Default policy: generated output, lockfiles, logs and files over 1 MB are refused.',
         tokensHint: 'Token counts are a byte-based range, not a model bill.',
         close: 'Close',
-        verdictAllowed: 'you allowed it'
+        verdictAllowed: 'you allowed it',
+        diagTitle: 'Diagnostics',
+        diagCopy: 'Copy',
+        diagCopied: 'Copied',
+        diagFailed: 'Could not read the diagnostics',
+        diagLoading: 'Reading…',
+        diagPlugin: 'Plugin',
+        diagNode: 'Node',
+        diagPlatform: 'Platform',
+        diagHome: 'Data folder',
+        diagWorkspace: 'Workspace',
+        diagSessions: 'Conversations',
+        diagRules: 'Rules in effect',
+        diagSurface: 'Surface',
+        diagSidebar: 'sidebar tab',
+        diagOverlay: 'floating card',
+        diagNone: 'not chosen yet'
       },
     //#endregion copy
 
@@ -484,7 +500,23 @@ window.__ModuleLoader__.load({
         policyDeny: '默认策略：构建产物、锁文件、日志与超过 1 MB 的文件会被拒绝读取。',
         tokensHint: 'token 数是按字节估算的区间，不是模型账单。',
         close: '关闭',
-        verdictAllowed: '你已放行'
+        verdictAllowed: '你已放行',
+        diagTitle: '诊断信息',
+        diagCopy: '复制',
+        diagCopied: '已复制',
+        diagFailed: '读不到诊断信息',
+        diagLoading: '正在读取…',
+        diagPlugin: '插件版本',
+        diagNode: 'Node',
+        diagPlatform: '平台',
+        diagHome: '数据目录',
+        diagWorkspace: '工作区',
+        diagSessions: '对话数',
+        diagRules: '生效规则',
+        diagSurface: '显示位置',
+        diagSidebar: '侧栏标签页',
+        diagOverlay: '浮层卡片',
+        diagNone: '还没有选择'
       }
     };
 
@@ -1579,6 +1611,36 @@ window.__ModuleLoader__.load({
   overflow-wrap: anywhere;
 }
 
+/* --------------------------------------------------------- diagnostics -- */
+
+/* A fold at the foot of Settings: the facts a bug report needs, and nothing
+ * that should not be pasted in public. */
+.aicd-diag {
+  padding-top: var(--aicd-s3, 14px);
+  border-top: 0.5px solid var(--aicd-hairline, rgba(127, 127, 127, 0.2));
+}
+
+.aicd-diag-rows {
+  margin: 0;
+}
+
+.aicd-diag .aicd-kv {
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 3px var(--aicd-s2, 8px);
+  font-size: var(--aicd-fs-eyebrow, 11px);
+}
+
+.aicd-diag-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aicd-diag-loading {
+  color: var(--dsw-alias-label-caption, #9a9a9a);
+  font-size: var(--aicd-fs-eyebrow, 11px);
+}
+
 /* ------------------------------------------------------------ rules etc. -- */
 
 .aicd-rules {
@@ -2545,6 +2607,9 @@ window.__ModuleLoader__.load({
 
     //#region components
     let stylesInjected = false;
+    // Which surface this install actually got. Set when the tab registers;
+    // Diagnostics reports it so a screenshot and a bug report agree.
+    let SURFACE = 'overlay';
     function injectStyles(doc) {
       if (stylesInjected || doc === undefined || doc === null) return;
       if (typeof doc.getElementById !== 'function') return;
@@ -3327,7 +3392,73 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function SettingsView({ data, conv, onDone, onRescan, onProtect }) {
+    /**
+     * The four numbers a bug report needs, kept in one fold at the bottom of
+     * Settings. It reports only what this install can verify: the server side
+     * answers the runtime facts, the client adds which surface is on screen.
+     * No token, no home directory, no conversation titles — it is meant to be
+     * copied into a public issue.
+     */
+    function Diagnostics({ surface }) {
+      const [data, setData] = useState(null);
+      const [failed, setFailed] = useState(null);
+      const [copied, setCopied] = useState(false);
+
+      useEffect(() => {
+        fetch('/aiignore/diagnostics', { headers: { accept: 'application/json' } })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then((payload) => setData(payload))
+          .catch((reason) => setFailed(reason === undefined || reason === null ? new Error('unknown') : reason));
+      }, []);
+
+      const rows = data === null
+        ? []
+        : [
+            [tr('diagPlugin'), data.plugin === null ? '—' : data.plugin],
+            [tr('diagNode'), data.node || '—'],
+            [tr('diagPlatform'), data.platform || '—'],
+            [tr('diagHome'), data.home || '—'],
+            [tr('diagWorkspace'), data.workspace === null ? tr('diagNone') : data.workspace],
+            [tr('diagSessions'), String(data.sessions === undefined ? '—' : data.sessions)],
+            [tr('diagRules'), String(data.rules === undefined ? '—' : data.rules)],
+            [tr('diagSurface'), surface === 'sidebar' ? tr('diagSidebar') : tr('diagOverlay')]
+          ];
+
+      const copy = () => {
+        const text = rows.map(([name, value]) => `${name}: ${value}`).join('\n');
+        const done = () => setCopied(true);
+        if (navigator.clipboard !== undefined && typeof navigator.clipboard.writeText === 'function') {
+          navigator.clipboard.writeText(text).then(done, () => setCopied(false));
+          return;
+        }
+        // Older webviews have no clipboard API; the text is on screen anyway.
+        setCopied(false);
+      };
+
+      return h('details', { className: 'aicd-fold aicd-diag' },
+        h('summary', { className: 'aicd-fold-head' }, tr('diagTitle')),
+        failed !== null
+          ? h('div', { className: 'aicd-state-inline', 'data-tone': 'bad' },
+              h(Icon, { name: 'warn', size: 12 }),
+              h('span', null, `${tr('diagFailed')} · ${tr('errorStatus')} ${reasonOf(failed)}`))
+          : data === null
+            ? h('div', { className: 'aicd-diag-loading' }, tr('diagLoading'))
+            : h('dl', { className: 'aicd-kv aicd-diag-rows' },
+                rows.flatMap(([name, value]) => [
+                  h('dt', { key: `${name}-k` }, name),
+                  h('dd', { key: `${name}-v`, className: 'aicd-diag-value', title: value }, value)
+                ])),
+        h('div', { className: 'aicd-btn-row' },
+          h('button', {
+            type: 'button',
+            className: 'aicd-textbtn',
+            disabled: data === null,
+            onClick: copy
+          }, copied === true ? tr('diagCopied') : tr('diagCopy')))
+      );
+    }
+
+    function SettingsView({ data, conv, onDone, onRescan, onProtect, surface }) {
       const scanned = data.scanned || {};
       const effective = typeof scanned.effectiveScore === 'number' ? scanned.effectiveScore : null;
       const raw = typeof scanned.healthScore === 'number' ? scanned.healthScore : null;
@@ -3350,7 +3481,8 @@ window.__ModuleLoader__.load({
             title: tr('scoreHow'),
             formula: tr('scoreFormula')
           })
-        )
+        ),
+        h(Diagnostics, { surface: surface })
       );
     }
 
@@ -3431,8 +3563,6 @@ window.__ModuleLoader__.load({
     }
 
     function ProtectView({ data, conv, convError, progress, optimize, onAllow, onIgnore, onSettings, level, levelBusy, onLevel }) {
-      const stats = data.stats !== null && typeof data.stats === 'object' ? data.stats : {};
-      const blockedReads = typeof stats.blockedReads === 'number' ? stats.blockedReads : 0;
       const skipped = Array.isArray(data.skipped) ? data.skipped.filter((item) => item.attempts > 0) : [];
       const potential = data.potential !== null && typeof data.potential === 'object' ? data.potential : null;
       const rules = Array.isArray(data.rules) ? data.rules : [];
@@ -4215,7 +4345,10 @@ window.__ModuleLoader__.load({
                   lastIgnored, onUndo
                 })
                 : view === 'settings'
-                  ? h(SettingsView, { data, conv, onDone: reload, onRescan: rescan, onProtect: () => setView('protect') })
+                  ? h(SettingsView, {
+                    data, conv, onDone: reload, onRescan: rescan, onProtect: () => setView('protect'),
+                    surface: SURFACE
+                  })
                   // Protection needs no workspace of its own: it reads counters
                   // and the conversation, both of which exist without a scan.
                   : h(ProtectView, {
@@ -4325,6 +4458,7 @@ window.__ModuleLoader__.load({
         try {
           ctx.inject(['sidebarRightTabs', 'sidebarRight'], (tabCtx) => {
             if (tabCtx.slots === undefined || tabCtx.slots === null) return;
+            SURFACE = 'sidebar';
             tabCtx.effect(() => tabCtx.sidebarRightTabs.register({
               id: NS,
               kind: KIND,
