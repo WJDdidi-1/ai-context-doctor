@@ -237,6 +237,26 @@ request failing), and `?nosidebar=1` to see the floating-card fallback. Open the
 file in a browser; no build, no server. It is a development page and is not part
 of the published package.
 
+### Behaviour tests
+
+`test/interaction.test.mjs` mounts the real `client.js` in Node — jsdom, the real
+React, a host context that records what the bundle registers, and stubbed
+`/aiignore/*` routes — and then does what a person does:
+
+```js
+const panel = await mountClient({ file: 'client.js', fetch: createFetch(routes) });
+await panel.press('#aicd-tab-protect', 'ArrowRight');   // the tab moves
+await panel.click('[data-aicd-menu-btn]');               // the menu opens
+await panel.press('[role="menu"]', 'Escape');            // and closes on Escape
+await panel.click('[data-wide="true"]');                 // Optimize posts once
+assert.match(panel.text(), /96/);                        // and the score moves
+```
+
+The tool is [`dsh-plugin-toolkit/testkit`](https://www.npmjs.com/package/dsh-plugin-toolkit).
+The older `*.test.mjs` guards that read this file as text are still here: they
+are fast and they catch a deleted string, but they could never have caught the
+bug where Optimize was hidden — only mounting it could.
+
 ### Visual baselines
 
 `docs/assets/baseline/` holds the eight screenshots the panel is measured
