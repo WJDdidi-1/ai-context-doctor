@@ -1,3 +1,29 @@
+## 0.29.0
+
+**The panel is rebuilt on the host's own measurements, so it stops looking like a widget bolted onto the sidebar.**
+
+- One visual source instead of six layers of overrides: `plugin/ui/panel.css`
+  went from ~2,400 lines of appended patches to a single pass with section
+  comments, and every colour, radius, elevation and type ramp now comes from
+  the host's design tokens. There is no hex left that a theme switch has to
+  disprove.
+- Measured against the built-in sidebar panels and matched: a 38px header with
+  a half-pixel rule and `0 6px 0 16px` padding, 28px controls, 15px icons at
+  1.3 stroke, 13px body text over 11px labels, list rows at `5px 10px` with
+  `radius-md` and the same hover fill, and inputs built from `bg-layer-1` plus
+  a half-pixel border that turns the accent colour on focus.
+- The header lost its second brand line. The tab is already titled — printing
+  the name again inside the panel was one underline too many.
+- Files reads as one column instead of a stack: search takes its own row, the
+  verdict chips and the file count share the next, and the sort control moved
+  into the list header it sorts. The bulk-action bar only appears when more
+  than one file is picked.
+- Smaller corrections found by measuring rather than eyeballing: chips carry a
+  hairline so they read as controls in the dark theme, the placeholder in the
+  note editor is quieter than the text it replaces, the settings section
+  counters sit on the right edge, and the rules footer no longer glues its
+  button to the count.
+
 ## 0.28.0
 
 **The counter says what your rules are holding back, and Files says what its three words mean.**
