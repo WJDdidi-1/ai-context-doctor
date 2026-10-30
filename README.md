@@ -168,9 +168,12 @@ moving once the rules cover a folder. One primary button, *Optimize now*,
 rescans, writes what is missing, and reports the score before and after; when
 nothing is missing it says so. A second line offers **one notch stricter** with
 the number attached, so "raise the strength" is a decision instead of advice.
+Directly under the counters is the **strength ladder**: five notches, each
+labelled with the score this folder would have at that notch, so the trade is
+visible before you take it — and picking one applies it and rescores the page.
 **Files** browses the workspace a directory at a time; **Settings** holds the
-strength buttons, the `.aiignore` lines with an × each, the note for the agent,
-and the five-dimension arithmetic. It follows the Harness light and dark themes.
+`.aiignore` lines with an × each, the note for the agent, and the
+five-dimension arithmetic. It follows the Harness light and dark themes.
 
 ![The AIignore tab in the right sidebar](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-light.png)
 

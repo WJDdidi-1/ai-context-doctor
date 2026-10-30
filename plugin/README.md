@@ -44,18 +44,25 @@ this doing anything?*
   folder and stops moving once the rules cover it. Under it sits one primary
   button, **Optimize now**: rescan, write whatever is missing, re-score, and
   report `before → after`. When nothing is missing it says so instead of
-  pretending. Then **one notch stricter**, with the number attached ("would
-  block 2 more files, about 65k–81k tokens") and a button that sets it and
-  rescans. Below that, the files it kept out, and how many rules are in force.
+  pretending. Directly under the counters sits **the strength ladder**: five
+  notches, each labelled with the score this folder would have at that notch,
+  so "what would one step stricter do" is answered without leaving the page.
+  Picking a notch writes it, rescans, and repaints from the new report — the
+  number after the click is the number that notch produced. Then **one notch
+  stricter**, with the number attached ("would block 2 more files, about
+  65k–81k tokens"). Below that, the files it kept out, and how many rules are
+  in force.
 - **Files** — opens on **the files this session touched** (what the agent read
   and what it wrote), then lets you browse the whole workspace a directory at a
   time. Search, filter by verdict — and when a filter has nothing in it, the
   panel says which filter that was instead of looking empty.
 - **Settings** — everything you can change, off the screen that answers *is it
-  working*: five strength buttons that each show what they would score on your
-  repository, **Rules in .aiignore** with an × per line, the note for the agent
+  working*: **Rules in .aiignore** with an × per line, the note for the agent
   with a preview of exactly the text it will read, and the five-dimension
-  arithmetic folded away at the bottom.
+  arithmetic folded away at the bottom. It points at Protection for the
+  strength ladder instead of keeping a second copy of it — two controls for one
+  setting drift, and the copy that stops being authoritative is always the one
+  on the page nobody is looking at.
 
   It no longer asks you to imagine what the note does: three one-click
   sentences, then a preview of **exactly the text the agent will read** before
@@ -176,7 +183,7 @@ must not be exposed to a network.
 
 ![The Protection tab, dark theme](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-dark.png)
 
-![Settings, dark theme: strength, rules, and the note for the agent](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-settings-dark.png)
+![Settings, dark theme: rules and the note for the agent](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-settings-dark.png)
 
 ### Looking at the panel without a Harness
 

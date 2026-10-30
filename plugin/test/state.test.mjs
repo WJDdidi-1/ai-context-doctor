@@ -41,15 +41,16 @@ test('a reason is the status, not a guess about the setup', () => {
   assert.doesNotMatch(reason, /permission|writ/i, 'no invented cause');
 });
 
-test('the strength table never disappears while loading or after a failure', () => {
-  const levels = bodyOf('LevelsTable', 'StrategyCard');
-  assert.match(levels, /kind: 'loading'/, 'loading shows the skeleton');
-  assert.match(levels, /kind: 'error'/, 'a failure is shown, not swallowed');
-  assert.match(levels, /strengthFailed/, 'the failure explains what it means for the user');
-  assert.match(levels, /setAttempt\(/, 'the failure can be retried');
+test('the strength ladder never disappears while loading or after a failure', () => {
+  const strip = bodyOf('StrengthStrip', 'ProtectView');
+  assert.match(strip, /kind: 'loading'/, 'loading shows the skeleton');
+  assert.match(strip, /kind: 'error'/, 'a failure is shown, not swallowed');
+  assert.match(strip, /strengthFailed/, 'the failure explains what it means for the user');
+  assert.match(strip, /onRetry: retry/, 'the failure can be retried');
+  const hook = bodyOf('useLevels', 'State');
   assert.doesNotMatch(
-    levels,
-    /catch\(\(\) => \{\s*if \(alive === true\) setLevels\(\[\]\);/,
+    hook,
+    /catch\(\(\) => \{\s*if \(live === true\) setLevels\(\[\]\);/,
     'a failed read must not masquerade as "no levels"'
   );
 });
