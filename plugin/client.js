@@ -54,16 +54,14 @@ window.__ModuleLoader__.load({
         tabFiles: 'Files',
         tabProtect: 'Protection',
         tabSettings: 'Settings',
+        scoreBeforeLabel: 'Score before rules',
+        scoreAfterLabel: 'Score after rules',
+        scoreBeforeHint: 'Nothing applied yet. Optimize writes the rules this folder needs, then scores it again.',
+        strengthFold: 'Fine-tune the strength',
         heroOne: 'read held back by your rules',
         heroMany: 'reads held back by your rules',
-        heroWouldOne: 'read is junk and still reaches the model',
-        heroWouldMany: 'reads are junk and still reach the model',
-        heroAbout: 'about',
         heroKept: 'never reached the model',
-        heroWouldCaption: 'Optimize writes the rules that stop them.',
-        heroStill: 'still getting through',
-        heroQuietTitle: 'Nothing worth holding back',
-        heroQuietLine: 'This conversation read {files} files, about {tokens} tokens — code and docs, no build output.',
+        heroQuietLine: 'This conversation read {files} files, {tokens} tokens — code and docs, no build output.',
         heroQuietLineShort: 'This conversation read {files} files — code and docs, no build output.',
         turns: 'turns',
         nextStep: 'One notch stricter blocks',
@@ -241,16 +239,14 @@ window.__ModuleLoader__.load({
         tabFiles: '文件',
         tabProtect: '保护',
         tabSettings: '设置',
+        scoreBeforeLabel: '规则生效前的评分',
+        scoreAfterLabel: '规则生效后的评分',
+        scoreBeforeHint: '还没有应用任何规则。点优化，写入这个文件夹需要的规则，然后重新评分。',
+        strengthFold: '微调力度',
         heroOne: '次读取被你的规则挡住',
         heroMany: '次读取被你的规则挡住',
-        heroWouldOne: '次读取是噪音，但现在还是会进模型',
-        heroWouldMany: '次读取是噪音，但现在还是会进模型',
-        heroAbout: '约',
         heroKept: '从没有进入模型',
-        heroWouldCaption: '点「立即优化」会写下挡住它们的规则，并当场重新评分。',
-        heroStill: '仍然会进模型',
-        heroQuietTitle: '没有需要挡住的东西',
-        heroQuietLine: '这次对话读了 {files} 个文件、约 {tokens} tokens——都是代码和文档，没有构建产物。',
+        heroQuietLine: '这次对话读了 {files} 个文件、{tokens} tokens——都是代码和文档，没有构建产物。',
         heroQuietLineShort: '这次对话读了 {files} 个文件——都是代码和文档，没有构建产物。',
         turns: '轮',
         nextStep: '再严格一档会多挡下',
@@ -2231,34 +2227,25 @@ window.__ModuleLoader__.load({
 }
 
 /* A conversation with nothing to hold back shows what it did read, not a 0. */
-.aicd-stat-quiet {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--aicd-s2, 8px);
-}
 
-.aicd-stat-quiet-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--dsw-alias-state-success-tertiary, rgba(0, 0, 0, 0.06));
-  color: var(--dsw-alias-state-success-primary, #4a7f5b);
+/* The strength ladder lives behind a disclosure now: the first screen offers a
+   score and one button, and the notches are an answer to "and if I want more?" */
+.aicd-strength-fold {
+  margin-top: var(--aicd-s4, 22px);
 }
-
-.aicd-quiet-title {
-  font: var(--dsw-font-xs-strong-13, 600 13px/1.4 system-ui, sans-serif);
-  color: var(--dsw-alias-label-primary, #1d1d1f);
+.aicd-strength-fold > .aicd-fold-head {
+  padding: 0;
+  border-top: 0;
 }
-
-.aicd-quiet-line {
-  margin-top: 2px;
-  font: var(--dsw-font-xxs-12, 400 12px/1.5 system-ui, sans-serif);
-  color: var(--dsw-alias-label-secondary, #55555a);
-  text-wrap: pretty;
+.aicd-strength-fold .aicd-strength {
+  margin-top: 10px;
+  border-top: 0;
+  padding-top: 0;
+}
+.aicd-strength-head-plain {
+  padding: 0 0 6px;
+  border-top: 0;
+  min-height: 0;
 }
 `;
 
@@ -2793,27 +2780,6 @@ window.__ModuleLoader__.load({
               }, tr('neverRead'))
             )
           : null
-      );
-    }
-
-    /**
-     * The counter's third state: this conversation read nothing worth holding
-     * back. It reports what was read instead of a zero, because a zero is the
-     * absence of a result and reads like a broken counter.
-     */
-    function QuietCard({ conversation }) {
-      const files = conversation === null ? 0 : conversation.readFiles;
-      const tokens = conversation === null ? '—' : formatTokensCompact(conversation.tokens);
-      // Without a token estimate the sentence drops the clause rather than
-      // printing an em dash the reader has to interpret.
-      const known = tokens !== '—';
-      return h('div', { className: 'aicd-stat-quiet' },
-        h('span', { className: 'aicd-stat-quiet-icon', 'aria-hidden': 'true' }, h(Icon, { name: 'check', size: 14 })),
-        h('div', null,
-          h('div', { className: 'aicd-quiet-title' }, tr('heroQuietTitle')),
-          h('div', { className: 'aicd-quiet-line' },
-            fill(tr(known ? 'heroQuietLine' : 'heroQuietLineShort'), { files, tokens }))
-        )
       );
     }
 
@@ -3505,7 +3471,7 @@ window.__ModuleLoader__.load({
      * notches and the score each one would leave now sit directly under the
      * score they change, and picking one applies it and rescores the same page.
      */
-    function StrengthStrip({ data, level, busy, onPick }) {
+    function StrengthStrip({ data, level, busy, onPick, head }) {
       const cwd = data !== null && data !== undefined && typeof data.workspace === 'string' ? data.workspace : '';
       const { levels, failed, retry } = useLevels(cwd);
 
@@ -3526,10 +3492,13 @@ window.__ModuleLoader__.load({
       const current = levels.find((row) => row.level === level);
 
       return h('div', { className: 'aicd-strength' },
-        h('div', { className: 'aicd-strength-head' },
-          h('span', { className: 'aicd-list-title' }, tr('strengthTitle')),
-          h('span', { className: 'aicd-strength-now' }, current === undefined ? '' : current.label)
-        ),
+        head === false
+          ? h('div', { className: 'aicd-strength-head aicd-strength-head-plain' },
+              h('span', { className: 'aicd-strength-now' }, current === undefined ? '' : current.label))
+          : h('div', { className: 'aicd-strength-head' },
+              h('span', { className: 'aicd-list-title' }, tr('strengthTitle')),
+              h('span', { className: 'aicd-strength-now' }, current === undefined ? '' : current.label)
+            ),
         h('div', {
           className: 'aicd-strength-row',
           role: 'group',
@@ -3581,14 +3550,41 @@ window.__ModuleLoader__.load({
       const pendingReads = Math.max(0, noiseReads - keptOut);
       const keptOutTokens = conversation !== null && conversation.coveredTokens !== undefined ? conversation.coveredTokens : null;
 
-      // Three states worth telling apart: rules hold something back, rules are
-      // missing but there is something to hold back, or this conversation simply
-      // never read junk. Reporting `0` for all three is what made the page feel
-      // decorative.
+      /**
+       * The first number is a score, not a counter.
+       *
+       * On a first open nothing has been applied, so the page shows the folder
+       * as it is and one button. Pressing it writes the rules and the same card
+       * comes back with the new score and what it moved from — the interaction
+       * is the point, and a counter that only ever said "0 reads held back"
+       * pre-empted it.
+       */
+      const scored = data.scanned !== null && typeof data.scanned === 'object' ? data.scanned : {};
+      const firstScore = typeof scored.healthScore === 'number' ? scored.healthScore : null;
+      // "Applied" means rules exist, not that two numbers differ: the level
+      // alone can move the effective score, and a first open with no rules must
+      // still show the folder as it is — otherwise the interaction it invites
+      // (press, watch the number move) has already happened without the user.
+      const applied = rules.length > 0 && typeof scored.effectiveScore === 'number';
+      const shownScore = applied === true ? scored.effectiveScore : firstScore;
       const quiet = keptOut === 0 && pendingReads === 0;
-      const headline = keptOut > 0
-        ? { value: keptOut, label: tr(keptOut === 1 ? 'heroOne' : 'heroMany'), tone: 'good' }
-        : { value: pendingReads, label: tr(pendingReads === 1 ? 'heroWouldOne' : 'heroWouldMany'), tone: 'warn' };
+      const subline = applied === true
+        ? `${firstScore} → ${shownScore}${
+            keptOut > 0 ? ` · ${keptOut} ${tr(keptOut === 1 ? 'heroOne' : 'heroMany')}` : ''
+          }${
+            keptOutTokens === null ? '' : ` · ${formatTokensCompact(keptOutTokens)} ${tr('heroKept')}`
+          }`
+        : pendingReads > 0
+          ? tr('scoreBeforeHint')
+          // A conversation that could not be read must not be described as one
+          // that read nothing: quiet is a fact about a conversation we have.
+          : quiet === true && conversation !== null
+            ? (() => {
+                const files = conversation.readFiles;
+                const tokens = formatTokensCompact(conversation.tokens);
+                return fill(tr(tokens === '—' ? 'heroQuietLineShort' : 'heroQuietLine'), { files, tokens });
+              })()
+            : tr('scoreBeforeHint');
 
       const applyNext = () => {
         if (potential === null || raised !== null) return;
@@ -3633,26 +3629,15 @@ window.__ModuleLoader__.load({
 
       return h('div', { className: 'aicd-body aicd-protect' },
         h('div', { className: 'aicd-stat' },
-          // When nothing was read that deserves holding back, a big "0" is not
-          // a result — it is the absence of one, and it reads like a broken
-          // counter. Say what the conversation did read instead, and drop the
-          // button that would have nothing to write.
-          quiet === true
-            ? h(QuietCard, { conversation })
-            : h('div', { className: 'aicd-stat-top' },
-                h('div', { className: 'aicd-stat-num', 'data-tone': headline.tone }, String(headline.value)),
-                h('div', { className: 'aicd-stat-label' }, headline.label)
-              ),
-          quiet === true ? null : h('div', { className: 'aicd-stat-sub' },
-            h(null, null,
-              keptOut > 0
-                ? `${tr('heroAbout')} ${formatTokensCompact(keptOutTokens)} ${tr('heroKept')}`
-                : tr('heroWouldCaption'),
-              pendingReads > 0 && keptOut > 0
-                ? ` · ${pendingReads} ${tr('heroStill')}`
-                : null
-            )),
-          quiet === true ? null : h('button', {
+          h('div', { className: 'aicd-stat-top' },
+            h('div', {
+              className: 'aicd-stat-num',
+              'data-tone': applied === true ? 'good' : undefined
+            }, shownScore === null ? '—' : String(shownScore)),
+            h('div', { className: 'aicd-stat-label' }, tr(applied === true ? 'scoreAfterLabel' : 'scoreBeforeLabel'))
+          ),
+          h('div', { className: 'aicd-stat-sub' }, subline),
+          h('button', {
             type: 'button',
             className: 'aicd-btn',
             'data-variant': 'primary',
@@ -3685,7 +3670,10 @@ window.__ModuleLoader__.load({
                 h('span', null, `${tr('chatUnavailable')} · ${tr('errorStatus')} ${reasonOf(convError)}`))
         ),
 
-        h(StrengthStrip, { data, level, busy: levelBusy, onPick: onLevel }),
+        h('details', { className: 'aicd-fold aicd-strength-fold' },
+          h('summary', { className: 'aicd-fold-head' }, tr('strengthFold')),
+          h(StrengthStrip, { data, level, busy: levelBusy, onPick: onLevel, head: false })
+        ),
 
         potential === null ? null : h('div', { className: 'aicd-hint' },
           h('span', { className: 'aicd-hint-text' },
@@ -4374,7 +4362,10 @@ window.__ModuleLoader__.load({
               h(State, { kind: 'error', error, onRetry: reload }))
           : data === null
             ? h('div', { className: 'aicd-body' }, h(State, { kind: 'loading' }))
-            : (data.workspace === null || data.workspace === undefined || choosing === true) && view === 'files'
+            // Nothing scanned is not a score of nothing: Protection must offer the
+            // same way in as Files does, or a first open is a dead end at "—".
+            : (data.workspace === null || data.workspace === undefined || choosing === true)
+                && (view === 'files' || view === 'protect')
               ? h('div', { className: 'aicd-body', 'data-center': 'true' },
                   h(NoWorkspace, { spaces, pending, scan, pick, scanError, choosing }))
               : view === 'files'

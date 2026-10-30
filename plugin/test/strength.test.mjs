@@ -22,14 +22,18 @@ function bodyOf(name, nextName) {
   return SOURCE.slice(start, end);
 }
 
-test('Protection renders the strength ladder under the score it changes', () => {
+test('Protection keeps the strength ladder one click from the score it changes', () => {
   const protect = bodyOf('ProtectView', 'NoWorkspace');
-  assert.match(protect, /h\(StrengthStrip, \{ data, level, busy: levelBusy, onPick: onLevel \}\)/,
-    'the ladder is on the page with the score');
+  // The first screen shows one score and one button. The ladder is still this
+  // page's, but folded away until someone asks what a notch would cost.
+  assert.match(protect, /h\(StrengthStrip, \{ data, level, busy: levelBusy, onPick: onLevel, head: false \}\)/,
+    'the ladder lives on the page with the score');
+  const foldAt = protect.indexOf("className: 'aicd-fold aicd-strength-fold'");
   const stripAt = protect.indexOf('h(StrengthStrip');
+  assert.ok(foldAt !== -1 && stripAt !== -1 && foldAt < stripAt, 'the ladder sits inside the fold');
+  assert.match(protect, /tr\('strengthFold'\)/, 'the fold says what it holds');
   const hintAt = protect.indexOf("className: 'aicd-hint'");
-  assert.ok(stripAt !== -1 && hintAt !== -1 && stripAt < hintAt,
-    'the ladder sits above the next-step hint, not buried at the bottom');
+  assert.ok(stripAt < hintAt, 'the ladder stays above the next-step hint');
 });
 
 test('every notch shows the score it would leave', () => {

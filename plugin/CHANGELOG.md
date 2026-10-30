@@ -1,3 +1,29 @@
+## 0.37.0
+
+**The first screen is a score, and the button is always there.**
+
+The panel used to open on a counter of guard refusals. On an install where
+nothing had been refused it read `0`, and once 0.36.0 learned to explain that
+zero it also hid the button that explained it — opening the panel and finding
+no action at all is what a user reported. It also spent the first screen on
+five scores at once, which answers "what would one notch stricter cost" before
+anyone has asked.
+
+- The card leads with the folder's score: *before rules* when no rule has been
+  written yet, *after rules* once they exist, with `22 → 71` and the tokens
+  kept out underneath. The count of reads held back became a sentence in that
+  line rather than the headline.
+- **Optimize now** renders unconditionally; only the in-flight request disables
+  it. Pressing it re-scores this card in the same response, so the number moves
+  on the click instead of at the next poll.
+- The strength ladder moved into *Fine-tune the strength*, folded by default.
+  Each notch still carries the score it would leave, so nothing was lost —
+  only the insistence that all five be read first.
+- With nothing scanned, Protection showed a card whose score was `—`. It now
+  offers the same way in as Files: pick a folder or scan one.
+- The preview forwards its `?v=` to `client.js`, which is loaded as a plain
+  script and was otherwise cached across edits.
+
 ## 0.36.0
 
 **A counter with nothing to report says so, instead of printing zero.**

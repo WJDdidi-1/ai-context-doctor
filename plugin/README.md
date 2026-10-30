@@ -49,25 +49,20 @@ one plugin covers both.
 Three tabs inside, and the first one exists to answer a single question: *is
 this doing anything?*
 
-- **Protection** — the number this panel is built around, about *this
-  conversation* rather than the folder or the install: reads that are junk and
-  that your rules now hold back, plus roughly how many tokens never reached the
-  model. Before you optimize it says the honest version instead — "2 reads are
-  junk and still reach the model" — so the button has something to be measured
-  against. A conversation that read nothing junk-worthy gets a third state:
-  *Nothing worth holding back*, followed by what it did read (files and tokens)
-  rather than a zero, because a zero is the absence of a result. Optimize, a new notch and Refresh all re-read the conversation, so
-  the counter moves on the click rather than at the next poll. Under it sits one primary
-  button, **Optimize now**: rescan, write whatever is missing, re-score, and
-  report `before → after`. When nothing is missing it says so instead of
-  pretending. Directly under the counters sits **the strength ladder**: five
-  notches, each labelled with the score this folder would have at that notch,
-  so "what would one step stricter do" is answered without leaving the page.
-  Picking a notch writes it, rescans, and repaints from the new report — the
-  number after the click is the number that notch produced. Then **one notch
-  stricter**, with the number attached ("would block 2 more files, about
-  65k–81k tokens"). Below that, the files it kept out, and how many rules are
-  in force.
+- **Protection** — a score, one button, and nothing else competing with them.
+  The number is the folder's own score: *before rules* on a fresh install, and
+  *after rules* once rules exist, with the line underneath reading `22 → 71`
+  and how many tokens stay out. A conversation that read nothing junk-worthy
+  says so in words instead of a zero. **Optimize now** is always there — it
+  rescans, writes whatever is missing, re-scores, and reports what moved, so
+  the interaction is: look, press, watch the number change.
+  The **strength ladder** is one click away in *Fine-tune the strength*: five
+  notches, each labelled with the score this folder would have there, because
+  five scores at once answer a question nobody asked yet. Picking a notch
+  writes it, rescans and repaints from the new report. Below that, **one notch
+  stricter** with the number attached ("would block 2 more files, about
+  65k–81k tokens"), then the files actually kept out and how many rules are in
+  force.
 - **Files** — opens on **the files this session touched** (what the agent read
   and what it wrote), then lets you browse the whole workspace a directory at a
   time. Search, filter by verdict — and when a filter has nothing in it, the

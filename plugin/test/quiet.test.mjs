@@ -1,6 +1,8 @@
-// The counter has a state the other tests do not reach: a conversation that
-// read nothing worth holding back. It used to print "0" with the label of a
-// result, which reads as a broken counter rather than as good news.
+// The first screen used to be a counter of guard refusals: a number that stays
+// 0 until something is actually blocked, and a button that vanished when there
+// was nothing to write. Opening the panel and finding no action at all is what
+// the user reported, so the card now leads with a score and always offers the
+// button — the interaction is: look, press, watch the score move.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,25 +16,32 @@ function region(name, stop) {
   return CLIENT.slice(start, CLIENT.indexOf(stop, start));
 }
 
-test('the empty state says what was read instead of printing a zero', () => {
+test('the card opens on the score the folder has before any rule', () => {
   const view = region('ProtectView', 'function SummaryPage');
-  assert.match(view, /const quiet = keptOut === 0 && pendingReads === 0;/);
-  assert.match(view, /quiet === true\s*\? h\(QuietCard, \{ conversation \}\)/);
-  // No branch may fall through to a numeric zero any more.
+  assert.match(view, /const firstScore = typeof scored\.healthScore === 'number'/);
+  // Rules, not the arithmetic, decide which score is on screen: a first open
+  // must show the folder as it is, or the press it invites has already happened.
+  assert.match(view, /const applied = rules\.length > 0 && typeof scored\.effectiveScore === 'number';/);
+  assert.match(view, /const shownScore = applied === true \? scored\.effectiveScore : firstScore;/);
+  assert.match(view, /tr\(applied === true \? 'scoreAfterLabel' : 'scoreBeforeLabel'\)/);
+});
+
+test('the score card says what moved after Optimize', () => {
+  const view = region('ProtectView', 'function SummaryPage');
+  assert.match(view, /const subline = applied === true\s*\? `\$\{firstScore\} → \$\{shownScore\}/);
+  assert.match(view, /: tr\('scoreBeforeHint'\)/);
+});
+
+test('the button is always there, even when nothing is worth writing', () => {
+  const view = region('ProtectView', 'function SummaryPage');
+  assert.equal(/quiet === true \? null : h\('button'/.test(view), false, 'the button is not hidden any more');
+  assert.match(view, /disabled: progress !== null,\s*\n\s*onClick: optimize/);
+});
+
+test('a quiet conversation says what it read instead of a bare zero', () => {
+  const view = region('ProtectView', 'function SummaryPage');
+  assert.match(view, /fill\(tr\(tokens === '—' \? 'heroQuietLineShort' : 'heroQuietLine'\), \{ files, tokens \}\)/);
   assert.equal(/value: 0,/.test(view), false, 'no zero headline');
-  assert.equal(view.includes("'heroMany'"), true, 'the plural label still exists for real counts');
-});
-
-test('the quiet card names the files and the tokens', () => {
-  const card = region('QuietCard', 'function ProtectView');
-  assert.match(card, /conversation\.readFiles/);
-  assert.match(card, /formatTokensCompact\(conversation\.tokens\)/);
-  assert.match(card, /fill\(tr\(known \? 'heroQuietLine' : 'heroQuietLineShort'\)/);
-});
-
-test('nothing to write means no button that writes nothing', () => {
-  const view = region('ProtectView', 'function SummaryPage');
-  assert.match(view, /quiet === true \? null : h\('button', \{/);
 });
 
 test('the fill helper leaves unknown slots alone', () => {
