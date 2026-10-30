@@ -16,6 +16,26 @@
           "zh-cn": "\u4e0a\u4e0b\u6587\u8d28\u91cf"
         }
       }
+    },
+    "labels": {
+      "no-network": {
+        "title": {
+          "en": "No network calls",
+          "zh-cn": "\u4e0d\u8054\u7f51"
+        }
+      },
+      "zero-setup": {
+        "title": {
+          "en": "Works with no setup",
+          "zh-cn": "\u88c5\u597d\u5373\u7528"
+        }
+      },
+      "sidebar-tab": {
+        "title": {
+          "en": "Lives in the sidebar",
+          "zh-cn": "\u5728\u4fa7\u680f\u91cc"
+        }
+      }
     }
   },
   "plugins": [
@@ -33,13 +53,32 @@
       "metadata": {
         "category": "context",
         "keywords": [
-          "context",
-          "repository",
           "aiignore",
-          "noise"
+          "context-window",
+          "token-budget",
+          "noise",
+          "lockfile",
+          "log-files",
+          "repo-hygiene",
+          "sidebar"
+        ],
+        "labels": [
+          "no-network",
+          "zero-setup",
+          "sidebar-tab"
         ]
       },
       "versions": [
+        {
+          "version": "0.29.1",
+          "publishTimestamp": 1793345358,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.29.0",
           "publishTimestamp": 1793344122,
