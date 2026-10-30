@@ -122,9 +122,9 @@ window.__ModuleLoader__.load({
         of: 'of',
         letThrough: 'let through by your rules and strength',
         phaseScan: 'Reading the folder…',
-        phaseScore: 'Scoring what is left…',
-        phaseWrite: 'Writing rules…',
-        phaseVerify: 'Checking the result…',
+        // The Host writes the rules and re-scores in one request, so the second
+        // step covers both rather than pretending to be two.
+        phaseWrite: 'Writing rules and re-scoring…',
         optimizeNothing: 'Nothing to add — your rules already cover it.',
         optimizeConversation: 'Optimize from this conversation',
         optimizeConversationHint: 'Writes the rules this conversation needs: the noise it read stays out next time. Your own lines are kept, and one click puts the file back.',
@@ -361,9 +361,7 @@ window.__ModuleLoader__.load({
         of: '共',
         letThrough: '会进入模型（规则与力度之后）',
         phaseScan: '正在读取目录…',
-        phaseScore: '正在计算剩余噪音…',
-        phaseWrite: '正在写入规则…',
-        phaseVerify: '正在核对结果…',
+        phaseWrite: '写入规则并重新评分…',
         optimizeNothing: '没有可加的规则——现有的规则已经覆盖了。',
         optimizeConversation: '按这个对话优化',
         optimizeConversationHint: '把这个对话读到的噪音写成规则，下次就不进了。你原有的行会保留，一次点击就能还原。',
@@ -1450,30 +1448,62 @@ window.__ModuleLoader__.load({
   white-space: nowrap;
 }
 
-.aicd-progress {
+/* Optimize in three named steps. A percentage bar would have to invent numbers
+   the Host never reports; a step is only marked done once its request returns. */
+.aicd-steps {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.aicd-progress-label {
-  color: var(--dsw-alias-label-secondary, #6b6b6b);
-  font-size: 11px;
+.aicd-step {
+  display: flex;
+  align-items: center;
+  gap: var(--aicd-s2, 8px);
+  color: var(--dsw-alias-label-tertiary, #8b8b8b);
+  font-size: var(--aicd-fs-eyebrow, 11px);
+  line-height: 1.6;
 }
 
-.aicd-progress-bar {
-  height: 3px;
-  border-radius: 999px;
-  background: var(--aicd-active, rgba(127,127,127,0.16));
+.aicd-step-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  flex: none;
+  font-size: 10px;
+}
+
+.aicd-step-label {
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.aicd-progress-bar span {
-  display: block;
-  height: 100%;
+.aicd-step[data-state="active"] {
+  color: var(--dsw-alias-label-primary, #1f1f1f);
+}
+
+.aicd-step[data-state="active"] .aicd-step-mark::before {
+  content: "";
+  width: 5px;
+  height: 5px;
   border-radius: 999px;
-  background: var(--aicd-accent, #4d6bfe);
-  transition: width 240ms ease;
+  background: var(--dsw-alias-state-business-primary, #4176e6);
+  animation: aicd-pulse 1.2s ease-in-out infinite;
+}
+
+.aicd-step[data-state="done"] {
+  color: var(--dsw-alias-state-success-secondary, #4d9970);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aicd-step[data-state="active"] .aicd-step-mark::before {
+    animation: none;
+  }
 }
 
 .aicd-empty {
@@ -2292,10 +2322,6 @@ window.__ModuleLoader__.load({
 
 @media (prefers-reduced-motion: reduce) {
   .aicd-skel-row,
-  .aicd-progress-bar span {
-    animation: none;
-    transition: none;
-  }
 }
 `;
 
@@ -3562,6 +3588,11 @@ window.__ModuleLoader__.load({
       );
     }
 
+    // The three things Optimize actually does, in the order the Host does them.
+    // A bar with invented percentages would claim progress the Host has not
+    // made; these steps are marked done only once their request has returned.
+    const PHASES = ['Scan', 'Write'];
+
     function ProtectView({ data, conv, convError, progress, optimize, onAllow, onIgnore, onSettings, level, levelBusy, onLevel }) {
       const skipped = Array.isArray(data.skipped) ? data.skipped.filter((item) => item.attempts > 0) : [];
       const potential = data.potential !== null && typeof data.potential === 'object' ? data.potential : null;
@@ -3657,9 +3688,18 @@ window.__ModuleLoader__.load({
             disabled: progress !== null,
             onClick: optimize
           }, progress === null ? tr('optimizeNow') : tr('working')),
-          progress === null ? null : h('div', { className: 'aicd-progress', role: 'progressbar', 'aria-valuenow': progress.pct, 'aria-valuemin': 0, 'aria-valuemax': 100 },
-            h('div', { className: 'aicd-progress-bar', style: { width: `${progress.pct}%` } }),
-            h('div', { className: 'aicd-progress-label' }, progress.label)
+          progress === null ? null : h('ol', { className: 'aicd-steps', 'aria-live': 'polite' },
+            PHASES.map((phase) => {
+              const done = PHASES.indexOf(phase) < PHASES.indexOf(progress);
+              const active = phase === progress;
+              return h('li', {
+                key: phase,
+                className: 'aicd-step',
+                'data-state': done === true ? 'done' : active === true ? 'active' : 'todo'
+              },
+              h('span', { className: 'aicd-step-mark', 'aria-hidden': 'true' }, done === true ? '✓' : ''),
+              h('span', { className: 'aicd-step-label' }, tr(`phase${phase}`)))
+            })
           ),
           conversation === null ? null : h('div', { className: 'aicd-stat-meta' },
             `${conversation.turns} ${tr('turns')} · ${conversation.readFiles} ${tr('files')} · ${shortTokens(tokenTotal(conversation.tokens))} ${tr('tokens')}`),
@@ -4253,39 +4293,32 @@ window.__ModuleLoader__.load({
       const [progress, setProgress] = useState(null);
       const optimizeNow = () => {
         if (progress !== null) return;
-        const target = typeof cwd === 'string' && cwd.length > 0 ? `/aiignore/scan?cwd=${encodeURIComponent(cwd)}` : '/aiignore/scan';
         const body = typeof cwd === 'string' && cwd.length > 0
           ? { cwd }
           : (conv !== null && conv !== undefined && typeof conv.id === 'string' ? { session: conv.id } : {});
         setToast(null);
-        setProgress({ pct: 8, label: tr('phaseScan') });
+        // No warm-up scan: `/aiignore/optimize` already reads the folder before
+        // and after writing, so a second scan here would only double the wait.
+        setProgress('Scan');
 
-        fetch(target, { method: 'POST', headers: { 'content-type': 'application/json' } })
+        fetch('/aiignore/optimize', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body)
+        })
           .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
           .then((payload) => {
-            if (payload === null || payload === undefined || payload.scanned === undefined) {
-              throw new Error('scan');
-            }
-            setProgress({ pct: 42, label: tr('phaseScore') });
-            return fetch('/aiignore/optimize', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify(body)
-            });
-          })
-          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-          .then((payload) => {
-            setProgress({ pct: 74, label: tr('phaseWrite') });
+            setProgress('Write');
             if (payload !== null && payload !== undefined && payload.report !== undefined) {
               applyReport(payload.report);
             }
-            setProgress({ pct: 92, label: tr('phaseVerify') });
             const added = Array.isArray(payload === null || payload === undefined ? undefined : payload.added) ? payload.added.length : 0;
             setToast(added === 0
               ? tr('optimizeNothing')
               : `${tr('scoreMoved')} ${payload.before} → ${payload.after} · ${added} ${tr('rules')}`);
             reload();
             reloadTree();
+            refreshConversation();
             return null;
           })
           .catch((error) => setToast(`${tr('optimizeFailed')} ${errorMessage(error)}`))

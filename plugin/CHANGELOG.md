@@ -1,3 +1,18 @@
+## 0.32.0
+
+**Optimize shows the two steps it really performs, and stops reading the folder twice.**
+
+- The percentage bar is gone. It had to invent numbers: the Host answers
+  Optimize in one request, so the panel could only guess how far inside it was.
+  In its place are the two steps that actually happen — *Reading the folder*,
+  then *Writing rules and re-scoring* — each marked done only when its work has
+  returned.
+- Dropped a redundant pre-flight scan: `/aiignore/optimize` already reads the
+  folder before and after writing, so the warm-up scan only doubled the wait on
+  a large repository.
+- Copy: `phaseScore` and `phaseVerify` are gone; `phaseWrite` now says what the
+  second step does.
+
 ## 0.31.0
 
 **Settings can now tell you what this install is, in the words a bug report needs.**
