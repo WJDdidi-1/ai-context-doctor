@@ -1,3 +1,17 @@
+## 0.33.0
+
+**The panel can be driven from the keyboard, and says where you are.**
+
+- The three tabs are a real tablist: Arrow Left/Right move between them, Home
+  and End jump to the ends, and the stop in the tab order follows the selection
+  instead of being three separate stops.
+- Each view is a tabpanel named by the tab that opened it, so a screen reader
+  announces which tab you are inside rather than reading an unlabelled box.
+- Icon-only buttons (refresh, choose folder, close) all carry an accessible
+  name; the toast and the Optimize steps remain live regions.
+- New guards in `plugin/test/a11y.test.mjs` keep all of that from being dropped
+  in a future restyle.
+
 ## 0.32.0
 
 **Optimize shows the two steps it really performs, and stops reading the folder twice.**

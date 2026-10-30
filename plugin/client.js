@@ -666,6 +666,16 @@ window.__ModuleLoader__.load({
 
 /* ------------------------------------------------------------------ tabs -- */
 
+/* The three views share one scroll container: the tab that opened it names it,
+   so a screen reader says which tab a reader is inside. */
+.aicd-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  outline: none;
+}
+
 .aicd-tabs {
   display: flex;
   flex: none;
@@ -4091,18 +4101,42 @@ window.__ModuleLoader__.load({
             : h('div', { className: 'aicd-toast', role: 'status' }, toast),
           data === null
             ? null
-            : h('div', { className: 'aicd-tabs', role: 'tablist' },
-                tabs.map(([id, label]) =>
-                  h('button', {
-                    key: id,
-                    type: 'button',
-                    role: 'tab',
-                    className: 'aicd-tab',
-                    'aria-selected': view === id ? 'true' : 'false',
-                    onClick: () => setView(id)
-                  }, label)
-                )
+            : h('div', {
+                className: 'aicd-tabs',
+                role: 'tablist',
+                // A tablist that can only be driven by clicks is unreachable
+                // from the keyboard once focus has moved past it: arrows move
+                // between tabs the way the platform expects.
+                onKeyDown: (event) => {
+                  const ids = tabs.map(([id]) => id);
+                  const at = ids.indexOf(view);
+                  let next = null;
+                  if (event.key === 'ArrowRight') next = ids[(at + 1) % ids.length];
+                  else if (event.key === 'ArrowLeft') next = ids[(at - 1 + ids.length) % ids.length];
+                  else if (event.key === 'Home') next = ids[0];
+                  else if (event.key === 'End') next = ids[ids.length - 1];
+                  if (next === null || next === undefined) return;
+                  event.preventDefault();
+                  setView(next);
+                  const el = document.getElementById(`aicd-tab-${next}`);
+                  if (el !== null && typeof el.focus === 'function') el.focus();
+                }
+              },
+              tabs.map(([id, label]) =>
+                h('button', {
+                  key: id,
+                  type: 'button',
+                  role: 'tab',
+                  id: `aicd-tab-${id}`,
+                  className: 'aicd-tab',
+                  'aria-selected': view === id ? 'true' : 'false',
+                  'aria-controls': `aicd-view-${id}`,
+                  // Roving tabindex: one stop for the whole tablist.
+                  tabIndex: view === id ? 0 : -1,
+                  onClick: () => setView(id)
+                }, label)
               )
+            )
         )
       );
     }
@@ -4364,6 +4398,15 @@ window.__ModuleLoader__.load({
           view, setView, tabs, choose, toast, rescanning: pending === 'scan',
           pinnedSession, onFollowConversation: () => setPinnedSession(null)
         }),
+        h('div', {
+          className: 'aicd-view',
+          role: 'tabpanel',
+          id: `aicd-view-${view}`,
+          'aria-labelledby': `aicd-tab-${view}`,
+          // Named by the tab that opened it, and focusable so a keyboard user
+          // can reach the content without tabbing through every row first.
+          tabIndex: -1
+        },
         error !== null
           ? h('div', { className: 'aicd-body', 'data-center': 'true' },
               h(State, { kind: 'error', error, onRetry: reload }))
@@ -4390,6 +4433,7 @@ window.__ModuleLoader__.load({
                     level, levelBusy, onLevel: pickLevel
                   }),
         postError !== null ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
+        )
       );
     }
 
