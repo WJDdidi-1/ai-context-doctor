@@ -924,30 +924,62 @@
   white-space: nowrap;
 }
 
-.aicd-progress {
+/* Optimize in three named steps. A percentage bar would have to invent numbers
+   the Host never reports; a step is only marked done once its request returns. */
+.aicd-steps {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.aicd-progress-label {
-  color: var(--dsw-alias-label-secondary, #6b6b6b);
-  font-size: 11px;
+.aicd-step {
+  display: flex;
+  align-items: center;
+  gap: var(--aicd-s2, 8px);
+  color: var(--dsw-alias-label-tertiary, #8b8b8b);
+  font-size: var(--aicd-fs-eyebrow, 11px);
+  line-height: 1.6;
 }
 
-.aicd-progress-bar {
-  height: 3px;
-  border-radius: 999px;
-  background: var(--aicd-active, rgba(127,127,127,0.16));
+.aicd-step-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  flex: none;
+  font-size: 10px;
+}
+
+.aicd-step-label {
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.aicd-progress-bar span {
-  display: block;
-  height: 100%;
+.aicd-step[data-state="active"] {
+  color: var(--dsw-alias-label-primary, #1f1f1f);
+}
+
+.aicd-step[data-state="active"] .aicd-step-mark::before {
+  content: "";
+  width: 5px;
+  height: 5px;
   border-radius: 999px;
-  background: var(--aicd-accent, #4d6bfe);
-  transition: width 240ms ease;
+  background: var(--dsw-alias-state-business-primary, #4176e6);
+  animation: aicd-pulse 1.2s ease-in-out infinite;
+}
+
+.aicd-step[data-state="done"] {
+  color: var(--dsw-alias-state-success-secondary, #4d9970);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aicd-step[data-state="active"] .aicd-step-mark::before {
+    animation: none;
+  }
 }
 
 .aicd-empty {
@@ -1766,8 +1798,4 @@
 
 @media (prefers-reduced-motion: reduce) {
   .aicd-skel-row,
-  .aicd-progress-bar span {
-    animation: none;
-    transition: none;
-  }
 }

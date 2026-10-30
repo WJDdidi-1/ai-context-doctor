@@ -89,9 +89,10 @@ this doing anything?*
   sentences, then a preview of **exactly the text the agent will read** before
   your next message.
 
-- **One button runs the job.** *Optimize now* rescans, writes the rules,
-  re-scores and moves the number on screen — the progress bar only advances when
-  the request behind that phase has come back.
+- **One button runs the job.** *Optimize now* reads the folder, writes the
+  rules, re-scores and moves the number on screen. While it runs you see the two
+  steps it actually performs, each marked done only when its work is finished —
+  no percentage bar inventing progress the Host never reported.
 - **The rules are visible, and removable one at a time.** Under the score sits
   **Rules in .aiignore**: every line that is in force, each with an ×. Removing
   one edits exactly that line — comments and the other rules stay — so a rule

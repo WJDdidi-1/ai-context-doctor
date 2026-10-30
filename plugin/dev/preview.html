@@ -332,26 +332,25 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
         body = null;
       }
       calls.push(method + ' ' + url);
+      const answer = (body, status) => ({
+        ok: status === undefined || status < 400,
+        status: status || 200,
+        json: () => Promise.resolve(body)
+      });
       const record = (body, status) =>
-        Promise.resolve({
-          ok: status === undefined || status < 400,
-          status: status || 200,
-          json: () => Promise.resolve(body)
-        });
+        Promise.resolve(answer(body, status));
 
       const data = SCENARIOS[scenario];
       if (data === null) return record({ error: 'boom' }, 500);
 
       const scannedCwd = url.match(/[?&]cwd=([^&]+)/);
-      const slow = (body, status) =>
+      // A real folder takes a moment: the delay is what makes the step list
+      // observable instead of a flash.
+      const slow = (body, status, ms) =>
         new Promise((resolve) => {
           setTimeout(() => {
-            resolve({
-              ok: status === undefined || status < 400,
-              status: status || 200,
-              json: () => Promise.resolve(body)
-            });
-          }, 260);
+            resolve(answer(body, status));
+          }, ms === undefined ? 260 : ms);
         });
 
       if (url.indexOf('/aiignore/scan') === 0 && scannedCwd !== null) {
@@ -574,6 +573,9 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
         return slow({ removed: true, rule });
       }
       if (url === '/aiignore/optimize') {
+        // Real hosts take a few hundred ms; the step list is only meaningful if
+        // the answer is not instantaneous.
+        const delay = window.__optimizeDelay === undefined ? 900 : window.__optimizeDelay;
         const asked = body === null || body === undefined ? {} : body;
         if (typeof asked.session === 'string') {
           const row = conversationRows.find((entry) => entry.id === asked.session);
@@ -618,7 +620,7 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
                   suggestedAiignore: []
                 })
               })
-        });
+        }, undefined, delay);
       }
       if (url === '/aiignore/optimize/undo') return record({ undone: true, restored: 'previous' });
       return record({ error: 'unknown route' }, 404);
