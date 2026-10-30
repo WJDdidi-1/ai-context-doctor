@@ -130,6 +130,10 @@ window.__ModuleLoader__.load({
         scoreNow: 'Score:',
         undoOptimize: 'Undo',
         strategyTitle: 'How strict should I be?',
+        strengthTitle: 'How strict should I be?',
+        strengthHintShort: 'Pick a notch: the number on it is the score this folder would have, and picking one applies it right away.',
+        strengthMoved: 'Strength moved to Protection, next to the score it changes: try a notch there and the conversation rescores without leaving the page.',
+        strengthMovedGo: 'Go to Protection',
         strategyHint: 'Each notch trades detail for cleanliness. The numbers are computed against this folder before you commit, so pick the one whose trade you can live with — 3 is the balance we recommend.',
         strategySave: 'Use this setting',
         strategyWarning: 'At this strength small but real source files can be skipped. Check the blocked list after a session.',
@@ -338,6 +342,10 @@ window.__ModuleLoader__.load({
         scoreNow: '分数：',
         undoOptimize: '撤销',
         strategyTitle: '筛选力度',
+        strengthTitle: '要多严格？',
+        strengthHintShort: '挑一档就生效：每格上的数字，是这个文件夹在这一档下的分数。',
+        strengthMoved: '力度已经挪到「保护」页，就在它改变的那个分数旁边：在那里换档，当前对话会立刻重新评分，不用来回切页。',
+        strengthMovedGo: '去保护页',
         strategyHint: '每一档都是拿细节换整洁。选中之前就先把这个仓库在每档下的分数算给你看，挑一个你愿意接受的取舍——我们推荐第 3 档。',
         strategySave: '使用这个档位',
         strategyWarning: '这个档位可能跳过体积不大但确实有用的源文件，会话结束后请看一眼被拦列表。',
@@ -2694,6 +2702,91 @@ window.__ModuleLoader__.load({
 .aicd-levels-state {
   padding: 4px 0 2px;
 }
+
+/* The strength ladder, where the score is.
+   Five cells, each labelled with the score that notch would leave: a row of
+   buttons you can read as a table, and a table you can press. */
+.aicd-strength {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0 14px;
+  border-top: 1px solid var(--dsw-alias-border-l1, #e6e6e6);
+}
+
+.aicd-strength-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aicd-strength-now {
+  font: var(--dsw-font-xxxs-11, 11px);
+  color: var(--dsw-alias-label-tertiary, #8a8a8a);
+}
+
+.aicd-strength-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.aicd-strength-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px 5px;
+  border: 1px solid var(--dsw-alias-border-l1, #e6e6e6);
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: transparent;
+  color: var(--dsw-alias-label-primary, #1b1b1f);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.aicd-strength-cell:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover, #f2f2f3);
+}
+
+.aicd-strength-cell[data-active='true'] {
+  border-color: var(--dsw-alias-state-business-primary, #4c6ef5);
+  background: var(--dsw-alias-state-business-tertiary, #eef1ff);
+}
+
+.aicd-strength-cell:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.aicd-strength-num {
+  font: var(--dsw-font-xxxs-11, 11px);
+  color: var(--dsw-alias-label-caption, #9a9a9a);
+  font-variant-numeric: tabular-nums;
+}
+
+.aicd-strength-score {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.aicd-strength-cell[data-active='true'] .aicd-strength-score {
+  color: var(--dsw-alias-state-business-primary, #4c6ef5);
+}
+
+.aicd-strength-hint {
+  font: var(--dsw-font-xxxs-11, 11px);
+  line-height: 1.45;
+  color: var(--dsw-alias-label-tertiary, #8a8a8a);
+}
+
+.aicd-strength-state {
+  padding: 10px 0 14px;
+  border-top: 1px solid var(--dsw-alias-border-l1, #e6e6e6);
+}
 `;
 
     //#endregion styles
@@ -2957,6 +3050,45 @@ window.__ModuleLoader__.load({
       }, [pinnedSession, tick]);
 
       return { conv, error };
+    }
+
+    /**
+     * The five notches, scored, in one request.
+     *
+     * Both the strip on Protection and anything else that shows the ladder read
+     * from here, so they cannot disagree about what a notch would cost.
+     */
+    function useLevels(cwd) {
+      const [levels, setLevels] = useState(null);
+      const [failed, setFailed] = useState(null);
+      const [attempt, setAttempt] = useState(0);
+
+      useEffect(() => {
+        if (typeof cwd !== 'string' || cwd === '') return undefined;
+        let live = true;
+        setFailed(null);
+        fetch(`/aiignore/levels?cwd=${encodeURIComponent(cwd)}`, { headers: { accept: 'application/json' } })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then((payload) => {
+            if (live === true) setLevels(Array.isArray(payload.levels) ? payload.levels : []);
+          })
+          .catch((reason) => {
+            if (live === true) setFailed(reason === undefined || reason === null ? new Error('unknown') : reason);
+          });
+        return () => {
+          live = false;
+        };
+      }, [cwd, attempt]);
+
+      return {
+        levels,
+        failed,
+        retry: () => {
+          setFailed(null);
+          setLevels(null);
+          setAttempt((value) => value + 1);
+        }
+      };
     }
 
     //#region components
@@ -3437,68 +3569,6 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function LevelsTable({ data, draft, onPick }) {
-      const [levels, setLevels] = useState(null);
-      const [failed, setFailed] = useState(null);
-      const [attempt, setAttempt] = useState(0);
-      const cwd = data !== null && data !== undefined && typeof data.workspace === 'string' ? data.workspace : '';
-
-      useEffect(() => {
-        if (cwd === '') return undefined;
-        let alive = true;
-        fetch(`/aiignore/levels?cwd=${encodeURIComponent(cwd)}`, { headers: { accept: 'application/json' } })
-          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-          .then((payload) => {
-            if (alive === true) {
-              setLevels(Array.isArray(payload.levels) ? payload.levels : []);
-              setFailed(null);
-            }
-          })
-          .catch((reason) => {
-            if (alive === true) setFailed(reason === undefined || reason === null ? new Error('unknown') : reason);
-          });
-        return () => {
-          alive = false;
-        };
-      }, [cwd, attempt]);
-
-      if (failed !== null) {
-        return h('div', { className: 'aicd-levels-state' },
-          h(State, {
-            kind: 'error',
-            errorTitle: tr('strengthFailedTitle'),
-            hint: tr('strengthFailed'),
-            error: failed,
-            onRetry: () => { setFailed(null); setLevels(null); setAttempt((value) => value + 1); }
-          })
-        );
-      }
-      if (levels === null) return h(State, { kind: 'loading', rows: 3 });
-      if (levels.length === 0) return null;
-
-      return h('div', { className: 'aicd-levels' },
-        h('div', { className: 'aicd-section-title' }, tr('strengthTable')),
-        levels.map((row) =>
-          h('button', {
-            key: row.level,
-            type: 'button',
-            className: 'aicd-level-row',
-            'data-active': row.level === draft ? 'true' : 'false',
-            'aria-pressed': row.level === draft ? 'true' : 'false',
-            onClick: () => onPick(row.level)
-          },
-            h('span', { className: 'aicd-level-num' }, String(row.level)),
-            h('span', { className: 'aicd-level-label' }, row.label,
-              typeof row.blockedFiles === 'number' && row.blockedFiles > 0
-                ? h('span', { className: 'aicd-level-meta', title: formatBytes(row.blockedBytes || 0) }, `${row.blockedFiles} ${tr('files')}`)
-                : null),
-            h('span', { className: 'aicd-level-score' },
-              typeof row.effectiveScore === 'number' ? String(row.effectiveScore) : '—')
-          )
-        )
-      );
-    }
-
     //#endregion views
 
     //#region score
@@ -3614,97 +3684,6 @@ window.__ModuleLoader__.load({
      * Everything you can change. Kept off the first screen on purpose: the
      * question that panel answers is "is this thing doing anything", and a
      * setting has no business in that answer.
-     */
-    function SettingsView({ data, conv, onDone, onRescan }) {
-      const scanned = data.scanned || {};
-      const effective = typeof scanned.effectiveScore === 'number' ? scanned.effectiveScore : null;
-      const raw = typeof scanned.healthScore === 'number' ? scanned.healthScore : null;
-
-      return h('div', { className: 'aicd-body' },
-        h(StrategyCard, { data, onSaved: onRescan }),
-        h(RulesCard, { data, onDone }),
-        h(NoteView, { data, onSaved: onDone }),
-        h('div', { className: 'aicd-section' },
-          h('div', { className: 'aicd-section-title' }, tr('scoreTitle')),
-          h('div', { className: 'aicd-note' },
-            `${tr('scoreOnDisk')} ${raw === null ? '—' : raw} · ${tr('scoreFolder')} ${effective === null ? '—' : effective}`),
-          h(ScoreBreakdown, {
-            rows: scanned.effectiveBreakdown,
-            lost: scanned.effectiveLost,
-            title: tr('scoreHow'),
-            formula: tr('scoreFormula')
-          })
-        )
-      );
-    }
-
-    function StrategyCard({ data, onSaved }) {
-      const levels = Array.isArray(data.levels) ? data.levels : [];
-      const stored = typeof data.level === 'number' ? data.level : 3;
-      const [level, setLevel] = useState(stored);
-      const [status, setStatus] = useState(null);
-
-      useEffect(() => {
-        setLevel(stored);
-      }, [stored]);
-
-      const entry = levels.find((item) => item.level === level) || levels[0] || { label: '', note: '', maxBytes: 0 };
-
-      const save = () => {
-        setStatus('saving');
-        fetch('/aiignore/policy', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ level })
-        })
-          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-          .then(() => {
-            setStatus('saved');
-            if (typeof onSaved === 'function') onSaved();
-          })
-          .catch(() => setStatus('failed'));
-      };
-
-      return h('div', { className: 'aicd-opt' },
-        h('div', { className: 'aicd-opt-head' },
-          h('span', { className: 'aicd-opt-title' }, tr('strategyTitle')),
-          h('span', { className: 'aicd-count' }, `${level} / 5`)
-        ),
-        h('div', { className: 'aicd-note' }, tr('strategyHint')),
-        h(LevelsTable, {
-          data,
-          draft: level,
-          onPick: (picked) => {
-            setLevel(picked);
-            setStatus(null);
-          }
-        }),
-        h('div', { className: 'aicd-level' },
-          h('span', { className: 'aicd-level-name' }, entry.label),
-          h('span', { className: 'aicd-level-note' }, entry.note)
-        ),
-        level >= 4 ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('strategyWarning')) : null,
-        level <= 1 ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('strategyOff')) : null,
-        h('div', { className: 'aicd-btn-row' },
-          h('button', {
-            type: 'button',
-            className: 'aicd-btn',
-            'data-variant': level === stored ? undefined : 'primary',
-            disabled: level === stored || status === 'saving',
-            onClick: save
-          }, status === 'saving' ? tr('working') : tr('strategySave')),
-          status === 'saved' ? h('span', { className: 'aicd-note', 'data-tone': 'ok' }, tr('strengthSaved')) : null,
-          status === 'failed' ? h('span', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
-        )
-      );
-    }
-
-    /**
-     * The rules actually in force, one removable line at a time.
-     *
-     * Optimize can only tell you "4 rules added"; this is the plate they landed
-     * on. Deleting a rule here is the same edit you would make by hand, minus
-     * the risk of deleting a comment.
      */
     function RulesCard({ data, onDone }) {
       const rules = Array.isArray(data.rules) ? data.rules : [];
@@ -3838,6 +3817,37 @@ window.__ModuleLoader__.load({
       );
     }
 
+    function SettingsView({ data, conv, onDone, onRescan, onProtect }) {
+      const scanned = data.scanned || {};
+      const effective = typeof scanned.effectiveScore === 'number' ? scanned.effectiveScore : null;
+      const raw = typeof scanned.healthScore === 'number' ? scanned.healthScore : null;
+
+      return h('div', { className: 'aicd-body' },
+        h('div', { className: 'aicd-opt' },
+          h('div', { className: 'aicd-opt-head' },
+            h('span', { className: 'aicd-opt-title' }, tr('strategyTitle')),
+            h('span', { className: 'aicd-count' }, `${typeof data.level === 'number' ? data.level : 3} / 5`)
+          ),
+          h('div', { className: 'aicd-note' }, tr('strengthMoved')),
+          h('div', { className: 'aicd-btn-row' },
+            h('button', { type: 'button', className: 'aicd-textbtn', onClick: onProtect }, tr('strengthMovedGo')))
+        ),
+        h(RulesCard, { data, onDone }),
+        h(NoteView, { data, onSaved: onDone }),
+        h('div', { className: 'aicd-section' },
+          h('div', { className: 'aicd-section-title' }, tr('scoreTitle')),
+          h('div', { className: 'aicd-note' },
+            `${tr('scoreOnDisk')} ${raw === null ? '—' : raw} · ${tr('scoreFolder')} ${effective === null ? '—' : effective}`),
+          h(ScoreBreakdown, {
+            rows: scanned.effectiveBreakdown,
+            lost: scanned.effectiveLost,
+            title: tr('scoreHow'),
+            formula: tr('scoreFormula')
+          })
+        )
+      );
+    }
+
     //#endregion score
 
     //#region chat
@@ -3854,7 +3864,67 @@ window.__ModuleLoader__.load({
      * that is why it never felt like anything happened. This counts the reads
      * the guard refused, which only goes up when there was something to refuse.
      */
-    function ProtectView({ data, conv, convError, progress, optimize, onAllow, onIgnore, onSettings }) {
+    /**
+     * The ladder, where the number is.
+     *
+     * Choosing a notch used to mean leaving the conversation, changing a
+     * setting on another tab, coming back and pressing refresh — four steps to
+     * answer "what would one notch stricter do to this conversation". The five
+     * notches and the score each one would leave now sit directly under the
+     * score they change, and picking one applies it and rescores the same page.
+     */
+    function StrengthStrip({ data, level, busy, onPick }) {
+      const cwd = data !== null && data !== undefined && typeof data.workspace === 'string' ? data.workspace : '';
+      const { levels, failed, retry } = useLevels(cwd);
+
+      if (failed !== null) {
+        return h('div', { className: 'aicd-strength-state' },
+          h(State, {
+            kind: 'error',
+            errorTitle: tr('strengthFailedTitle'),
+            hint: tr('strengthFailed'),
+            error: failed,
+            onRetry: retry
+          })
+        );
+      }
+      if (levels === null) return h(State, { kind: 'loading', rows: 1 });
+      if (levels.length === 0) return null;
+
+      const current = levels.find((row) => row.level === level);
+
+      return h('div', { className: 'aicd-strength' },
+        h('div', { className: 'aicd-strength-head' },
+          h('span', { className: 'aicd-list-title' }, tr('strengthTitle')),
+          h('span', { className: 'aicd-strength-now' }, current === undefined ? '' : current.label)
+        ),
+        h('div', {
+          className: 'aicd-strength-row',
+          role: 'group',
+          'aria-label': tr('strengthTitle')
+        },
+          levels.map((row) =>
+            h('button', {
+              key: row.level,
+              type: 'button',
+              className: 'aicd-strength-cell',
+              'data-active': row.level === level ? 'true' : 'false',
+              'aria-pressed': row.level === level ? 'true' : 'false',
+              disabled: busy === true,
+              title: row.note,
+              onClick: () => onPick(row.level)
+            },
+              h('span', { className: 'aicd-strength-num' }, String(row.level)),
+              h('span', { className: 'aicd-strength-score' },
+                typeof row.effectiveScore === 'number' ? String(row.effectiveScore) : '—')
+            )
+          )
+        ),
+        h('div', { className: 'aicd-strength-hint' }, tr('strengthHintShort'))
+      );
+    }
+
+    function ProtectView({ data, conv, convError, progress, optimize, onAllow, onIgnore, onSettings, level, levelBusy, onLevel }) {
       const stats = data.stats !== null && typeof data.stats === 'object' ? data.stats : {};
       const blockedReads = typeof stats.blockedReads === 'number' ? stats.blockedReads : 0;
       const savedTokens = typeof stats.savedTokens === 'number' ? stats.savedTokens : 0;
@@ -3937,6 +4007,8 @@ window.__ModuleLoader__.load({
                 h(Icon, { name: 'warn', size: 12 }),
                 h('span', null, `${tr('chatUnavailable')} · ${tr('errorStatus')} ${reasonOf(convError)}`))
         ),
+
+        h(StrengthStrip, { data, level, busy: levelBusy, onPick: onLevel }),
 
         potential === null ? null : h('div', { className: 'aicd-hint' },
           h('span', { className: 'aicd-hint-text' },
@@ -4529,6 +4601,28 @@ window.__ModuleLoader__.load({
           .finally(() => setProgress(null));
       };
 
+      // Applying a notch is a write and a re-read: the policy lands first, then
+      // the same folder is scanned again, so the score on screen is the score
+      // that notch produced rather than a number we assumed it would produce.
+      const [levelBusy, setLevelBusy] = useState(false);
+      const level = data !== null && data !== undefined && typeof data.level === 'number' ? data.level : 3;
+      const pickLevel = (next) => {
+        if (levelBusy === true || next === level) return;
+        setLevelBusy(true);
+        setToast(null);
+        fetch('/aiignore/policy', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ level: next })
+        })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+          .then(() => {
+            rescan();
+          })
+          .catch((error) => setToast(`${tr('optimizeFailed')} ${errorMessage(error)}`))
+          .finally(() => setLevelBusy(false));
+      };
+
       const onOptimized = (payload) => {
         if (payload !== null && payload !== undefined && payload.report !== undefined) {
           applyReport(payload.report);
@@ -4559,12 +4653,13 @@ window.__ModuleLoader__.load({
                   lastIgnored, onUndo
                 })
                 : view === 'settings'
-                  ? h(SettingsView, { data, conv, onDone: reload, onRescan: rescan })
+                  ? h(SettingsView, { data, conv, onDone: reload, onRescan: rescan, onProtect: () => setView('protect') })
                   // Protection needs no workspace of its own: it reads counters
                   // and the conversation, both of which exist without a scan.
                   : h(ProtectView, {
                     data, conv, convError, progress, optimize: optimizeNow, onAllow, onIgnore,
-                    onSettings: () => setView('settings')
+                    onSettings: () => setView('settings'),
+                    level, levelBusy, onLevel: pickLevel
                   }),
         postError !== null ? h('div', { className: 'aicd-note', 'data-tone': 'bad' }, tr('noteFailed')) : null
       );

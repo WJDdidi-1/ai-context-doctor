@@ -2230,3 +2230,88 @@
 .aicd-levels-state {
   padding: 4px 0 2px;
 }
+
+/* The strength ladder, where the score is.
+   Five cells, each labelled with the score that notch would leave: a row of
+   buttons you can read as a table, and a table you can press. */
+.aicd-strength {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0 14px;
+  border-top: 1px solid var(--dsw-alias-border-l1, #e6e6e6);
+}
+
+.aicd-strength-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aicd-strength-now {
+  font: var(--dsw-font-xxxs-11, 11px);
+  color: var(--dsw-alias-label-tertiary, #8a8a8a);
+}
+
+.aicd-strength-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.aicd-strength-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px 5px;
+  border: 1px solid var(--dsw-alias-border-l1, #e6e6e6);
+  border-radius: var(--dsw-radius-sm, 8px);
+  background: transparent;
+  color: var(--dsw-alias-label-primary, #1b1b1f);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.aicd-strength-cell:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover, #f2f2f3);
+}
+
+.aicd-strength-cell[data-active='true'] {
+  border-color: var(--dsw-alias-state-business-primary, #4c6ef5);
+  background: var(--dsw-alias-state-business-tertiary, #eef1ff);
+}
+
+.aicd-strength-cell:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.aicd-strength-num {
+  font: var(--dsw-font-xxxs-11, 11px);
+  color: var(--dsw-alias-label-caption, #9a9a9a);
+  font-variant-numeric: tabular-nums;
+}
+
+.aicd-strength-score {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.aicd-strength-cell[data-active='true'] .aicd-strength-score {
+  color: var(--dsw-alias-state-business-primary, #4c6ef5);
+}
+
+.aicd-strength-hint {
+  font: var(--dsw-font-xxxs-11, 11px);
+  line-height: 1.45;
+  color: var(--dsw-alias-label-tertiary, #8a8a8a);
+}
+
+.aicd-strength-state {
+  padding: 10px 0 14px;
+  border-top: 1px solid var(--dsw-alias-border-l1, #e6e6e6);
+}

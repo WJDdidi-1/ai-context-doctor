@@ -1,3 +1,21 @@
+## 0.27.0
+
+**The strength ladder moved to the page it changes, and every notch shows its score.**
+
+- The five notches are on Protection now, directly under the counters they
+  affect, and each one carries the score this folder would have at that
+  notch (22 / 34 / 49 / 65 / 81 on the demo folder). Choosing one writes the
+  policy, rescans the folder, and repaints the page from the new report — so
+  the number you see after a click is the number that notch produced, not a
+  prediction the panel made on its own.
+- Settings no longer keeps a second copy of the ladder. It says where the
+  ladder went and offers the way there, because two controls for one setting
+  drift, and the copy that quietly stops being authoritative is always the one
+  on the page nobody is looking at.
+- The ladder is one request for all five notches (it was five scans in the
+  common case), and it keeps the shared loading/empty/failure behaviour: a
+  failed read says so instead of collapsing to a blank strip.
+
 ## 0.26.3
 
 **One shape for loading, empty and failure — and a failure that says why.**
