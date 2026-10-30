@@ -1,3 +1,19 @@
+## 0.35.0
+
+**Eight screenshots the panel is measured against, and a check that they stay put.**
+
+- `docs/assets/baseline/` now holds four preview scenarios (noisy, healthy,
+  fresh, broken) in both themes, cropped to the 420 × 660 the sidebar gives the
+  panel.
+- `plugin/scripts/check-baseline.mjs` (`npm run check:baseline`) fails when a
+  baseline is missing, hand-edited, or missing from the manifest. There is no
+  headless browser in this repository, so the part that can be automated is
+  catching drift rather than pretending to re-render.
+- `plugin/test/baseline.test.mjs` asserts the set is complete, each file matches
+  its recorded size and digest, and the re-capture procedure is documented.
+- README explains how to re-capture after an intentional change, including the
+  fixed crop so new images stay comparable.
+
 ## 0.34.0
 
 **One word per idea, and no copy nobody reads.**

@@ -1,6 +1,6 @@
 {
   "name": "dsh-aiignore",
-  "version": "0.34.0",
+  "version": "0.35.0",
   "description": "See what a conversation feeds the model, what your rules keep out, and what one click would change.",
   "license": "Apache-2.0",
   "type": "module",
@@ -52,7 +52,8 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node scripts/check-bundle.mjs"
+    "check": "node scripts/check-bundle.mjs",
+    "check:baseline": "node scripts/check-baseline.mjs"
   },
   "engines": {
     "node": ">=18",
