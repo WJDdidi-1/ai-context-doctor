@@ -54,7 +54,9 @@ this doing anything?*
   that your rules now hold back, plus roughly how many tokens never reached the
   model. Before you optimize it says the honest version instead — "2 reads are
   junk and still reach the model" — so the button has something to be measured
-  against. Optimize, a new notch and Refresh all re-read the conversation, so
+  against. A conversation that read nothing junk-worthy gets a third state:
+  *Nothing worth holding back*, followed by what it did read (files and tokens)
+  rather than a zero, because a zero is the absence of a result. Optimize, a new notch and Refresh all re-read the conversation, so
   the counter moves on the click rather than at the next poll. Under it sits one primary
   button, **Optimize now**: rescan, write whatever is missing, re-score, and
   report `before → after`. When nothing is missing it says so instead of

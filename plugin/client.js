@@ -62,7 +62,9 @@ window.__ModuleLoader__.load({
         heroKept: 'never reached the model',
         heroWouldCaption: 'Optimize writes the rules that stop them.',
         heroStill: 'still getting through',
-        heroNoneCaption: 'This conversation has not read anything worth holding back — no build output, no lockfile, no log.',
+        heroQuietTitle: 'Nothing worth holding back',
+        heroQuietLine: 'This conversation read {files} files, about {tokens} tokens — code and docs, no build output.',
+        heroQuietLineShort: 'This conversation read {files} files — code and docs, no build output.',
         turns: 'turns',
         nextStep: 'One notch stricter blocks',
         nextFiles: 'more files',
@@ -247,7 +249,9 @@ window.__ModuleLoader__.load({
         heroKept: '从没有进入模型',
         heroWouldCaption: '点「立即优化」会写下挡住它们的规则，并当场重新评分。',
         heroStill: '仍然会进模型',
-        heroNoneCaption: '这次对话没有读过值得挡住的东西——没有构建产物、锁文件或日志。',
+        heroQuietTitle: '没有需要挡住的东西',
+        heroQuietLine: '这次对话读了 {files} 个文件、约 {tokens} tokens——都是代码和文档，没有构建产物。',
+        heroQuietLineShort: '这次对话读了 {files} 个文件——都是代码和文档，没有构建产物。',
         turns: '轮',
         nextStep: '再严格一档会多挡下',
         nextFiles: '个文件',
@@ -2225,6 +2229,37 @@ window.__ModuleLoader__.load({
 @media (prefers-reduced-motion: reduce) {
   .aicd-skel-row,
 }
+
+/* A conversation with nothing to hold back shows what it did read, not a 0. */
+.aicd-stat-quiet {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--aicd-s2, 8px);
+}
+
+.aicd-stat-quiet-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--dsw-alias-state-success-tertiary, rgba(0, 0, 0, 0.06));
+  color: var(--dsw-alias-state-success-primary, #4a7f5b);
+}
+
+.aicd-quiet-title {
+  font: var(--dsw-font-xs-strong-13, 600 13px/1.4 system-ui, sans-serif);
+  color: var(--dsw-alias-label-primary, #1d1d1f);
+}
+
+.aicd-quiet-line {
+  margin-top: 2px;
+  font: var(--dsw-font-xxs-12, 400 12px/1.5 system-ui, sans-serif);
+  color: var(--dsw-alias-label-secondary, #55555a);
+  text-wrap: pretty;
+}
 `;
 
     //#endregion styles
@@ -2268,6 +2303,16 @@ window.__ModuleLoader__.load({
           strokeLinejoin: 'round'
         })
       );
+    }
+
+    /**
+     * Fill `{name}` slots in a label. Copy stays one sentence in each language
+     * instead of being assembled from fragments that only read well in English.
+     */
+    function fill(template, values) {
+      return String(template).replace(/\{(\w+)\}/g, (match, name) => (
+        Object.prototype.hasOwnProperty.call(values, name) ? String(values[name]) : match
+      ));
     }
 
     function formatBytes(bytes) {
@@ -2748,6 +2793,27 @@ window.__ModuleLoader__.load({
               }, tr('neverRead'))
             )
           : null
+      );
+    }
+
+    /**
+     * The counter's third state: this conversation read nothing worth holding
+     * back. It reports what was read instead of a zero, because a zero is the
+     * absence of a result and reads like a broken counter.
+     */
+    function QuietCard({ conversation }) {
+      const files = conversation === null ? 0 : conversation.readFiles;
+      const tokens = conversation === null ? '—' : formatTokensCompact(conversation.tokens);
+      // Without a token estimate the sentence drops the clause rather than
+      // printing an em dash the reader has to interpret.
+      const known = tokens !== '—';
+      return h('div', { className: 'aicd-stat-quiet' },
+        h('span', { className: 'aicd-stat-quiet-icon', 'aria-hidden': 'true' }, h(Icon, { name: 'check', size: 14 })),
+        h('div', null,
+          h('div', { className: 'aicd-quiet-title' }, tr('heroQuietTitle')),
+          h('div', { className: 'aicd-quiet-line' },
+            fill(tr(known ? 'heroQuietLine' : 'heroQuietLineShort'), { files, tokens }))
+        )
       );
     }
 
@@ -3519,11 +3585,10 @@ window.__ModuleLoader__.load({
       // missing but there is something to hold back, or this conversation simply
       // never read junk. Reporting `0` for all three is what made the page feel
       // decorative.
+      const quiet = keptOut === 0 && pendingReads === 0;
       const headline = keptOut > 0
         ? { value: keptOut, label: tr(keptOut === 1 ? 'heroOne' : 'heroMany'), tone: 'good' }
-        : pendingReads > 0
-          ? { value: pendingReads, label: tr(pendingReads === 1 ? 'heroWouldOne' : 'heroWouldMany'), tone: 'warn' }
-          : { value: 0, label: tr('heroMany'), tone: 'neutral' };
+        : { value: pendingReads, label: tr(pendingReads === 1 ? 'heroWouldOne' : 'heroWouldMany'), tone: 'warn' };
 
       const applyNext = () => {
         if (potential === null || raised !== null) return;
@@ -3568,21 +3633,26 @@ window.__ModuleLoader__.load({
 
       return h('div', { className: 'aicd-body aicd-protect' },
         h('div', { className: 'aicd-stat' },
-          h('div', { className: 'aicd-stat-top' },
-            h('div', { className: 'aicd-stat-num', 'data-tone': headline.tone }, String(headline.value)),
-            h('div', { className: 'aicd-stat-label' }, headline.label)
-          ),
-          h('div', { className: 'aicd-stat-sub' }, headline.value === 0
-            ? tr('heroNoneCaption')
-            : h(null, null,
-                keptOut > 0
-                  ? `${tr('heroAbout')} ${formatTokensCompact(keptOutTokens)} ${tr('heroKept')}`
-                  : tr('heroWouldCaption'),
-                pendingReads > 0 && keptOut > 0
-                  ? ` · ${pendingReads} ${tr('heroStill')}`
-                  : null
-              )),
-          h('button', {
+          // When nothing was read that deserves holding back, a big "0" is not
+          // a result — it is the absence of one, and it reads like a broken
+          // counter. Say what the conversation did read instead, and drop the
+          // button that would have nothing to write.
+          quiet === true
+            ? h(QuietCard, { conversation })
+            : h('div', { className: 'aicd-stat-top' },
+                h('div', { className: 'aicd-stat-num', 'data-tone': headline.tone }, String(headline.value)),
+                h('div', { className: 'aicd-stat-label' }, headline.label)
+              ),
+          quiet === true ? null : h('div', { className: 'aicd-stat-sub' },
+            h(null, null,
+              keptOut > 0
+                ? `${tr('heroAbout')} ${formatTokensCompact(keptOutTokens)} ${tr('heroKept')}`
+                : tr('heroWouldCaption'),
+              pendingReads > 0 && keptOut > 0
+                ? ` · ${pendingReads} ${tr('heroStill')}`
+                : null
+            )),
+          quiet === true ? null : h('button', {
             type: 'button',
             className: 'aicd-btn',
             'data-variant': 'primary',
