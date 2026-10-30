@@ -136,6 +136,15 @@ test('what a rule keeps out is scored separately from what the conversation read
   assert.equal(after.coveredBytes, 4000);
   assert.deepEqual(after.covered.map((entry) => entry.path), ['dist/bundle.js']);
   assert.equal(after.covered[0].reason, 'listed in .aiignore');
+
+  // The counter on the protection page is the size of the whole conversation,
+  // not the size of the list the panel renders. It also has to say how much is
+  // still getting through, which is what Optimize has left to do.
+  assert.equal(off.coveredCount, 0);
+  assert.equal(off.noiseCount, 1);
+  assert.equal(after.coveredCount, 1);
+  assert.equal(after.noiseCount, 1);
+  assert.equal(after.coveredTokens.max > 0, true);
 });
 
 test('reads outside the folder are counted but never treated as project noise', () => {

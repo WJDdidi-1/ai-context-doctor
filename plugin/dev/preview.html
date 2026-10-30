@@ -235,7 +235,7 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
         return;
       }
       if (!Array.isArray(scenario.suggestedAiignore)) {
-        scenario.suggestedAiignore = name === 'noisy' ? ['dist/', 'package-lock.json'] : [];
+        scenario.suggestedAiignore = name === 'noisy' ? ['dist/', 'package-lock.json', '*.log', 'coverage/'] : [];
       }
       // The real report carries the suggestion inside `scanned`, next to the
       // effective score it explains.
@@ -273,13 +273,13 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
         dir: '', parent: null, total: 8, truncated: false,
         entries: [
           { name: 'src', path: 'src', type: 'dir', bytes: 0, badge: 'useful', ignored: false },
-          { name: 'dist', path: 'dist', type: 'dir', bytes: 918273, badge: 'noise', reason: 'generated build output', ignored: false },
+          { name: 'dist', path: 'dist', type: 'dir', bytes: 918273, badge: 'noise', reason: 'generated build output', ignored: false, suggestion: 'dist/' },
           { name: 'docs', path: 'docs', type: 'dir', bytes: 4096, badge: 'useful', ignored: false },
-          { name: 'package-lock.json', path: 'package-lock.json', type: 'file', bytes: 36044, badge: 'noise', reason: 'lockfile', ignored: true },
+          { name: 'package-lock.json', path: 'package-lock.json', type: 'file', bytes: 36044, badge: 'noise', reason: 'lockfile', ignored: true, suggestion: null },
           { name: 'README.md', path: 'README.md', type: 'file', bytes: 6210, badge: 'useful', ignored: false },
           { name: '.env.example', path: '.env.example', type: 'file', bytes: 412, badge: 'review', ignored: false },
-          { name: 'big-export.json', path: 'big-export.json', type: 'file', bytes: 4194304, badge: 'noise', reason: 'large file', ignored: false },
-          { name: 'dev.log', path: 'dev.log', type: 'file', bytes: 18841, badge: 'noise', reason: 'local log file', ignored: false }
+          { name: 'big-export.json', path: 'big-export.json', type: 'file', bytes: 4194304, badge: 'noise', reason: 'large file', ignored: false, suggestion: null },
+          { name: 'dev.log', path: 'dev.log', type: 'file', bytes: 18841, badge: 'noise', reason: 'local log file', ignored: false, suggestion: '*.log' }
         ]
       },
       src: {
@@ -288,6 +288,13 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
           { name: 'gen', path: 'src/gen', type: 'dir', bytes: 0, badge: 'useful', ignored: false },
           { name: 'index.js', path: 'src/index.js', type: 'file', bytes: 2048, badge: 'useful', ignored: false },
           { name: 'legacy.js', path: 'src/legacy.js', type: 'file', bytes: 90112, badge: 'review', ignored: false }
+        ]
+      },
+      dist: {
+        dir: 'dist', parent: '', total: 2, truncated: false,
+        entries: [
+          { name: 'bundle.js', path: 'dist/bundle.js', type: 'file', bytes: 153600, badge: 'noise', reason: 'generated build output', ignored: false, suggestion: 'dist/' },
+          { name: 'bundle.js.map', path: 'dist/bundle.js.map', type: 'file', bytes: 402000, badge: 'noise', reason: 'generated build output', ignored: false, suggestion: 'dist/' }
         ]
       },
       'src/gen': {
@@ -464,7 +471,23 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
             { path: 'dist/bundle.js', relativePath: 'dist/bundle.js', bytes: 150000, reason: 'generated build output' },
             { path: 'package-lock.json', relativePath: 'package-lock.json', bytes: 30224, reason: 'lockfile' }
           ],
-          suggestedAiignore: ['dist/', 'package-lock.json'],
+          // Two of the reads are junk, and whether the rules hold them back is
+          // what the headline counter reports. `__covered` lets the preview
+          // rehearse "after Optimize" without inventing a second scenario.
+          coveredCount: window.__covered ? 2 : 0,
+          noiseCount: 2,
+          coveredTokens: { min: 30000, max: 45000 },
+          stillNoiseTokens: { min: 30000, max: 45000 },
+          coveredBytes: window.__covered ? 180224 : 0,
+          covered: window.__covered
+            ? [
+                { path: 'dist/bundle.js', bytes: 150000, reason: 'listed in .aiignore' },
+                { path: 'package-lock.json', bytes: 30224, reason: 'listed in .aiignore' }
+              ]
+            : [],
+          // Two of these are already written into the scenario's .aiignore;
+          // the rest are what the Files page offers as one-click rules.
+          suggestedAiignore: ['dist/', 'package-lock.json', '*.log', 'coverage/'],
           reads: [
             { path: 'src/index.js', relativePath: 'src/index.js', bytes: 24000 },
             { path: 'src/legacy.js', relativePath: 'src/legacy.js', bytes: 90000 }
@@ -485,6 +508,7 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
       }
       if (url === '/aiignore/allow') return record({ allowed: true });
       if (url === '/aiignore/ignore') return record({ ignored: true, rule: String((body && body.path) || '') });
+      if (url === '/aiignore/rules') return record({ rule: String((body && body.rule) || ''), added: 1, created: false });
       if (url === '/aiignore/unignore') return record({ removed: true });
       if (url === '/aiignore/notes') return record({ written: true, removed: false });
       const FACTORS = [0, 0, 0.15, 0.35, 0.55, 0.75, 0.9];
