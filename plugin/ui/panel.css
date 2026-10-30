@@ -9,6 +9,16 @@
  */
 
 .aicd-panel {
+  /* A four-step interval and a four-step type ramp. Anything that needs a
+   * fifth value is usually a sign the block wants to be split, not styled. */
+  --aicd-s1: 4px;
+  --aicd-s2: 8px;
+  --aicd-s3: 14px;
+  --aicd-s4: 22px;
+  --aicd-fs-eyebrow: 11px;
+  --aicd-fs-meta: 12px;
+  --aicd-fs-body: 13px;
+  --aicd-fs-hero: 30px;
   --aicd-gap: 8px;
   --aicd-pad: 10px;
   --aicd-row-radius: var(--dsw-radius-md, 12px);
@@ -236,6 +246,8 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
+  padding-top: var(--aicd-s3, 14px);
+  border-top: 0.5px solid var(--aicd-hairline, rgba(127,127,127,0.2));
 }
 
 .aicd-list-head {
@@ -287,8 +299,8 @@
 .aicd-foot {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 2px;
+  gap: var(--aicd-s1, 4px);
+  margin-top: var(--aicd-s2, 8px);
   color: var(--dsw-alias-label-caption, #9a9a9a);
   font-size: 11px;
 }
@@ -478,6 +490,12 @@
   font: inherit;
   font-size: 12px;
   cursor: pointer;
+}
+
+.aicd-hint > .aicd-textbtn {
+  flex: none;
+  margin: 0 0 0 auto;
+  white-space: nowrap;
 }
 
 .aicd-textbtn:hover {
@@ -693,11 +711,18 @@
 
 /* ----------------------------------------------------------------- cards -- */
 
+/* One elevated surface per view: the counter and the one button that moves it.
+ * Everything under it sits flat on the page, separated by space rather than by
+ * another box, so the eye has one place to land first. */
+.aicd-protect > * + * {
+  margin-top: var(--aicd-s4, 22px);
+}
+
 .aicd-stat {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 16px;
+  gap: var(--aicd-s2, 8px);
+  padding: var(--aicd-s3, 14px);
   border: 0.5px solid var(--aicd-line, rgba(127,127,127,0.16));
   border-radius: var(--aicd-card-radius, 16px);
   background: var(--aicd-surface, rgba(127,127,127,0.05));
@@ -711,8 +736,9 @@
 
 .aicd-stat-num {
   color: var(--dsw-alias-label-primary, #1b1b1f);
-  font-size: 30px;
+  font-size: var(--aicd-fs-hero, 30px);
   font-weight: 600;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
   letter-spacing: -0.01em;
@@ -738,9 +764,9 @@
 }
 
 .aicd-stat-sub {
-  color: var(--dsw-alias-label-tertiary, #8b8b8b);
-  font-size: 11px;
-  line-height: 1.5;
+  color: var(--dsw-alias-label-secondary, #6b6b6b);
+  font-size: var(--aicd-fs-meta, 12px);
+  line-height: 1.45;
 }
 
 .aicd-stat-meta {
@@ -751,11 +777,11 @@
 
 .aicd-hint {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border: 0.5px solid var(--aicd-line, rgba(127,127,127,0.16));
-  border-radius: var(--dsw-radius-sm, 8px);
+  align-items: flex-start;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
 }
 
 .aicd-hint-text {
@@ -769,11 +795,13 @@
 .aicd-legend {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px;
-  border: 0.5px solid var(--aicd-line, rgba(127,127,127,0.16));
-  border-radius: var(--dsw-radius-sm, 8px);
-  background: var(--aicd-surface, rgba(127,127,127,0.05));
+  gap: 3px;
+  padding: 0 0 0 2px;
+  border: none;
+  border-radius: 0;
+  background: none;
+  font-size: var(--aicd-fs-eyebrow, 11px);
+  line-height: 1.45;
 }
 
 .aicd-legend-row {
@@ -809,6 +837,26 @@
 
 .aicd-legend-text {
   min-width: 0;
+}
+
+/* Grouping, not decoration: a bigger gap starts a new group, a small one only
+ * separates lines inside it. The two lists inside the file body are separate
+ * groups; the rows inside each are not. */
+.aicd-files .aicd-body > div + div {
+  margin-top: var(--aicd-s3, 14px);
+}
+
+.aicd-files .aicd-body > div + div > .aicd-list-head:first-child {
+  margin-top: var(--aicd-s1, 4px);
+}
+
+.aicd-files > .aicd-legend {
+  margin-top: calc(var(--aicd-s1, 4px) * -1);
+  margin-bottom: var(--aicd-s1, 4px);
+}
+
+.aicd-files > .aicd-suggest {
+  margin-bottom: var(--aicd-s2, 8px);
 }
 
 .aicd-suggest {
@@ -1049,7 +1097,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 3px 6px 3px 8px;
+  min-height: 26px;
+  padding: 1px 4px 1px 0;
   border-radius: var(--dsw-radius-sm, 8px);
 }
 
@@ -1187,9 +1236,10 @@
 .aicd-strength {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding-top: 12px;
-  border-top: 0.5px solid var(--aicd-hairline, rgba(127,127,127,0.2));
+  gap: var(--aicd-s1, 4px);
+  margin-top: var(--aicd-s4, 22px);
+  padding-top: 0;
+  border-top: none;
 }
 
 .aicd-strength-head {
@@ -1267,9 +1317,26 @@
 .aicd-opt {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px 0;
+  gap: var(--aicd-s2, 8px);
+  padding: var(--aicd-s3, 14px) 0 var(--aicd-s2, 8px);
   border-top: 0.5px solid var(--aicd-hairline, rgba(127,127,127,0.2));
+}
+
+.aicd-opt:last-child {
+  padding-bottom: 0;
+}
+
+/* A pointer to the tab that owns the control: one row, no paragraph. */
+.aicd-opt-row {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--aicd-s2, 8px);
+  padding-top: var(--aicd-s3, 14px);
+  border-top: none;
+}
+
+.aicd-opt-row .aicd-count {
+  margin-left: auto;
 }
 
 .aicd-opt:first-child {
@@ -1368,8 +1435,8 @@
 .aicd-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: var(--aicd-s2, 8px);
+  padding: 5px 8px;
   border-radius: var(--aicd-row-radius, 12px);
 }
 
