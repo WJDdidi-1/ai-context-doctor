@@ -1,3 +1,25 @@
+## 0.26.3
+
+**One shape for loading, empty and failure — and a failure that says why.**
+
+- Three surfaces now render from one component instead of three ad-hoc
+  branches: the panel body, the left page behind the guide tile, and the
+  strength table. Each of them shows a skeleton while a request is in flight,
+  a sentence when there is nothing to show, and an error with the actual
+  status when a request fails.
+- The failures that used to be silent are said out loud. The strength table
+  used to disappear entirely while loading or after a failed read — a blank
+  space between the slider and the rules looked like a broken layout. The
+  conversation read on Protection used to fail without a word, because the
+  error was captured and never rendered.
+- The reason is the reason. `useConversation` used to turn any non-2xx
+  response into the word `unavailable`, so a 500 and a 404 read the same; it
+  now carries the status through to `status 500`. The left page no longer
+  claims the plugin server is unreachable — it names the failed read and
+  offers a retry.
+- Every error block has a retry that reuses the same request, and the left
+  page no longer keeps counting rows it failed to load.
+
 ## 0.26.2
 
 **A dropdown that can be dismissed like every other menu.**

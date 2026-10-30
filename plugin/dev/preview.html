@@ -351,6 +351,7 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
         bound = decodeURIComponent(scannedCwd[1]);
       }
       if (url.indexOf('/aiignore/report') === 0) {
+        if (window.__failReport === true) return record({ error: 'no' }, 503);
         // `?nocwd=1` models the real failure: the panel has no session, so it
         // asks without a cwd and the Host has nothing to answer with.
         const blind = location.search.indexOf('nocwd') !== -1 && bound === null && url.indexOf('cwd=') === -1;
@@ -401,9 +402,11 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
         });
       }
       if (url.indexOf('/aiignore/conversations') === 0) {
+        if (window.__failConversations === true) return record({ error: 'no' }, 500);
         return record({ current: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50', conversations: conversationRows });
       }
       if (url.indexOf('/aiignore/conversation') === 0) {
+        if (window.__failConversations === true) return record({ error: 'no' }, 500);
         // A pinned conversation must answer with ITS numbers, otherwise the
         // preview cannot tell a working picker from a decorative one.
         const asked = url.match(/[?&]session=([^&]+)/);
@@ -486,6 +489,7 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
       if (url === '/aiignore/notes') return record({ written: true, removed: false });
       const FACTORS = [0, 0, 0.15, 0.35, 0.55, 0.75, 0.9];
       if (url.indexOf('/aiignore/levels') === 0) {
+        if (window.__failLevels === true) return record({ error: 'no' }, 500);
         const target = SCENARIOS[scenario];
         const raw = target && target.scanned ? target.scanned.healthScore : 22;
         return record({
@@ -692,6 +696,12 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
       this.textContent = dark ? 'light' : 'dark';
     });
+
+    // Failure switches as URL flags, so the three states can be opened cold
+    // (a state that only appears after a retry hides the first impression).
+    if (location.search.indexOf('failconv') !== -1) window.__failConversations = true;
+    if (location.search.indexOf('faillevels') !== -1) window.__failLevels = true;
+    if (location.search.indexOf('failreport') !== -1) window.__failReport = true;
 
     window.__preview = {
       scenario: function (name) {
