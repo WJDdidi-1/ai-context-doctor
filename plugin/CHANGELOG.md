@@ -1,3 +1,19 @@
+## 0.29.1
+
+**The requirements are written down where a reader looks before installing.**
+
+- `plugin/README.md` gained a Requirements table: Harness `>= 0.2.0` (the
+  release that ships `sidebarRightTabs`), Node.js 18, and no permissions at
+  all — no network, no key, no telemetry. It also says what happens on a
+  Harness without sidebar services: the same button opens a floating card.
+- The package keywords now name what people search for (`aiignore`,
+  `context-window`, `token-budget`, `noise`, `lockfile`, `sidebar`) instead of
+  only its own name.
+- The market index files the plugin under **Context quality** with three
+  labels — *No network calls*, *Works with no setup*, *Lives in the sidebar* —
+  and carries the same `engines.dsh` range on every version, so the Discover
+  page can filter it and an incompatible Harness can refuse it.
+
 ## 0.29.0
 
 **The panel is rebuilt on the host's own measurements, so it stops looking like a widget bolted onto the sidebar.**

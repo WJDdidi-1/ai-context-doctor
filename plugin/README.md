@@ -8,6 +8,17 @@ The scan is the same one the [`ai-context-doctor`](https://www.npmjs.com/package
 CLI runs; this package only decides *when* to run it and how to phrase the
 result for the model. Everything is local: no network, no API key, no upload.
 
+## Requirements
+
+| | |
+| --- | --- |
+| DeepSeek Harness | `>= 0.2.0` — the version that ships `sidebarRightTabs`; declared as `engines.dsh` in `package.json` and in every market-index entry, so an older Harness refuses the install instead of half-loading it |
+| Node.js | `>= 18` — the Host half uses `node:test` and `structuredClone` |
+| Permissions | none. No network, no API key, no telemetry; it reads the workspace and writes `.aiignore` and `.aiignore.policy.json` |
+
+Without a sidebar service the same button opens the panel as a floating card,
+so an older or trimmed-down Harness still gets the report, just not the tab.
+
 ## What the agent sees
 
 When a workspace scores below the threshold, the agent receives one short note
