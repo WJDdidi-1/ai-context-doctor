@@ -240,6 +240,27 @@ request failing), and `?nosidebar=1` to see the floating-card fallback. Open the
 file in a browser; no build, no server. It is a development page and is not part
 of the published package.
 
+### Visual baselines
+
+`docs/assets/baseline/` holds the eight screenshots the panel is measured
+against: four preview scenarios (*noisy*, *healthy*, *fresh*, *broken*) in both
+themes, cropped to the 420 × 660 the sidebar actually gives it. They are
+committed, not generated in CI — this repository has no headless browser.
+
+After an **intentional** visual change, re-capture all eight from
+`dev/preview.html` (scenario buttons, theme toggle) and rewrite
+`docs/assets/baseline/manifest.json` with each file's size and SHA-256. Then run:
+
+```
+node plugin/scripts/check-baseline.mjs
+```
+
+It fails when a baseline is missing, edited by hand, or left out of the
+manifest — the change that looks like a small fix but moves everything.
+
+The crop is fixed so the images stay comparable: with the preview open at
+1280 × 800, the panel occupies `(860, 66)` to `(1280, 726)`.
+
 ## Install
 
 Through the Plugin Manager:

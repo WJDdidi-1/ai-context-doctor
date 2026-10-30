@@ -1,0 +1,48 @@
+{
+  "crop": {
+    "height": 660,
+    "width": 420,
+    "x": 860,
+    "y": 66
+  },
+  "files": {
+    "broken-dark.png": {
+      "bytes": 24246,
+      "sha256": "5405e8095a7a2a6c4c5710434c214ee940ebc4fb676a2d57db185e6c813f34b2"
+    },
+    "broken-light.png": {
+      "bytes": 23586,
+      "sha256": "305e2a0ddb766e4dd8edd72fbeab6d6279f10a6c31b7e2c52f7a58610b08dbf9"
+    },
+    "fresh-dark.png": {
+      "bytes": 45075,
+      "sha256": "2dc5767aaa9648ffe588778dd92aca07242fa1aedb6ca62b12a377da46155698"
+    },
+    "fresh-light.png": {
+      "bytes": 43736,
+      "sha256": "8fb8c1150dd513f8ae18764444b89a5539a7fe8c7887f74b518da5881f5d6446"
+    },
+    "healthy-dark.png": {
+      "bytes": 43250,
+      "sha256": "8eaeb3d7f3ecff2a9881ada38d1eab2e77639c3d4bcd92bf2fb7b4a872bef34e"
+    },
+    "healthy-light.png": {
+      "bytes": 41870,
+      "sha256": "109b071b969ed3b8f4404b16014b16b300b2c26d6f129eadee620c28db51c955"
+    },
+    "noisy-dark.png": {
+      "bytes": 52102,
+      "sha256": "1d65c2a3d9ef7db80500410b7bc8d03a18e4e8b7123975bc5c2cbe5143292112"
+    },
+    "noisy-light.png": {
+      "bytes": 50551,
+      "sha256": "2dae5acae3f1dcadccf887857c1746f137dd02640ee4887bd990ec345b2ec701"
+    }
+  },
+  "note": "Visual baselines of the panel in dev/preview.html. Re-capture after an intentional visual change; checkBaseline fails when a file drifts.",
+  "source": "plugin/dev/preview.html",
+  "viewport": {
+    "height": 660,
+    "width": 420
+  }
+}
