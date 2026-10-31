@@ -3,6 +3,7 @@
 [![npm](https://img.shields.io/npm/v/ai-context-doctor)](https://www.npmjs.com/package/ai-context-doctor)
 [![CI](https://github.com/WJDdidi-1/ai-context-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/WJDdidi-1/ai-context-doctor/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/ai-context-doctor)](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/LICENSE)
+[![downloads](https://img.shields.io/npm/dm/ai-context-doctor)](https://www.npmjs.com/package/ai-context-doctor)
 
 [English README](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/README.md)
 
