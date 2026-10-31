@@ -149,3 +149,25 @@ test('Optimize posts once, then the score on screen is the one that came back', 
   assert.equal(stub.calls('/aiignore/optimize').length, 1, 'Optimize should post exactly once');
   assert.match(panel.text(), /96/, panel.text().slice(0, 300));
 });
+
+test('writing a rule re-scores the folder instead of leaving a stale number', async (t) => {
+  // The score is the last scan plus the rules in force. A rule written without a
+  // re-scan leaves a number on screen that describes rules which no longer exist.
+  const report = await realReport();
+  const withSkipped = {
+    ...report,
+    skipped: [{ path: 'dist/bundle.js', attempts: 2, bytes: 40_000, reason: 'noise' }],
+  };
+  const stub = createFetch(routes(report, {
+    '/aiignore/report': { body: withSkipped },
+    '/aiignore/ignore': { body: { ignored: true, rule: 'dist/**' } },
+    '/aiignore/scan': { body: { scanned: { files: 1, effectiveScore: 99 } } },
+  }));
+  const panel = await mountClient({ file: clientFile, fetch: stub });
+  t.after(() => panel.unmount());
+  const never = panel.must('[title="Never read"]');
+  never.click();
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  assert.equal(stub.calls('/aiignore/ignore').length, 1, 'the rule is written');
+  assert.equal(stub.calls('/aiignore/scan').length, 1, 'and the folder is scored again');
+});
