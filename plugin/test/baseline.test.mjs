@@ -27,6 +27,29 @@ test('each baseline is the file the manifest describes', () => {
   }
 });
 
+test('every baseline records the URL that reproduces it', () => {
+  // A baseline without its recipe is an opinion: the last three images drifted
+  // because they were taken with ?first=1 / ?failreport=1 and nothing said so.
+  for (const name of Object.keys(MANIFEST.files)) {
+    const url = MANIFEST.urls?.[name];
+    assert.ok(url, `${name} has no url in the manifest`);
+    const [scenario, theme] = name.replace(/\.png$/, '').split('-');
+    assert.match(url, new RegExp(`scenario=${scenario}\\b`), `${name} names its scenario`);
+    assert.match(url, new RegExp(`theme=${theme}\\b`), `${name} names its theme`);
+  }
+});
+
+test('the preview takes its scenario and theme from the URL', () => {
+  const preview = fs.readFileSync(path.join(ROOT, 'plugin', 'dev', 'preview.html'), 'utf8');
+  assert.match(preview, /PARAMS\.get\('scenario'\)/);
+  assert.match(preview, /PARAMS\.get\('theme'\)/);
+  // Before the first render, or a screenshot catches the flip.
+  const themeAt = preview.indexOf("setAttribute('data-theme', initialTheme)");
+  const renderAt = preview.indexOf('ReactLite.rerender');
+  assert.notEqual(themeAt, -1, 'the initial theme is applied');
+  assert.ok(themeAt < renderAt, 'the theme is set before the first render');
+});
+
 test('the panel size the baselines were taken at is recorded', () => {
   assert.deepEqual(MANIFEST.viewport, { width: 420, height: 660 });
   assert.equal(MANIFEST.source, 'plugin/dev/preview.html');

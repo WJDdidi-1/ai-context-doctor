@@ -1,3 +1,16 @@
+## 0.37.1
+
+A baseline you cannot reproduce is an opinion, and a dash is not a score.
+
+- The preview now takes `?scenario=` and `?theme=` from the URL, so every
+  screenshot is a cold load of the address that produced it. The manifest
+  records that address per file, and both `check-baseline` and the test suite
+  fail when an image has no recipe — three of the eight had drifted because
+  they were captured with flags nobody wrote down.
+- A folder nobody has scanned says "Not scanned yet" instead of printing `—`
+  under "Score before rules". No score is not the score zero, and it is not a
+  broken scoreboard either: the line under it says what pressing Optimize does.
+
 ## 0.37.0
 
 **The first screen is a score, and the button is always there.**

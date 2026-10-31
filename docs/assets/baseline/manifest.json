@@ -7,20 +7,20 @@
   },
   "files": {
     "broken-dark.png": {
-      "bytes": 22877,
-      "sha256": "fd66ca926597d552c264cb100145fdced4d7c98135825c08ba8a70b1795785a6"
+      "bytes": 15268,
+      "sha256": "65b2a06df0be1f3272a1dfe71c2009f2779ec0ad93536e38b962db1b8ef3ac47"
     },
     "broken-light.png": {
-      "bytes": 22028,
-      "sha256": "6f763a41c6e614dd993f42f06890fc261e96e7ab130702f5734dc4ee6894907b"
+      "bytes": 14762,
+      "sha256": "d8eac67c4aad2b5712b70e3305f4e28f49ebc9700eadccf4922dfc5be935ab22"
     },
     "fresh-dark.png": {
-      "bytes": 48012,
-      "sha256": "56058846343e4471d96ab0cbbb6d247e5409e03f29e58470c16519408afb4988"
+      "bytes": 34087,
+      "sha256": "e4ce3f37cb7bd71b69f1a43d68876b6311322bc3dac76008fa8e9fea1b96da6a"
     },
     "fresh-light.png": {
-      "bytes": 46598,
-      "sha256": "383faf50447babfc44a607c4cafc224dd27db558525496acf115ce3f30f828bc"
+      "bytes": 32932,
+      "sha256": "af169a6be73798961f98c7186ae847508da6ec616555ce500475ff1f21952649"
     },
     "healthy-dark.png": {
       "bytes": 34889,
@@ -41,6 +41,16 @@
   },
   "note": "Visual baselines of the panel in dev/preview.html. Re-capture after an intentional visual change; checkBaseline fails when a file drifts.",
   "source": "plugin/dev/preview.html",
+  "urls": {
+    "broken-dark.png": "preview.html?scenario=broken&theme=dark",
+    "broken-light.png": "preview.html?scenario=broken&theme=light",
+    "fresh-dark.png": "preview.html?scenario=fresh&theme=dark",
+    "fresh-light.png": "preview.html?scenario=fresh&theme=light",
+    "healthy-dark.png": "preview.html?scenario=healthy&theme=dark",
+    "healthy-light.png": "preview.html?scenario=healthy&theme=light",
+    "noisy-dark.png": "preview.html?scenario=noisy&theme=dark",
+    "noisy-light.png": "preview.html?scenario=noisy&theme=light"
+  },
   "viewport": {
     "height": 660,
     "width": 420

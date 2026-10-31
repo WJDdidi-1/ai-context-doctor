@@ -57,6 +57,8 @@ window.__ModuleLoader__.load({
         scoreBeforeLabel: 'Score before rules',
         scoreAfterLabel: 'Score after rules',
         scoreBeforeHint: 'Nothing applied yet. Optimize writes the rules this folder needs, then scores it again.',
+        scoreUnknownLabel: 'Not scanned yet',
+        scoreUnknownHint: 'Nothing here has been read yet. Optimize scans the folder, writes the rules it needs, and scores it.',
         strengthFold: 'Fine-tune the strength',
         heroOne: 'read held back by your rules',
         heroMany: 'reads held back by your rules',
@@ -242,6 +244,8 @@ window.__ModuleLoader__.load({
         scoreBeforeLabel: '规则生效前的评分',
         scoreAfterLabel: '规则生效后的评分',
         scoreBeforeHint: '还没有应用任何规则。点优化，写入这个文件夹需要的规则，然后重新评分。',
+        scoreUnknownLabel: '还没有扫描',
+        scoreUnknownHint: '这里还没有读过任何东西。点优化会扫描这个文件夹、写入它需要的规则，然后评分。',
         strengthFold: '微调力度',
         heroOne: '次读取被你的规则挡住',
         heroMany: '次读取被你的规则挡住',
@@ -1180,6 +1184,12 @@ window.__ModuleLoader__.load({
 
 .aicd-stat-num[data-tone="bad"] {
   color: var(--dsw-alias-state-error-primary, #c94a4a);
+}
+
+.aicd-stat-lead {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary, #1b1b1f);
 }
 
 .aicd-stat-label {
@@ -3567,8 +3577,14 @@ window.__ModuleLoader__.load({
       // (press, watch the number move) has already happened without the user.
       const applied = rules.length > 0 && typeof scored.effectiveScore === 'number';
       const shownScore = applied === true ? scored.effectiveScore : firstScore;
+      // No score is not the score zero: a folder nobody has scanned yet has no
+      // number to show, and a dash under "Score before rules" reads as a broken
+      // scoreboard rather than as an invitation to press the button.
+      const unscored = shownScore === null;
       const quiet = keptOut === 0 && pendingReads === 0;
-      const subline = applied === true
+      const subline = unscored === true
+        ? tr('scoreUnknownHint')
+        : applied === true
         ? `${firstScore} → ${shownScore}${
             keptOut > 0 ? ` · ${keptOut} ${tr(keptOut === 1 ? 'heroOne' : 'heroMany')}` : ''
           }${
@@ -3629,13 +3645,15 @@ window.__ModuleLoader__.load({
 
       return h('div', { className: 'aicd-body aicd-protect' },
         h('div', { className: 'aicd-stat' },
-          h('div', { className: 'aicd-stat-top' },
-            h('div', {
-              className: 'aicd-stat-num',
-              'data-tone': applied === true ? 'good' : undefined
-            }, shownScore === null ? '—' : String(shownScore)),
-            h('div', { className: 'aicd-stat-label' }, tr(applied === true ? 'scoreAfterLabel' : 'scoreBeforeLabel'))
-          ),
+          unscored === true
+            ? h('div', { className: 'aicd-stat-label aicd-stat-lead' }, tr('scoreUnknownLabel'))
+            : h('div', { className: 'aicd-stat-top' },
+              h('div', {
+                className: 'aicd-stat-num',
+                'data-tone': applied === true ? 'good' : undefined
+              }, String(shownScore)),
+              h('div', { className: 'aicd-stat-label' }, tr(applied === true ? 'scoreAfterLabel' : 'scoreBeforeLabel'))
+            ),
           h('div', { className: 'aicd-stat-sub' }, subline),
           h('button', {
             type: 'button',

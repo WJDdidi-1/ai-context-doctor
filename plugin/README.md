@@ -264,9 +264,20 @@ against: four preview scenarios (*noisy*, *healthy*, *fresh*, *broken*) in both
 themes, cropped to the 420 × 660 the sidebar actually gives it. They are
 committed, not generated in CI — this repository has no headless browser.
 
-After an **intentional** visual change, re-capture all eight from
-`dev/preview.html` (scenario buttons, theme toggle) and rewrite
-`docs/assets/baseline/manifest.json` with each file's size and SHA-256. Then run:
+After an **intentional** visual change, re-capture all eight. Each one is a
+cold load of its own URL, which the manifest records per file:
+
+```
+dev/preview.html?scenario=noisy&theme=light
+dev/preview.html?scenario=noisy&theme=dark
+...  (healthy, fresh, broken × light, dark)
+```
+
+Open each URL at 1280 × 800, crop to the panel, and rewrite
+`docs/assets/baseline/manifest.json` with each file's size, SHA-256 and URL.
+The URL is not decoration: three baselines once drifted because they had been
+taken with `?first=1` and `?failreport=1` and nothing recorded it, so the
+difference looked like a rendering bug. Then run:
 
 ```
 node plugin/scripts/check-baseline.mjs
@@ -276,7 +287,8 @@ It fails when a baseline is missing, edited by hand, or left out of the
 manifest — the change that looks like a small fix but moves everything.
 
 The crop is fixed so the images stay comparable: with the preview open at
-1280 × 800, the panel occupies `(860, 66)` to `(1280, 726)`.
+1280 × 800, the panel occupies `(861, 100)` to `(1281, 760)` — the preview's own
+toolbar sits above it, and a crop that included it would compare the harness.
 
 ## Install
 
