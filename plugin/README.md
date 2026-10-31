@@ -52,8 +52,10 @@ this doing anything?*
 - **Protection** — a score, one button, and nothing else competing with them.
   The number is the folder's own score: *before rules* on a fresh install, and
   *after rules* once rules exist, with the line underneath reading `22 → 71`
-  and how many tokens stay out. A conversation that read nothing junk-worthy
-  says so in words instead of a zero. **Optimize now** is always there — it
+  and how many tokens stay out. A folder nobody has scanned says *not scanned
+  yet* rather than printing a dash under a label that promises a number, and a
+  conversation that read nothing junk-worthy says so in words instead of a
+  zero. **Optimize now** is always there — it
   rescans, writes whatever is missing, re-scores, and reports what moved, so
   the interaction is: look, press, watch the number change.
   The **strength ladder** is one click away in *Fine-tune the strength*: five
