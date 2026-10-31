@@ -16,22 +16,25 @@ function region(name, stop) {
   return CLIENT.slice(start, CLIENT.indexOf(stop, start));
 }
 
-test('the card opens on the score the folder has before any rule', () => {
+test('the card shows one score: the current one, whatever the rules are', () => {
   const view = region('ProtectView', 'function SummaryPage');
   assert.match(view, /const firstScore = typeof scored\.healthScore === 'number'/);
-  // Rules, not the arithmetic, decide which score is on screen: a first open
-  // must show the folder as it is, or the press it invites has already happened.
-  assert.match(view, /const applied = rules\.length > 0 && typeof scored\.effectiveScore === 'number';/);
-  assert.match(view, /const shownScore = applied === true \? scored\.effectiveScore : firstScore;/);
-  assert.match(view, /tr\(applied === true \? 'scoreAfterLabel' : 'scoreBeforeLabel'\)/);
+  // One number, always the current one. Switching between "before" and "after"
+  // depending on whether a folder happened to have rules made two folders
+  // answer the same question with different kinds of number.
+  assert.match(view, /const shownScore = typeof scored\.effectiveScore === 'number' \? scored\.effectiveScore : firstScore;/);
+  assert.match(view, /tr\('scoreCurrentLabel'\)/);
+  assert.equal(/scoreBeforeLabel|scoreAfterLabel/.test(view), false, 'no two-state label survives');
 });
 
-test('the score card says what moved after Optimize', () => {
+test('the subline says what is held back, never a before → after pair', () => {
   const view = region('ProtectView', 'function SummaryPage');
   // A folder nobody scanned has no number at all; saying "not scanned yet" is
-  // the honest headline, and the before → after line belongs to the next branch.
+  // the honest headline. The rest of the line is about what the rules hold
+  // back, not about two scores that only ever appear together.
   assert.match(view, /const subline = unscored === true\s*\? tr\('scoreUnknownHint'\)/);
-  assert.match(view, /applied === true\s*\? `\$\{firstScore\} → \$\{shownScore\}/);
+  assert.match(view, /: keptOut > 0/);
+  assert.equal(/\$\{firstScore\} → \$\{shownScore\}/.test(view), false, 'the arrow pair is gone');
   assert.match(view, /: tr\('scoreBeforeHint'\)/);
 });
 

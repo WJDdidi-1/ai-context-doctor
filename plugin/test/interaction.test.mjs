@@ -61,13 +61,46 @@ function routes(report, overrides = {}) {
   };
 }
 
-test('the panel mounts and shows the score the host sent', async (t) => {
+test('the score on screen is the current one, not a before/after pair', async (t) => {
+  // The card used to switch between "before" and "after" depending on whether
+  // the folder happened to have rules, so two folders answered the same
+  // question with different kinds of number. One number now: the score with the
+  // rules and the strength in force.
   const report = await realReport();
   const panel = await mountClient({ file: clientFile, fetch: createFetch(routes(report)) });
   t.after(() => panel.unmount());
-  assert.match(panel.text(), /Score before rules/);
-  assert.ok(panel.text().includes(String(report.scanned.healthScore)), panel.text().slice(0, 200));
+  assert.match(panel.text(), /Current score/);
+  assert.doesNotMatch(panel.text(), /Score before rules/);
+  assert.ok(
+    panel.text().includes(String(report.scanned.effectiveScore)),
+    `the current score (${report.scanned.effectiveScore}) should be on screen: ${panel.text().slice(0, 200)}`,
+  );
   assert.equal(panel.queryAll('[role="tab"]').length, 3);
+});
+
+test('the panel asks for the conversation it belongs to, not the newest one', async (t) => {
+  // Switching conversations does not write a log, so the host's "newest file"
+  // guess keeps answering with the conversation the user just left. The slot
+  // knows the id; the panel has to say it.
+  const report = await realReport();
+  const stub = createFetch(routes(report));
+  const panel = await mountClient({
+    file: clientFile,
+    fetch: stub,
+    props: { sessionId: 'session-abc' },
+  });
+  t.after(() => panel.unmount());
+  const asked = stub.calls('/aiignore/conversation');
+  assert.ok(asked.length > 0, 'the panel should read the conversation');
+  assert.equal(asked[0].search, '?session=session-abc');
+});
+
+test('without a session id the panel still asks, and lets the host answer', async (t) => {
+  const report = await realReport();
+  const stub = createFetch(routes(report));
+  const panel = await mountClient({ file: clientFile, fetch: stub });
+  t.after(() => panel.unmount());
+  assert.equal(stub.calls('/aiignore/conversation')[0].search, '');
 });
 
 test('the tabs answer to the keyboard, not only to the mouse', async (t) => {
