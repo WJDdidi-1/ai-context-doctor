@@ -28,8 +28,18 @@ test('the card opens on the score the folder has before any rule', () => {
 
 test('the score card says what moved after Optimize', () => {
   const view = region('ProtectView', 'function SummaryPage');
-  assert.match(view, /const subline = applied === true\s*\? `\$\{firstScore\} → \$\{shownScore\}/);
+  // A folder nobody scanned has no number at all; saying "not scanned yet" is
+  // the honest headline, and the before → after line belongs to the next branch.
+  assert.match(view, /const subline = unscored === true\s*\? tr\('scoreUnknownHint'\)/);
+  assert.match(view, /applied === true\s*\? `\$\{firstScore\} → \$\{shownScore\}/);
   assert.match(view, /: tr\('scoreBeforeHint'\)/);
+});
+
+test('a folder with no score says so instead of printing a dash', () => {
+  const view = region('ProtectView', 'function SummaryPage');
+  assert.match(view, /const unscored = shownScore === null;/);
+  assert.match(view, /unscored === true\s*\n\s*\? h\('div', \{ className: 'aicd-stat-label aicd-stat-lead' \}, tr\('scoreUnknownLabel'\)\)/);
+  assert.equal(/shownScore \?\? '—'/.test(view), false, 'the dash is gone');
 });
 
 test('the button is always there, even when nothing is worth writing', () => {

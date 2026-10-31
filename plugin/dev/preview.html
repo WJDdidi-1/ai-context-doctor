@@ -305,7 +305,14 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
       }
     };
 
-    let scenario = 'noisy';
+    // A baseline has to be reproducible from its URL alone: `?scenario=broken&theme=dark`
+    // is the whole recipe, so a stale image is a diff and not an argument.
+    const PARAMS = new URLSearchParams(location.search);
+    let scenario = PARAMS.get('scenario') || 'noisy';
+    const initialTheme = PARAMS.get('theme') === 'dark' ? 'dark' : 'light';
+    // Set before anything renders: a screenshot taken after a late flip is a
+    // baseline of the wrong theme.
+    document.documentElement.setAttribute('data-theme', initialTheme);
     const calls = [];
 
     // Thumbnails are real <img> requests, which the mock fetch cannot answer:
@@ -755,6 +762,11 @@ html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot
       const dark = document.documentElement.getAttribute('data-theme') !== 'dark';
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
       this.textContent = dark ? 'light' : 'dark';
+    });
+
+    document.getElementById('theme').textContent = initialTheme === 'dark' ? 'light' : 'dark';
+    document.querySelectorAll('[data-scenario]').forEach(function (button) {
+      button.setAttribute('aria-pressed', button.getAttribute('data-scenario') === scenario ? 'true' : 'false');
     });
 
     // Failure switches as URL flags, so the three states can be opened cold

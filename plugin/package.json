@@ -1,6 +1,6 @@
 {
   "name": "dsh-aiignore",
-  "version": "0.37.0",
+  "version": "0.37.1",
   "description": "See what a conversation feeds the model, what your rules keep out, and what one click would change.",
   "license": "Apache-2.0",
   "type": "module",

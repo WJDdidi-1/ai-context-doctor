@@ -766,6 +766,12 @@
   color: var(--dsw-alias-state-error-primary, #c94a4a);
 }
 
+.aicd-stat-lead {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary, #1b1b1f);
+}
+
 .aicd-stat-label {
   min-width: 0;
   color: var(--dsw-alias-label-secondary, #6b6b6b);

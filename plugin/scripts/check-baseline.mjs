@@ -31,6 +31,22 @@ if (!fs.existsSync(MANIFEST)) {
     fail(`expected 8 baselines (four scenarios × two themes), manifest lists ${names.length}`);
   }
 
+  // Every image has to name the URL that produces it. Three of these were once
+  // captured with query flags nobody wrote down, so they could not be
+  // reproduced and the drift looked like a rendering bug.
+  const urls = manifest.urls || {};
+  for (const name of names) {
+    const url = urls[name];
+    if (typeof url !== 'string' || url === '') {
+      fail(`${name} has no url in the manifest, so nobody can re-capture it`);
+      continue;
+    }
+    const [scenario, theme] = name.replace(/\.png$/, '').split('-');
+    if (!url.includes(`scenario=${scenario}`) || !url.includes(`theme=${theme}`)) {
+      fail(`${name} records ${url}, which does not reproduce ${scenario}/${theme}`);
+    }
+  }
+
   for (const name of names) {
     const file = path.join(DIR, name);
     if (!fs.existsSync(file)) {
