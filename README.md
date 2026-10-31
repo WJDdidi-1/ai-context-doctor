@@ -183,6 +183,21 @@ five-dimension arithmetic. It follows the Harness light and dark themes.
 
 It declares `engines.dsh: ">=0.2.0"` — the Harness checks that range before installing, and refuses the plugin rather than half-loading it — and needs Node.js 18 or newer. In the [plugin market index](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/market/index.json) it is filed under **Context quality** with three labels: *No network calls*, *Works with no setup*, *Lives in the sidebar*. Without a sidebar service the same button opens the panel as a floating card. The source, its configuration and its limits are in [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
 
+## Building your own plugin?
+
+The checks that decide whether a Harness plugin installs — the host range, the
+root export the loader mounts, `dsh.client` agreeing with `exports["./client"]`,
+and whether `npm pack` actually ships the panel — are the ones
+[`dsh-plugin-toolkit`](https://github.com/WJDdidi-1/dsh-plugin-toolkit) runs
+before you publish:
+
+```bash
+npx dsh-plugin-toolkit@latest verify .
+```
+
+It also has a panel of the same checks inside the Harness, and it is what this
+repository's own plugin is released with.
+
 ## What counts as noise
 
 - **Directories:** `dist/`, `build/`, `coverage/`, `.next/`, `.turbo/`
