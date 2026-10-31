@@ -3,6 +3,7 @@
 [![npm](https://img.shields.io/npm/v/ai-context-doctor)](https://www.npmjs.com/package/ai-context-doctor)
 [![CI](https://github.com/WJDdidi-1/ai-context-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/WJDdidi-1/ai-context-doctor/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/ai-context-doctor)](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/LICENSE)
+[![downloads](https://img.shields.io/npm/dm/ai-context-doctor)](https://www.npmjs.com/package/ai-context-doctor)
 
 [中文说明](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/docs/README.zh-CN.md)
 
@@ -153,6 +154,8 @@ console.log(report.healthScore, report.topNoise);
 `scanRepository(root, { maxFiles, maxBytes })` is synchronous and has no dependencies. Pass a cap for huge trees; the report then carries `truncated: true`.
 
 ## DeepSeek Harness plugin
+
+[![checked with dsh-plugin-toolkit](https://raw.githubusercontent.com/WJDdidi-1/dsh-plugin-toolkit/main/docs/badge.svg)](https://github.com/WJDdidi-1/dsh-plugin-toolkit)
 
 [`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore) packages the same scan as a Host plugin. When a session opens a workspace, the agent gets one short note naming the files that would waste its context — and nothing at all when the workspace is clean.
 
