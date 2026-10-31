@@ -41,6 +41,12 @@
           "en": "Lives in the sidebar",
           "zh-cn": "在侧栏里"
         }
+      },
+      "network-optional": {
+        "title": {
+          "en": "Network only when asked",
+          "zh-cn": "按需联网"
+        }
       }
     }
   },
@@ -585,7 +591,7 @@
     {
       "name": "dsh-plugin-toolkit",
       "title": "Plugin doctor",
-      "description": "Runs the checks the market runs on any plugin folder — manifest, host range, and whether the tarball actually ships the panel — and says which one would fail. Same package also ships the CLI: init, verify, mount, dev and release.",
+      "description": "Runs the checks the market runs on any plugin folder or GitHub repository — manifest, host range, and whether the tarball actually ships the panel — and says which one would fail. Same package also ships the CLI: init, verify, mount, dev and release.",
       "author": "WJDdidi-1",
       "homepage": "https://github.com/WJDdidi-1/dsh-plugin-toolkit",
       "repository": {
@@ -598,14 +604,26 @@
           "preflight",
           "release",
           "testing",
+          "github",
           "sidebar"
         ],
         "labels": [
-          "no-network",
-          "sidebar-tab"
+          "sidebar-tab",
+          "zero-setup",
+          "network-optional"
         ]
       },
       "versions": [
+        {
+          "version": "0.13.0",
+          "publishTimestamp": 1793437467,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
         {
           "version": "0.12.0",
           "publishTimestamp": 1793435225,
