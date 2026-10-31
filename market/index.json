@@ -2,24 +2,24 @@
   "format": 1,
   "title": {
     "en": "AI Context Doctor",
-    "zh-cn": "AI \u4e0a\u4e0b\u6587\u533b\u751f"
+    "zh-cn": "AI 上下文医生"
   },
   "description": {
     "en": "A plugin index for AI Context Doctor, which warns you when a repository would flood your agent's context.",
-    "zh-cn": "AI Context Doctor \u7684\u63d2\u4ef6\u7d22\u5f15\uff1a\u5f53\u4ed3\u5e93\u4f1a\u6df9\u6ca1\u667a\u80fd\u4f53\u4e0a\u4e0b\u6587\u65f6\u7ed9\u51fa\u63d0\u9192\u3002"
+    "zh-cn": "AI Context Doctor 的插件索引：当仓库会淹没智能体上下文时给出提醒。"
   },
   "metadata": {
     "categories": {
       "context": {
         "title": {
           "en": "Context quality",
-          "zh-cn": "\u4e0a\u4e0b\u6587\u8d28\u91cf"
+          "zh-cn": "上下文质量"
         }
       },
       "developer": {
         "title": {
           "en": "Developer tools",
-          "zh-cn": "\u5f00\u53d1\u8005\u5de5\u5177"
+          "zh-cn": "开发者工具"
         }
       }
     },
@@ -27,19 +27,19 @@
       "no-network": {
         "title": {
           "en": "No network calls",
-          "zh-cn": "\u4e0d\u8054\u7f51"
+          "zh-cn": "不联网"
         }
       },
       "zero-setup": {
         "title": {
           "en": "Works with no setup",
-          "zh-cn": "\u88c5\u597d\u5373\u7528"
+          "zh-cn": "装好即用"
         }
       },
       "sidebar-tab": {
         "title": {
           "en": "Lives in the sidebar",
-          "zh-cn": "\u5728\u4fa7\u680f\u91cc"
+          "zh-cn": "在侧栏里"
         }
       }
     }
@@ -573,6 +573,42 @@
         {
           "version": "0.1.1",
           "publishTimestamp": 1793381768,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-plugin-toolkit",
+      "title": "Plugin doctor",
+      "description": "Runs the checks the market runs on any plugin folder — manifest, host range, and whether the tarball actually ships the panel — and says which one would fail. Same package also ships the CLI: init, verify, mount, dev and release.",
+      "author": "WJDdidi-1",
+      "homepage": "https://github.com/WJDdidi-1/dsh-plugin-toolkit",
+      "repository": {
+        "url": "https://github.com/WJDdidi-1/dsh-plugin-toolkit"
+      },
+      "metadata": {
+        "category": "developer",
+        "keywords": [
+          "plugin-tooling",
+          "preflight",
+          "release",
+          "testing",
+          "sidebar"
+        ],
+        "labels": [
+          "no-network",
+          "sidebar-tab"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.8.0",
+          "publishTimestamp": 1793415345,
           "source": {
             "type": "npm"
           },
