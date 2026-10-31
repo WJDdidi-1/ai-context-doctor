@@ -54,8 +54,7 @@ window.__ModuleLoader__.load({
         tabFiles: 'Files',
         tabProtect: 'Protection',
         tabSettings: 'Settings',
-        scoreBeforeLabel: 'Score before rules',
-        scoreAfterLabel: 'Score after rules',
+        scoreCurrentLabel: 'Current score',
         scoreBeforeHint: 'Nothing applied yet. Optimize writes the rules this folder needs, then scores it again.',
         scoreUnknownLabel: 'Not scanned yet',
         scoreUnknownHint: 'Nothing here has been read yet. Optimize scans the folder, writes the rules it needs, and scores it.',
@@ -241,8 +240,7 @@ window.__ModuleLoader__.load({
         tabFiles: '文件',
         tabProtect: '保护',
         tabSettings: '设置',
-        scoreBeforeLabel: '规则生效前的评分',
-        scoreAfterLabel: '规则生效后的评分',
+        scoreCurrentLabel: '当前评分',
         scoreBeforeHint: '还没有应用任何规则。点优化，写入这个文件夹需要的规则，然后重新评分。',
         scoreUnknownLabel: '还没有扫描',
         scoreUnknownHint: '这里还没有读过任何东西。点优化会扫描这个文件夹、写入它需要的规则，然后评分。',
@@ -2496,16 +2494,19 @@ window.__ModuleLoader__.load({
      * its title, what it read, and what those reads cost. `pinnedSession` lets the
      * user look at another conversation without leaving this one.
      */
-    function useConversation(pinnedSession, nonce) {
+    function useConversation(sessionId, nonce) {
       const [conv, setConv] = useState(null);
       const [error, setError] = useState(null);
       const [tick, setTick] = useState(0);
 
       useEffect(() => {
         let live = true;
-        const target = pinnedSession === null
-          ? '/aiignore/conversation'
-          : `/aiignore/conversation?session=${encodeURIComponent(pinnedSession)}`;
+        // Always name the conversation. Without an id the Host half answers with
+        // "the session that wrote last", which is wrong the moment the user
+        // switches back to an older conversation: switching does not write.
+        const target = typeof sessionId === 'string' && sessionId.length > 0
+          ? `/aiignore/conversation?session=${encodeURIComponent(sessionId)}`
+          : '/aiignore/conversation';
         fetch(target, { headers: { accept: 'application/json' } })
           // Keep the status: "unavailable" told the reader nothing, while the
           // status is the one fact that says whether retrying can help.
@@ -2531,7 +2532,7 @@ window.__ModuleLoader__.load({
         // Optimize, a new notch, a rescan. Without it the counter kept the
         // numbers from before the click until the next poll, which is exactly
         // the "nothing happened" the page was accused of.
-      }, [pinnedSession, tick, nonce]);
+      }, [sessionId, tick, nonce]);
 
       return { conv, error };
     }
@@ -3575,8 +3576,12 @@ window.__ModuleLoader__.load({
       // alone can move the effective score, and a first open with no rules must
       // still show the folder as it is — otherwise the interaction it invites
       // (press, watch the number move) has already happened without the user.
-      const applied = rules.length > 0 && typeof scored.effectiveScore === 'number';
-      const shownScore = applied === true ? scored.effectiveScore : firstScore;
+      // One number, always the current one: the folder scored with the rules and
+      // the strength in force right now. Switching between "before" and "after"
+      // depending on whether a folder happens to have rules made two folders
+      // answer the same question with different kinds of number.
+      const shownScore = typeof scored.effectiveScore === 'number' ? scored.effectiveScore : firstScore;
+      const applied = shownScore !== null;
       // No score is not the score zero: a folder nobody has scanned yet has no
       // number to show, and a dash under "Score before rules" reads as a broken
       // scoreboard rather than as an invitation to press the button.
@@ -3584,10 +3589,8 @@ window.__ModuleLoader__.load({
       const quiet = keptOut === 0 && pendingReads === 0;
       const subline = unscored === true
         ? tr('scoreUnknownHint')
-        : applied === true
-        ? `${firstScore} → ${shownScore}${
-            keptOut > 0 ? ` · ${keptOut} ${tr(keptOut === 1 ? 'heroOne' : 'heroMany')}` : ''
-          }${
+        : keptOut > 0
+        ? `${keptOut} ${tr(keptOut === 1 ? 'heroOne' : 'heroMany')}${
             keptOutTokens === null ? '' : ` · ${formatTokensCompact(keptOutTokens)} ${tr('heroKept')}`
           }`
         : pendingReads > 0
@@ -3652,7 +3655,7 @@ window.__ModuleLoader__.load({
                 className: 'aicd-stat-num',
                 'data-tone': applied === true ? 'good' : undefined
               }, String(shownScore)),
-              h('div', { className: 'aicd-stat-label' }, tr(applied === true ? 'scoreAfterLabel' : 'scoreBeforeLabel'))
+              h('div', { className: 'aicd-stat-label' }, tr('scoreCurrentLabel'))
             ),
           h('div', { className: 'aicd-stat-sub' }, subline),
           h('button', {
@@ -4159,7 +4162,12 @@ window.__ModuleLoader__.load({
       // Bumped whenever an action changes what the conversation's rules cover.
       const [convNonce, setConvNonce] = useState(0);
       const refreshConversation = useCallback(() => setConvNonce((value) => value + 1), []);
-      const { conv, error: convError } = useConversation(pinnedSession, convNonce);
+      // The slot is rendered per conversation, so its id is the one fact that
+      // says which conversation is in front of the user. Pinning another one is
+      // a deliberate act; following is the default and must be exact.
+      const liveSession = typeof props.sessionId === 'string' && props.sessionId.length > 0 ? props.sessionId : null;
+      const shownSession = pinnedSession !== null ? pinnedSession : liveSession;
+      const { conv, error: convError } = useConversation(shownSession, convNonce);
       const [view, setView] = useState('protect');
       const [pending, setPending] = useState(null);
       const [postError, setPostError] = useState(null);
@@ -4175,7 +4183,10 @@ window.__ModuleLoader__.load({
         })
           .then((response) => response.json())
           .then((payload) => {
-            if (done(payload)) reloadTree();
+            // The score is computed from the last scan plus the rules in force.
+            // Writing a rule without re-scoring would leave the number on screen
+            // describing rules that no longer exist.
+            if (done(payload)) rescan();
             else setPostError('refused');
           })
           .catch(() => setPostError('failed'))

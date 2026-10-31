@@ -1,3 +1,26 @@
+## 0.38.0
+
+**One score, and the conversation you are actually looking at.**
+
+Two things made the first screen untrustworthy.
+
+- **The score is the current one.** The card showed the score *before* your rules
+  in a folder that had none, and the score *after* them in a folder that did — so
+  two folders answered the same question with different kinds of number. The
+  subline printed `71 → 43`: two numbers for a question with one answer. It now
+  shows the folder scored with the rules and the strength in force, and nothing
+  else. Writing a rule re-scores at once instead of leaving a number that
+  describes rules which no longer exist.
+- **Switching conversations switches the panel.** The panel asked the host for
+  "the conversation"; the host answered with whichever session had written last.
+  Switching back to an older conversation writes nothing, so the panel kept
+  describing the conversation you had just left. The slot already knows which
+  conversation it belongs to, so the panel names it.
+
+Both are covered by tests that drive the real bundle rather than the source: one
+asserts the request carries `?session=<id>`, one asserts the card prints a single
+current score, and one asserts a folder with no rules still shows the current one.
+
 ## 0.37.1
 
 A baseline you cannot reproduce is an opinion, and a dash is not a score.
