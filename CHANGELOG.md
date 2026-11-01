@@ -1,3 +1,14 @@
+## 0.7.5
+
+- **The suggested rules now say whether they would do anything.** At the
+  default strength the rules a scan suggests are already enforced by the
+  strength, so writing `.aiignore` changes no number — the output listed them
+  anyway, which reads as "do this and things get better". The report now also
+  scores the folder as if those rules existed (`suggestedRulesChangeTheScore`),
+  and the CLI says so in one line when the score would not move. Measured: a
+  folder with a 100 KB log scores 76 at strength 1 and the `*.log` rule moves
+  it; at strength 3 the same folder already scores 100 with no rules at all.
+
 ## 0.7.4
 
 - **`--json` now reports the strength it scored at.** The output carried the
