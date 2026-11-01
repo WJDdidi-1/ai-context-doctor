@@ -22,9 +22,28 @@ test('the card shows one score: the current one, whatever the rules are', () => 
   // One number, always the current one. Switching between "before" and "after"
   // depending on whether a folder happened to have rules made two folders
   // answer the same question with different kinds of number.
-  assert.match(view, /const shownScore = typeof scored\.effectiveScore === 'number' \? scored\.effectiveScore : firstScore;/);
+  assert.match(view, /: typeof scored\.effectiveScore === 'number' \? scored\.effectiveScore : firstScore;/);
   assert.match(view, /tr\('scoreCurrentLabel'\)/);
   assert.equal(/scoreBeforeLabel|scoreAfterLabel/.test(view), false, 'no two-state label survives');
+});
+
+test('the card number belongs to the conversation it sits under', () => {
+  const view = region('ProtectView', 'function SummaryPage');
+  // The card is titled with one conversation and lists that conversation's
+  // turns and files, so its number has to be that conversation's score — the
+  // same number the overview row shows. The folder's score is a different
+  // question, and it lives in Settings.
+  assert.match(view, /const conversationScore = conversation !== null && typeof conversation\.effectiveScore === 'number'/);
+  assert.match(view, /const shownScore = conversationScore !== null/);
+});
+
+test('rules in effect do not come with "nothing applied yet"', () => {
+  const view = region('ProtectView', 'function SummaryPage');
+  // The page can show "2 rules in effect" and "held back 3" while this
+  // conversation lost nothing to them. Saying "nothing applied yet" there is
+  // the panel contradicting itself on one screen.
+  assert.match(view, /\? rules\.length > 0\s*\n\s*\? fill\(tr\('scorePendingUnderRules'\), \{ reads: pendingReads \}\)/);
+  assert.match(view, /: tr\('scoreBeforeHint'\)/);
 });
 
 test('the subline says what is held back, never a before → after pair', () => {

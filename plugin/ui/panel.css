@@ -468,14 +468,17 @@
 
 .aicd-btn[data-variant="primary"] {
   border-color: transparent;
-  background: var(--aicd-accent, #4d6bfe);
-  color: var(--dsw-alias-label-primary-foreground, #fff);
+  /* A filled button needs a fill that carries white text in both themes. The
+     host's business colour is light in dark mode on purpose — it is for text
+     and icons there — so using it as a background left white on #7aaaff. */
+  background: #2f4f96;
+  background: color-mix(in srgb, var(--dsw-alias-state-business-primary, #4d6bfe) 62%, #000);
+  color: #fff;
   font-weight: 500;
 }
 
 .aicd-btn[data-variant="primary"]:hover:not(:disabled) {
-  background: var(--aicd-accent, #4d6bfe);
-  filter: brightness(1.07);
+  filter: brightness(1.12);
 }
 
 .aicd-btn[data-wide="true"] {
