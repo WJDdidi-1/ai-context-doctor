@@ -35,6 +35,33 @@ test('--json emits a parseable report', () => {
   assert.equal(report.status, 'Some context noise found');
 });
 
+test('--json records the strength the score was computed at', () => {
+  const root = tempRepo({ 'src/index.js': 'const a = 1;\n', 'package-lock.json': 'x'.repeat(1000) });
+  const out = execFileSync(process.execPath, [bin, '--json', root], { encoding: 'utf8' });
+  const report = JSON.parse(out);
+
+  // Without this a script cannot tell a score at strength 3 from one at
+  // strength 1, so two runs are not comparable.
+  assert.equal(typeof report.strength, 'number');
+  assert.equal(typeof report.strengthLabel, 'string');
+  assert.equal(report.strength, 3);
+  assert.equal(report.strengthLabel, 'Balanced');
+  assert.equal(typeof report.effectiveScore, 'number');
+});
+
+test('--json reports what the rules hold back, not just what was scanned', () => {
+  const root = tempRepo({ 'src/index.js': 'const a = 1;\n', 'package-lock.json': 'x'.repeat(1000) });
+  const out = execFileSync(process.execPath, [bin, '--json', root], { encoding: 'utf8' });
+  const report = JSON.parse(out);
+
+  assert.ok(report.noisePercent > 90, `noisePercent was ${report.noisePercent}`);
+  assert.equal(report.blockedFiles, 1);
+  assert.equal(report.blockedBytes, 1000);
+  // The rule holds the lockfile back, so what reaches the model cannot be
+  // worse than the raw scan.
+  assert.ok(report.effectiveScore >= report.healthScore);
+});
+
 test('--json error path stays machine-readable', () => {
   const result = spawnSync(process.execPath, [bin, '--json', './does-not-exist-aicd'], { encoding: 'utf8' });
 

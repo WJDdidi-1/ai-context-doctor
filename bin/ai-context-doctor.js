@@ -157,18 +157,25 @@ if (writeOutput) {
 }
 
 if (jsonOutput) {
-  const output = writeResult
-    ? {
-        ...report,
-        write: {
-          path: writeResult.path,
-          created: writeResult.created,
-          added: writeResult.added,
-          written: writeResult.written,
-          dryRun: writeResult.dryRun
+  // The score depends on the strength the rules were read at, so a script that
+  // compares two runs has to record which strength produced each number.
+  const strength = levelFor(level);
+  const output = {
+    ...report,
+    strength: strength.level,
+    strengthLabel: strength.label,
+    ...(writeResult
+      ? {
+          write: {
+            path: writeResult.path,
+            created: writeResult.created,
+            added: writeResult.added,
+            written: writeResult.written,
+            dryRun: writeResult.dryRun
+          }
         }
-      }
-    : report;
+      : {})
+  };
   console.log(JSON.stringify(output, null, 2));
   process.exit(0);
 }
