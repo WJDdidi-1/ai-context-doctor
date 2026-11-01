@@ -66,6 +66,12 @@ Run this before asking your coding agent to inspect a larger repo.
 | `Review before sharing` | 看起来像凭证或部署脚本的文件。**工具没有说它们一定是密钥**，只是提醒你：把这个仓库贴进聊天窗口之前先看一眼。 |
 | `Suggested .aiignore` | 可以直接复制进忽略文件的行。工具不会替你写。 |
 
+## 它是怎么判断的
+
+![仓库和对话是怎么被打分的](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/architecture.svg)
+
+两条路径读的是同一个判断函数，所以面板上的数字和「实际被挡住的文件」不会互相矛盾：扫描把文件夹拆成文件、字节和噪音并打分；Agent 的每一次读取都用同一套 `.aiignore` 规则和当前力度去判断。Optimize 写下的规则，下一次扫描和下一次读取都会立刻用上。
+
 ## 拿它能干什么
 
 - **在让 AI 读一个大仓库之前**：先跑一遍，把建议的行贴进 `.aiignore`（或你所用助手的忽略配置），再跑一遍，看分数有没有变高。
