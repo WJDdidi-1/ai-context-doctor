@@ -1,3 +1,11 @@
+## 0.38.2
+
+- **Docs only.** The README still described the Protection card as showing a
+  `before → after` pair. 0.38.0 removed that pair: the card shows one number,
+  this conversation's current score, and the folder's own score lives on
+  Settings. Anyone reading the README and then opening the panel would have
+  looked for a line that is not there.
+
 ## 0.38.1
 
 - **One score per conversation.** The card sits under a conversation's title and
