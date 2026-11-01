@@ -132,3 +132,25 @@ test('--dry-run without --write is rejected', () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /only applies to --write/);
 });
+
+test('says when a suggested rule would change nothing at this strength', () => {
+  const root = tempRepo({ 'src/index.js': 'const a = 1;\n', 'logs/dev.log': 'x'.repeat(5000) });
+  const out = execFileSync(process.execPath, [bin, root], { encoding: 'utf8' });
+
+  assert.match(out, /Suggested \.aiignore:/);
+  assert.match(out, /the strength already blocks these/);
+});
+
+test('stays quiet when the rule would change the score', () => {
+  const root = tempRepo({
+    'src/index.js': 'const a = 1;\n',
+    'logs/dev.log': 'x'.repeat(5000),
+    '.aiignore.policy.json': JSON.stringify({ level: 1 })
+  });
+  const out = execFileSync(process.execPath, [bin, root], { encoding: 'utf8' });
+  const report = JSON.parse(execFileSync(process.execPath, [bin, '--json', root], { encoding: 'utf8' }));
+
+  assert.equal(report.strength, 1);
+  assert.equal(report.suggestedRulesChangeTheScore, true);
+  assert.doesNotMatch(out, /the strength already blocks these/);
+});

@@ -132,7 +132,7 @@ the other tools: your agent, your editor, your teammates.
 npx ai-context-doctor ./some-repo --json
 ```
 
-Returns `repo`, `healthScore`, `effectiveScore`, `status`, `noisePercent`, `usefulPercent`, `scannedBytes`, `scannedFiles`, `allowedBytes`, `allowedFiles`, `topNoise`, `review`, `suggestedAiignore`, `scoreBreakdown` (the five-dimension arithmetic behind each score) and `scoreLost`, `blockedFiles` / `blockedBytes` (what the rules held back), and `strength` / `strengthLabel` — the strength the score was computed at, so two runs stay comparable. `truncated: true` appears when a scan cap was hit.
+Returns `repo`, `healthScore`, `effectiveScore`, `status`, `noisePercent`, `usefulPercent`, `scannedBytes`, `scannedFiles`, `allowedBytes`, `allowedFiles`, `topNoise`, `review`, `suggestedAiignore`, `scoreBreakdown` (the five-dimension arithmetic behind each score) and `scoreLost`, `blockedFiles` / `blockedBytes` (what the rules held back), and `strength` / `strengthLabel` — the strength the score was computed at, so two runs stay comparable. `suggestedRulesChangeTheScore` answers the question the suggestion list raises: would writing these rules move the number at this strength? At the default strength 3 they usually do not — the strength already blocks those categories — and the text output says so instead of implying the file will help. `truncated: true` appears when a scan cap was hit.
 
 With `--write` it also carries a `write` object: `path`, `created`, `added`, `written`, `dryRun`.
 
