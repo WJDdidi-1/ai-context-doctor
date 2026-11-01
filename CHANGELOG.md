@@ -1,3 +1,11 @@
+## 0.7.4
+
+- **`--json` now reports the strength it scored at.** The output carried the
+  score but not the policy behind it, so two runs could differ because the code
+  changed or because the strength did, with nothing in the file to tell them
+  apart. It now includes `strength` and `strengthLabel`, and documents
+  `blockedFiles` / `blockedBytes`, which were emitted but unlisted.
+
 ## 0.7.3
 
 - **Fix: `--write` wrote through a dangling `.aiignore` symlink.** The guard
