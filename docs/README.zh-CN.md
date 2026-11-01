@@ -128,7 +128,7 @@ npx ai-context-doctor --write
 npx ai-context-doctor ./some-repo --json
 ```
 
-返回 `repo`、`healthScore`、`status`、`noisePercent`、`usefulPercent`、`scannedBytes`、`scannedFiles`、`topNoise`、`review`、`suggestedAiignore`；触发扫描上限时还会带 `truncated: true`。
+返回 `repo`、`healthScore`、`effectiveScore`、`status`、`noisePercent`、`usefulPercent`、`scannedBytes`、`scannedFiles`、`allowedBytes`、`allowedFiles`、`blockedFiles`、`blockedBytes`、`topNoise`、`review`、`suggestedAiignore`、`scoreBreakdown`、`scoreLost`，以及 `strength` / `strengthLabel`（这次评分用的力度，方便两次运行对比）；触发扫描上限时还会带 `truncated: true`。
 
 加上 `--write` 时会多一个 `write` 对象：`path`、`created`、`added`、`written`、`dryRun`。
 
