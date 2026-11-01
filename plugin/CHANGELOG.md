@@ -1,3 +1,17 @@
+## 0.38.1
+
+- **One score per conversation.** The card sits under a conversation's title and
+  lists that conversation's turns and files, but printed the folder's score, so
+  the same conversation read 74 in the overview and 71 on the card. The folder
+  score still lives in Settings ("On disk 22 · Reaches the model 71").
+- **The card no longer contradicts the page.** With rules in effect it said
+  "Nothing applied yet" right above "2 rules in effect". It now says how many of
+  this conversation's noisy reads the rules do not cover.
+- **The primary button is readable in the dark theme.** It filled with the
+  host's business colour and kept white text; in the dark theme that colour is a
+  light blue meant for text, so the pair measured about 2.1:1. It is now 8.6:1
+  in light and 5.47:1 in dark.
+
 ## 0.38.0
 
 **One score, and the conversation you are actually looking at.**
