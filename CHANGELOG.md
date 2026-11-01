@@ -1,3 +1,12 @@
+## 0.7.3
+
+- **Fix: `--write` wrote through a dangling `.aiignore` symlink.** The guard
+  checked `fs.existsSync` before `lstat`, and `existsSync` follows the link — so
+  for a symlink whose target did not exist it returned `false`, the guard was
+  skipped, and `writeFileSync` created the link's target. It now `lstat`s in a
+  try/catch, which is the question the guard was asking all along, and refuses
+  with exit 1. The README promised this; the code did not.
+
 # Changelog
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
