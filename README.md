@@ -64,6 +64,12 @@ Run this before asking your coding agent to inspect a larger repo.
 | `Review before sharing` | Files that look like credentials or deploy scripts. **The tool does not claim they are secret** — it says look before you paste the repo into a chat. |
 | `Suggested .aiignore` | Lines you can paste into an ignore file. Nothing is written for you. |
 
+## How it decides
+
+![How a repository and a conversation are scored](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/architecture.svg)
+
+Two paths read the same decision function, which is why the number on the panel and the files the agent was actually kept from cannot disagree: the scan turns a folder into files, bytes and noise and scores it, and every read the agent makes is checked against the same `.aiignore` rules at the chosen strength. Optimize writes those rules, and the next scan and the next read both pick them up.
+
 ## What you can do with it
 
 - **Before you hand a repo to an agent** — run it, then `--write` the suggested lines into `.aiignore` instead of copying them by hand.
