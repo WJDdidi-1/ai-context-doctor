@@ -219,6 +219,15 @@ if (report.suggestedAiignore.length === 0) {
   for (const suggestion of report.suggestedAiignore) {
     console.log(suggestion);
   }
+  if (report.suggestedRulesChangeTheScore !== true) {
+    // Saying "here are the rules" without saying "they change nothing at this
+    // strength" invites people to write a file and wonder why the number did
+    // not move.
+    console.log('');
+    console.log(
+      `At strength ${levelFor(level).level} the strength already blocks these, so they change nothing that reaches the model. They bite at a lower strength.`
+    );
+  }
 }
 if (writeResult) {
   console.log('');
@@ -234,6 +243,11 @@ if (writeResult) {
     console.log(`Created ${relative} with ${writeResult.added.length} rule(s).`);
   } else {
     console.log(`Added ${writeResult.added.length} rule(s) to ${relative}.`);
+  }
+  if (writeResult.added.length > 0 && report.suggestedRulesChangeTheScore !== true) {
+    console.log(
+      `They do not change the score at strength ${levelFor(level).level}: the strength already blocks those files.`
+    );
   }
 }
 
