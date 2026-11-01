@@ -56,6 +56,7 @@ window.__ModuleLoader__.load({
         tabSettings: 'Settings',
         scoreCurrentLabel: 'Current score',
         scoreBeforeHint: 'Nothing applied yet. Optimize writes the rules this folder needs, then scores it again.',
+        scorePendingUnderRules: '{reads} noisy reads here are not covered by your rules yet.',
         scoreUnknownLabel: 'Not scanned yet',
         scoreUnknownHint: 'Nothing here has been read yet. Optimize scans the folder, writes the rules it needs, and scores it.',
         strengthFold: 'Fine-tune the strength',
@@ -242,6 +243,7 @@ window.__ModuleLoader__.load({
         tabSettings: '设置',
         scoreCurrentLabel: '当前评分',
         scoreBeforeHint: '还没有应用任何规则。点优化，写入这个文件夹需要的规则，然后重新评分。',
+        scorePendingUnderRules: '这里有 {reads} 次噪音读取还没被规则覆盖。',
         scoreUnknownLabel: '还没有扫描',
         scoreUnknownHint: '这里还没有读过任何东西。点优化会扫描这个文件夹、写入它需要的规则，然后评分。',
         strengthFold: '微调力度',
@@ -886,14 +888,17 @@ window.__ModuleLoader__.load({
 
 .aicd-btn[data-variant="primary"] {
   border-color: transparent;
-  background: var(--aicd-accent, #4d6bfe);
-  color: var(--dsw-alias-label-primary-foreground, #fff);
+  /* A filled button needs a fill that carries white text in both themes. The
+     host's business colour is light in dark mode on purpose — it is for text
+     and icons there — so using it as a background left white on #7aaaff. */
+  background: #2f4f96;
+  background: color-mix(in srgb, var(--dsw-alias-state-business-primary, #4d6bfe) 62%, #000);
+  color: #fff;
   font-weight: 500;
 }
 
 .aicd-btn[data-variant="primary"]:hover:not(:disabled) {
-  background: var(--aicd-accent, #4d6bfe);
-  filter: brightness(1.07);
+  filter: brightness(1.12);
 }
 
 .aicd-btn[data-wide="true"] {
@@ -3580,7 +3585,18 @@ window.__ModuleLoader__.load({
       // the strength in force right now. Switching between "before" and "after"
       // depending on whether a folder happens to have rules made two folders
       // answer the same question with different kinds of number.
-      const shownScore = typeof scored.effectiveScore === 'number' ? scored.effectiveScore : firstScore;
+      // The card sits under one conversation's title and lists that
+      // conversation's turns and files, so its number has to be that
+      // conversation's — the same number the overview row shows. The folder
+      // score is a different question and lives in Settings ("On disk 22 ·
+      // Reaches the model 71"). Showing the folder number here made the same
+      // conversation read 74 in the list and 71 on the card.
+      const conversationScore = conversation !== null && typeof conversation.effectiveScore === 'number'
+        ? conversation.effectiveScore
+        : null;
+      const shownScore = conversationScore !== null
+        ? conversationScore
+        : typeof scored.effectiveScore === 'number' ? scored.effectiveScore : firstScore;
       const applied = shownScore !== null;
       // No score is not the score zero: a folder nobody has scanned yet has no
       // number to show, and a dash under "Score before rules" reads as a broken
@@ -3594,7 +3610,12 @@ window.__ModuleLoader__.load({
             keptOutTokens === null ? '' : ` · ${formatTokensCompact(keptOutTokens)} ${tr('heroKept')}`
           }`
         : pendingReads > 0
-          ? tr('scoreBeforeHint')
+          // Rules can be in effect and still not cover what this conversation
+          // read; saying "nothing applied yet" next to "2 rules in effect" is
+          // the panel contradicting itself on one screen.
+          ? rules.length > 0
+            ? fill(tr('scorePendingUnderRules'), { reads: pendingReads })
+            : tr('scoreBeforeHint')
           // A conversation that could not be read must not be described as one
           // that read nothing: quiet is a fact about a conversation we have.
           : quiet === true && conversation !== null
