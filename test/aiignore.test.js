@@ -88,6 +88,19 @@ test('refuses to write through a symbolic link', () => {
   assert.equal(fs.readFileSync(outside, 'utf8'), 'important\n');
 });
 
+test('refuses to write through a symbolic link whose target does not exist', () => {
+  // `existsSync` follows the link, so this case used to read as "no file here"
+  // and the write created the link's target instead of refusing.
+  const dir = tempDir();
+  const outside = path.join(dir, 'outside');
+  const target = path.join(dir, '.aiignore');
+
+  fs.symlinkSync(outside, target);
+
+  assert.throws(() => writeAiignore(target, ['dist/']), /symbolic link/);
+  assert.equal(fs.existsSync(outside), false);
+});
+
 test('refuses to replace a directory that happens to be called .aiignore', () => {
   const dir = tempDir();
   const target = path.join(dir, '.aiignore');
