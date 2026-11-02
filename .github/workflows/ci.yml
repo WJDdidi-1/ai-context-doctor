@@ -15,7 +15,36 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run smoke tests
+        run: npm run smoke
+
+      - name: Check package contents
+        run: npm run pack:check
+
+  # macOS arm64 runners are capacity constrained. Requesting all four Node
+  # versions at once can leave one job unacquired until GitHub times it out
+  # ("The job was not acquired by Runner of type hosted", run 41489729400).
+  # Queue the same matrix one job at a time rather than dropping coverage.
+  smoke-macos:
+    name: Smoke (macos-latest, Node ${{ matrix.node }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
         node: [18, 20, 22, 24]
     steps:
       - uses: actions/checkout@v4
