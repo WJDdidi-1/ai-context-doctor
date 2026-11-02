@@ -219,7 +219,7 @@ repository's own plugin is released with.
 ## What it does not do
 
 - It does not call an AI service, need an API key, or upload anything.
-- It does not modify your repository — it never writes `.aiignore` or any other file.
+- It changes your repository only when you run `--write`, which appends the suggested rules to `.aiignore`; a plain scan writes nothing.
 - It is not a `gitignore` linter: it looks at what an agent *would read*, not what git tracks, so ignored files still show up.
 - It is not a secret scanner. The review list is a name heuristic; an `id_rsa` without an extension and a key pasted into `config.js` both slip through.
 - It does not count tokens or parse code. The score is a size heuristic — useful as a signal, not as a measurement.

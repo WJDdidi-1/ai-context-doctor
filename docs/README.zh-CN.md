@@ -179,7 +179,7 @@ dsh plugin --profile web add dsh-aiignore
 ## 它不做什么
 
 - 不调用任何 AI 服务，不需要 API key，不上传文件。
-- 不修改你的仓库——不会写 `.aiignore`，也不会写别的文件。
+- 只有运行 `--write` 时才会改动仓库：它把建议的规则追加到 `.aiignore`；不带 `--write` 的扫描不会写任何文件。
 - 不是 `gitignore` 检查器：它看的是「AI 会读到什么」，不是「git 跟踪什么」，所以被 git 忽略的文件照样会出现。
 - 不是密钥扫描器。`Review` 列表基于文件名，没有扩展名的 `id_rsa`、粘在 `config.js` 里的密钥都会漏掉。
 - 不统计 token，也不解析代码。分数是体积启发式：可以当真信号，不能当测量结果。
