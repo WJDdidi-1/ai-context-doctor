@@ -635,6 +635,16 @@
       },
       "versions": [
         {
+          "version": "0.17.0",
+          "publishTimestamp": 1793776079,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
           "version": "0.16.0",
           "publishTimestamp": 1793771426,
           "source": {
