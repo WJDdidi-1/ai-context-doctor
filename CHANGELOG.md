@@ -2,7 +2,7 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
-## 0.7.7
+## Unreleased
 
 - **Ask why one file is blocked: `--explain <path>`.** A report said which files
   were kept from the model but not what stopped a particular one.
