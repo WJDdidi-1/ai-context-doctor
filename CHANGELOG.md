@@ -1,3 +1,29 @@
+# Changelog
+
+Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
+
+## 0.7.6
+
+- **Every blocked read now says why it was blocked.** The report counted
+  `blockedFiles` but could not answer "which rule stopped this one, and what
+  category is it?" `blockedDetails` (also exposed as `blockedReasons`) lists
+  each blocked path with its `rule`, `category`, `level`, `levelLabel`,
+  `blockedBy` and, for a size limit, `levelReason`/`limitBytes`. `blocked`
+  keeps the path-labelled view and now carries the same explanations plus the
+  individual `files`, so a directory rule no longer hides which file matched.
+  The CLI prints up to five blocked files and points at `--json` for the rest.
+- **Fix: explanations now match rules written with `/` on Windows.** Walked
+  paths were compared in the host's separator form, so `dist/` never matched
+  `dist\bundle.js`; paths are normalised to the portable form before matching
+  and reporting.
+- **Fix: large `--json` reports are no longer truncated.** With a rule and
+  category per blocked file the document can exceed one pipe buffer, and
+  `process.exit` used to cut it in half on Node 18/20. It is now written
+  synchronously to file descriptor 1 before exiting.
+- **Docs: the README says when the tool writes.** It now states that a plain
+  scan changes nothing and that `--write` is what appends rules to
+  `.aiignore`, matching the code.
+
 ## 0.7.5
 
 - **The suggested rules now say whether they would do anything.** At the
@@ -25,10 +51,6 @@
   skipped, and `writeFileSync` created the link's target. It now `lstat`s in a
   try/catch, which is the question the guard was asking all along, and refuses
   with exit 1. The README promised this; the code did not.
-
-# Changelog
-
-Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
 ## 0.7.2
 
