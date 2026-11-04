@@ -47,6 +47,7 @@
     "library"
   ],
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "exports": {
     ".": "./lib/index.js",
     "./package.json": "./package.json"
