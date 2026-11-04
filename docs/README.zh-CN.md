@@ -17,7 +17,7 @@ npx ai-context-doctor
 
 ## 跑起来是什么样
 
-下面是本项目自带的 demo 仓库的真实输出：
+下面是本仓库干净 checkout 里运行 `node bin/ai-context-doctor.js ./demo-ai-context-noise-repo` 的真实输出：
 
 ```text
 AI Context Doctor
@@ -25,8 +25,18 @@ AI Context Doctor
 Repo: demo-ai-context-noise-repo
 Scanned: 8 files, 1.50 MB
 
-AI Context Health: 22/100
+AI Context Health: 43/100
 Status: Too much noise for an AI coding agent
+
+What reaches the model: 78/100
+  strength 3 (Balanced) · 335.0 KB of 1.50 MB let through
+
+Where the points go:
+  context noise          - 21.3 / 30
+  context volume         - 16.2 / 25
+  one file dominating    -   20 / 20
+  file sprawl            -    0 / 15
+  binary payloads        -    0 / 10
 
 Context noise estimate:
 78% likely noise
@@ -49,6 +59,8 @@ dist/
 *.log
 package-lock.json
 
+At strength 3 the strength already blocks these, so they change nothing that reaches the model. They bite at a lower strength.
+
 Next step:
 Run this before asking your coding agent to inspect a larger repo.
 ```
@@ -60,7 +72,9 @@ Run this before asking your coding agent to inspect a larger repo.
 | 这一行 | 意思 |
 | --- | --- |
 | `Scanned: 8 files, 1.50 MB` | 实际扫了多少内容。`.git/` 和 `node_modules/` 不扫。 |
-| `AI Context Health: 22/100` | 100 减去「命中了噪音规则的文件」占的体积比例。22 分表示 AI 要读的东西里大部分是噪音。 |
+| `AI Context Health: 43/100` | 100 减去五项扣分：噪音（30）、体积（25）、单文件占比（20）、文件数量（15）、二进制内容（10）。第一项可以通过规则改变；其余四项描述文件夹本身，所以一个干净但巨大的仓库也不会再得 100 分。 |
+| `What reaches the model: 78/100` | 套用当前力度和 `.aiignore` 规则之后的分数。下面一行标出这次用的力度，以及扫描总量中有多少字节真正被放行。 |
+| `Where the points go` | 健康分背后的五项扣分，按每项权重显示丢了多少分。 |
 | `Status:` | 把分数翻译成一句话：85 分以上干净，60–84 有噪音，60 分以下噪音太多。 |
 | `Top context waste` | 体积最大的五个噪音来源，以及各自被标出来的原因。 |
 | `Review before sharing` | 看起来像凭证或部署脚本的文件。**工具没有说它们一定是密钥**，只是提醒你：把这个仓库贴进聊天窗口之前先看一眼。 |

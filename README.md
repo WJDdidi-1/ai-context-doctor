@@ -17,7 +17,7 @@ No install, no login, no API key, nothing uploaded. It only reads file names and
 
 ## What it looks like
 
-Real output from the demo repository in this project:
+Real output of `node bin/ai-context-doctor.js ./demo-ai-context-noise-repo`, run from a clean checkout of this repository:
 
 ```text
 AI Context Doctor
@@ -25,8 +25,18 @@ AI Context Doctor
 Repo: demo-ai-context-noise-repo
 Scanned: 8 files, 1.50 MB
 
-AI Context Health: 22/100
+AI Context Health: 43/100
 Status: Too much noise for an AI coding agent
+
+What reaches the model: 78/100
+  strength 3 (Balanced) · 335.0 KB of 1.50 MB let through
+
+Where the points go:
+  context noise          - 21.3 / 30
+  context volume         - 16.2 / 25
+  one file dominating    -   20 / 20
+  file sprawl            -    0 / 15
+  binary payloads        -    0 / 10
 
 Context noise estimate:
 78% likely noise
@@ -49,6 +59,8 @@ dist/
 *.log
 package-lock.json
 
+At strength 3 the strength already blocks these, so they change nothing that reaches the model. They bite at a lower strength.
+
 Next step:
 Run this before asking your coding agent to inspect a larger repo.
 ```
@@ -59,6 +71,8 @@ Run this before asking your coding agent to inspect a larger repo.
 | --- | --- |
 | `Scanned: 8 files, 1.50 MB` | What was actually walked. `.git/` and `node_modules/` are skipped. |
 | `AI Context Health: 43/100` | Five separate losses, subtracted from 100: noise (30), sheer size (25), one file dominating (20), file count (15), binaries (10). The first is what rules can move; the other four describe the folder itself, so a clean but enormous repository no longer scores 100. |
+| `What reaches the model: 78/100` | The score after the current strength and `.aiignore` rules. The line below it names the strength and how many bytes of the scan are actually let through. |
+| `Where the points go` | The five losses behind the health score, with the points lost out of each dimension's weight. |
 | `Status:` | Just the score in words: 85+ clean, 60–84 some noise, below 60 too much. |
 | `Top context waste` | The five biggest offenders with the reason each was flagged. |
 | `Review before sharing` | Files that look like credentials or deploy scripts. **The tool does not claim they are secret** — it says look before you paste the repo into a chat. |
