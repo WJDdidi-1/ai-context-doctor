@@ -2,6 +2,24 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.7.7
+
+- **Ask why one file is blocked: `--explain <path>`.** A report said which files
+  were kept from the model but not what stopped a particular one.
+  `ai-context-doctor --explain src/index.js` prints the verdict, the exact rule
+  that decided it (an `.aiignore` line, or the strength's category or size
+  cutoff), the category, the size and token estimate, and what allowing the file
+  would cost. The counterfactual is computed by re-running the same report with
+  that path forced through, so it cannot drift from the score the scan prints.
+- `--json --explain` returns the same explanation as one object. A path the scan
+  never saw is an error with exit code 2 (`error: "unknown-path"` in JSON), not a
+  silent "not blocked".
+- Export `explainPath(root, relativePath, { rules, level })`, the decision behind
+  the flag, for callers that want the verdict without the printing.
+- **Docs: the README shows the new flag and a real run.** It adds a
+  "Why is this file blocked?" example with the exact text output, and the sample
+  report is regenerated from a clean checkout instead of being hand-maintained.
+
 ## 0.7.6
 
 - **Every blocked read now says why it was blocked.** The report counted
