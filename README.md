@@ -13,7 +13,7 @@
 npx ai-context-doctor
 ```
 
-No install, no login, no API key, nothing uploaded. It only reads file names and sizes.
+No install, no login, no API key, nothing uploaded. It only reads file names, sizes, and your ignore/policy files.
 
 ## What it looks like
 
@@ -25,8 +25,25 @@ AI Context Doctor
 Repo: demo-ai-context-noise-repo
 Scanned: 8 files, 1.50 MB
 
-AI Context Health: 22/100
+AI Context Health: 43/100
 Status: Too much noise for an AI coding agent
+
+What reaches the model: 78/100
+  strength 3 (Balanced) · 335.0 KB of 1.50 MB let through
+
+Blocked from the model:
+- coverage/lcov.info           16.7 KB   build · category rule at strength 3 (Balanced)
+- data/export.json             1.00 MB   large · file > 1.00 MB at strength 3 (Balanced)
+- dist/app.bundle.js          106.9 KB   build · category rule at strength 3 (Balanced)
+- logs/dev.log                 18.4 KB   log · category rule at strength 3 (Balanced)
+- package-lock.json            35.2 KB   lockfile · category rule at strength 3 (Balanced)
+
+Where the points go:
+  context noise          - 21.3 / 30
+  context volume         - 16.2 / 25
+  one file dominating    -   20 / 20
+  file sprawl            -    0 / 15
+  binary payloads        -    0 / 10
 
 Context noise estimate:
 78% likely noise
@@ -49,6 +66,8 @@ dist/
 *.log
 package-lock.json
 
+At strength 3 the strength already blocks these, so they change nothing that reaches the model. They bite at a lower strength.
+
 Next step:
 Run this before asking your coding agent to inspect a larger repo.
 ```
@@ -59,6 +78,9 @@ Run this before asking your coding agent to inspect a larger repo.
 | --- | --- |
 | `Scanned: 8 files, 1.50 MB` | What was actually walked. `.git/` and `node_modules/` are skipped. |
 | `AI Context Health: 43/100` | Five separate losses, subtracted from 100: noise (30), sheer size (25), one file dominating (20), file count (15), binaries (10). The first is what rules can move; the other four describe the folder itself, so a clean but enormous repository no longer scores 100. |
+| `What reaches the model` | The same score after `.aiignore` rules and the chosen strength are applied, plus how many bytes they let through. |
+| `Blocked from the model` | Up to five blocked files, each with its category and the rule or strength cutoff that decided it. |
+| `Where the points go` | The five losses behind the health score, so a low number is explainable instead of mysterious. |
 | `Status:` | Just the score in words: 85+ clean, 60–84 some noise, below 60 too much. |
 | `Top context waste` | The five biggest offenders with the reason each was flagged. |
 | `Review before sharing` | Files that look like credentials or deploy scripts. **The tool does not claim they are secret** — it says look before you paste the repo into a chat. |
@@ -100,11 +122,38 @@ Requires Node.js 18 or newer.
 ai-context-doctor              # scan the current directory
 ai-context-doctor ../some-repo # scan another repository
 ai-context-doctor --json       # machine-readable output
+ai-context-doctor --explain src/index.js   # explain one file's verdict
 ai-context-doctor --write      # add the suggested rules to .aiignore
 ai-context-doctor --write --dry-run   # show what --write would add
 ai-context-doctor --help
 ai-context-doctor --version
 ```
+
+### Why is this file blocked?
+
+```bash
+npx ai-context-doctor --explain src/index.js
+```
+
+Prints the verdict for one path, the rule that decided it, the category it
+belongs to, and what letting it through would cost:
+
+```text
+AI Context Doctor — explain
+
+Path: package-lock.json
+Verdict: blocked
+Rule: strength 3 (Balanced) skips lockfiles
+Category: lockfile
+Size: 35.2 KB (~8342–11700 tokens)
+Why: lockfile
+Score impact: allowing it would cost 4 points (78/100 -> 74/100).
+```
+
+If a line in `.aiignore` decided it, the `Rule:` line prints that exact line
+instead of a strength. An unblocked path says `Verdict: not blocked`. An unknown
+path is an error with exit code 2, not a silent "not blocked". Add `--json` to
+get the same explanation as an object.
 
 ### Writing `.aiignore`
 
@@ -122,9 +171,11 @@ not exist it is created with a two-line header.
 It will not follow a symbolic link, and it refuses to replace a directory that
 happens to be called `.aiignore`.
 
-The scan is a heuristic over file names and sizes — it does not read `.aiignore`
-— so the score will not change just because you wrote the file. The file is for
-the other tools: your agent, your editor, your teammates.
+The raw health score is a heuristic over file names and sizes and does not change
+when you write rules. The `What reaches the model` score applies the `.aiignore`
+rules in the scanned directory and the chosen strength, so writing rules can
+move what the agent actually sees. The file is also for your agent, your editor,
+and your teammates.
 
 ### JSON output
 
@@ -156,6 +207,8 @@ console.log(report.healthScore, report.topNoise);
 ```
 
 `writeAiignore(aiignorePath, suggested, { dryRun })` is the writer behind `--write`, if you want the same behaviour from code.
+
+`explainPath(root, relativePath, { rules, level })` is the decision behind `--explain`; it returns the verdict, the deciding rule, the category and the score impact without printing anything.
 
 `scanRepository(root, { maxFiles, maxBytes })` is synchronous and has no dependencies. Pass a cap for huge trees; the report then carries `truncated: true`.
 
@@ -223,7 +276,7 @@ repository's own plugin is released with.
 - It is not a `gitignore` linter: it looks at what an agent *would read*, not what git tracks, so ignored files still show up.
 - It is not a secret scanner. The review list is a name heuristic; an `id_rsa` without an extension and a key pasted into `config.js` both slip through.
 - It does not count tokens or parse code. The score is a size heuristic — useful as a signal, not as a measurement.
-- It does not have a config file. Caps are available through the API and the Harness plugin only.
+- It does not have a general config file. The chosen strength lives in `.aiignore.policy.json` in the scanned directory; scan caps are available through the API and the Harness plugin only.
 
 ## Why `.aiignore` and not `.gitignore`
 
@@ -231,7 +284,7 @@ Because the two questions are different. `dist/` is gitignored in most projects 
 
 ## Privacy
 
-Everything runs locally. The tool reads directory entries and file sizes; it does not read file contents, does not open a network connection, and stores nothing. The only thing it sends anywhere is what `npm` sends when you install it.
+Everything runs locally. The tool reads directory entries, file sizes, and the rule/policy files (`.aiignore`, `.aiignore.policy.json`); it does not read other file contents, does not open a network connection, and stores nothing. The only thing it sends anywhere is what `npm` sends when you install it.
 
 ## Development
 
