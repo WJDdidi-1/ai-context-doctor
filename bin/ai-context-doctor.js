@@ -144,11 +144,11 @@ if (writeOutput) {
     writeResult = writeAiignore(path.join(cwd, '.aiignore'), report.suggestedAiignore, { dryRun });
   } catch (error) {
     if (jsonOutput) {
-      console.log(JSON.stringify({
+      fs.writeSync(1, `${JSON.stringify({
         error: error.code || 'write-failed',
         message: error.message,
         target: path.join(cwd, '.aiignore')
-      }, null, 2));
+      }, null, 2)}\n`);
       process.exit(1);
     }
     console.error(`Error: ${error.message}`);
@@ -176,7 +176,12 @@ if (jsonOutput) {
         }
       : {})
   };
-  console.log(JSON.stringify(output, null, 2));
+  // `process.exit` does not wait for a pipe to drain: on Node 18/20 a `--json`
+  // report larger than one pipe buffer (the blocked-file list pushed it past
+  // 8 KiB) arrived truncated, and `JSON.parse` then failed for scripts that
+  // capture stdout. Writing straight to the descriptor is synchronous, so the
+  // exit that follows cannot cut the document in half.
+  fs.writeSync(1, `${JSON.stringify(output, null, 2)}\n`);
   process.exit(0);
 }
 
@@ -192,6 +197,22 @@ console.log(`Status: ${statusFor(healthScore)}`);
 console.log('');
 console.log(`What reaches the model: ${report.effectiveScore}/100`);
 console.log(`  strength ${levelFor(level).level} (${levelFor(level).label}) · ${formatBytes(report.allowedBytes)} of ${formatBytes(scannedBytes)} let through`);
+if (report.blockedDetails.length > 0) {
+  console.log('');
+  console.log('Blocked from the model:');
+  for (const item of report.blockedDetails.slice(0, 5)) {
+    const cause = item.rule !== null
+      ? `rule ${item.rule}`
+      : item.levelReason === 'size'
+        ? `file > ${formatBytes(item.limitBytes)}`
+        : 'category rule';
+    const atLevel = item.level === null ? '' : ` at strength ${item.level} (${item.levelLabel})`;
+    console.log(`- ${item.path.padEnd(26)} ${formatBytes(item.bytes).padStart(9)}   ${item.category} · ${cause}${atLevel}`);
+  }
+  if (report.blockedDetails.length > 5) {
+    console.log(`  ... and ${report.blockedDetails.length - 5} more (see --json).`);
+  }
+}
 console.log('');
 console.log('Where the points go:');
 printScoreBreakdown(report.scoreBreakdown);
