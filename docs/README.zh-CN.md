@@ -17,7 +17,7 @@ npx ai-context-doctor
 
 ## 跑起来是什么样
 
-下面是本项目自带的 demo 仓库的真实输出：
+下面是本仓库干净 checkout 里运行 `node bin/ai-context-doctor.js ./demo-ai-context-noise-repo` 的真实输出：
 
 ```text
 AI Context Doctor
@@ -79,7 +79,7 @@ Run this before asking your coding agent to inspect a larger repo.
 | 这一行 | 意思 |
 | --- | --- |
 | `Scanned: 8 files, 1.50 MB` | 实际扫了多少内容。`.git/` 和 `node_modules/` 不扫。 |
-| `AI Context Health: 43/100` | 五个维度分别扣分后的结果：噪音（30）、体积（25）、单个文件占比（20）、文件数量（15）、二进制（10）。前两项之外的维度描述文件夹本身，所以「干净但巨大」也不会是 100 分。 |
+| `AI Context Health: 43/100` | 五个维度分别扣分后的结果：噪音（30）、体积（25）、单个文件占比（20）、文件数量（15）、二进制（10）。第一项是规则能改变的；其余四项描述文件夹本身，所以「干净但巨大」也不会是 100 分。 |
 | `What reaches the model` | 应用 `.aiignore` 规则和当前力度之后，模型实际会看到的分数和字节数。 |
 | `Blocked from the model` | 最多列出五个被挡的文件，以及各自的类别和做出决定的规则或力度阈值。 |
 | `Where the points go` | 分数背后的五类损失，低分因此可以解释。 |

@@ -17,7 +17,7 @@ No install, no login, no API key, nothing uploaded. It only reads file names, si
 
 ## What it looks like
 
-Real output from the demo repository in this project:
+Real output of `node bin/ai-context-doctor.js ./demo-ai-context-noise-repo`, run from a clean checkout of this repository:
 
 ```text
 AI Context Doctor
