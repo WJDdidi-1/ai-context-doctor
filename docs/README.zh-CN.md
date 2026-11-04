@@ -25,8 +25,25 @@ AI Context Doctor
 Repo: demo-ai-context-noise-repo
 Scanned: 8 files, 1.50 MB
 
-AI Context Health: 22/100
+AI Context Health: 43/100
 Status: Too much noise for an AI coding agent
+
+What reaches the model: 78/100
+  strength 3 (Balanced) · 335.0 KB of 1.50 MB let through
+
+Blocked from the model:
+- coverage/lcov.info           16.7 KB   build · category rule at strength 3 (Balanced)
+- data/export.json             1.00 MB   large · file > 1.00 MB at strength 3 (Balanced)
+- dist/app.bundle.js          106.9 KB   build · category rule at strength 3 (Balanced)
+- logs/dev.log                 18.4 KB   log · category rule at strength 3 (Balanced)
+- package-lock.json            35.2 KB   lockfile · category rule at strength 3 (Balanced)
+
+Where the points go:
+  context noise          - 21.3 / 30
+  context volume         - 16.2 / 25
+  one file dominating    -   20 / 20
+  file sprawl            -    0 / 15
+  binary payloads        -    0 / 10
 
 Context noise estimate:
 78% likely noise
@@ -49,6 +66,8 @@ dist/
 *.log
 package-lock.json
 
+At strength 3 the strength already blocks these, so they change nothing that reaches the model. They bite at a lower strength.
+
 Next step:
 Run this before asking your coding agent to inspect a larger repo.
 ```
@@ -60,7 +79,7 @@ Run this before asking your coding agent to inspect a larger repo.
 | 这一行 | 意思 |
 | --- | --- |
 | `Scanned: 8 files, 1.50 MB` | 实际扫了多少内容。`.git/` 和 `node_modules/` 不扫。 |
-| `AI Context Health: 22/100` | 100 减去「命中了噪音规则的文件」占的体积比例。22 分表示 AI 要读的东西里大部分是噪音。 |
+| `AI Context Health: 43/100` | 五个维度分别扣分后的结果：噪音（30）、体积（25）、单个文件占比（20）、文件数量（15）、二进制（10）。前两项之外的维度描述文件夹本身，所以「干净但巨大」也不会是 100 分。 |
 | `Status:` | 把分数翻译成一句话：85 分以上干净，60–84 有噪音，60 分以下噪音太多。 |
 | `Top context waste` | 体积最大的五个噪音来源，以及各自被标出来的原因。 |
 | `Review before sharing` | 看起来像凭证或部署脚本的文件。**工具没有说它们一定是密钥**，只是提醒你：把这个仓库贴进聊天窗口之前先看一眼。 |
@@ -129,6 +148,8 @@ npx ai-context-doctor ./some-repo --json
 ```
 
 返回 `repo`、`healthScore`、`effectiveScore`、`status`、`noisePercent`、`usefulPercent`、`scannedBytes`、`scannedFiles`、`allowedBytes`、`allowedFiles`、`blockedFiles`、`blockedBytes`、`topNoise`、`review`、`suggestedAiignore`、`scoreBreakdown`、`scoreLost`，以及 `strength` / `strengthLabel`（这次评分用的力度，方便两次运行对比）、`suggestedRulesChangeTheScore`（写出这些建议规则在当前力度下是否真的会改变分数——默认力度 3 下通常不会，因为力度本身已经挡住了那些类别，命令行会直接说出来）；触发扫描上限时还会带 `truncated: true`。
+
+`blocked` 里每个路径标签都带 `rule`（匹配到的规则文本，力度挡住时为 `null`）、`category`、`level` / `levelLabel` 和 `blockedBy`（`rule` 或 `level`），`files` 再列出该标签下的每个文件。`blockedDetails` / `blockedReasons` 则是逐文件的完整列表：`path`、`bytes`、`reason`、`category`、`rule` / `matchedRule`、`blockedBy` / `source`、`level` / `levelLabel`；因大小被挡时还带 `levelReason: "size"` 与 `limitBytes`，因类别被挡时是 `levelReason: "category"`。这样一条 `dist/app.js` 记录能直接回答「哪条规则、哪一类、哪一档力度」。
 
 加上 `--write` 时会多一个 `write` 对象：`path`、`created`、`added`、`written`、`dryRun`。
 

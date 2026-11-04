@@ -192,6 +192,22 @@ console.log(`Status: ${statusFor(healthScore)}`);
 console.log('');
 console.log(`What reaches the model: ${report.effectiveScore}/100`);
 console.log(`  strength ${levelFor(level).level} (${levelFor(level).label}) · ${formatBytes(report.allowedBytes)} of ${formatBytes(scannedBytes)} let through`);
+if (report.blockedDetails.length > 0) {
+  console.log('');
+  console.log('Blocked from the model:');
+  for (const item of report.blockedDetails.slice(0, 5)) {
+    const cause = item.rule !== null
+      ? `rule ${item.rule}`
+      : item.levelReason === 'size'
+        ? `file > ${formatBytes(item.limitBytes)}`
+        : 'category rule';
+    const atLevel = item.level === null ? '' : ` at strength ${item.level} (${item.levelLabel})`;
+    console.log(`- ${item.path.padEnd(26)} ${formatBytes(item.bytes).padStart(9)}   ${item.category} · ${cause}${atLevel}`);
+  }
+  if (report.blockedDetails.length > 5) {
+    console.log(`  ... and ${report.blockedDetails.length - 5} more (see --json).`);
+  }
+}
 console.log('');
 console.log('Where the points go:');
 printScoreBreakdown(report.scoreBreakdown);
