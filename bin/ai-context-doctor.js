@@ -144,11 +144,11 @@ if (writeOutput) {
     writeResult = writeAiignore(path.join(cwd, '.aiignore'), report.suggestedAiignore, { dryRun });
   } catch (error) {
     if (jsonOutput) {
-      console.log(JSON.stringify({
+      fs.writeSync(1, `${JSON.stringify({
         error: error.code || 'write-failed',
         message: error.message,
         target: path.join(cwd, '.aiignore')
-      }, null, 2));
+      }, null, 2)}\n`);
       process.exit(1);
     }
     console.error(`Error: ${error.message}`);
@@ -176,7 +176,12 @@ if (jsonOutput) {
         }
       : {})
   };
-  console.log(JSON.stringify(output, null, 2));
+  // `process.exit` does not wait for a pipe to drain: on Node 18/20 a `--json`
+  // report larger than one pipe buffer (the blocked-file list pushed it past
+  // 8 KiB) arrived truncated, and `JSON.parse` then failed for scripts that
+  // capture stdout. Writing straight to the descriptor is synchronous, so the
+  // exit that follows cannot cut the document in half.
+  fs.writeSync(1, `${JSON.stringify(output, null, 2)}\n`);
   process.exit(0);
 }
 

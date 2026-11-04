@@ -13,7 +13,12 @@ const node = process.execPath;
 function run(args, options = {}) {
   return spawnSync(node, [cliPath, ...args], {
     cwd: options.cwd || repoRoot,
-    encoding: 'utf8'
+    encoding: 'utf8',
+    // The report now carries one entry per blocked file, so `--json` on the
+    // demo repository is larger than the buffer older Node versions give a
+    // synchronous child (8 KiB on Node 18/20). Without this the capture is cut
+    // mid-object and valid JSON looks invalid on exactly those two versions.
+    maxBuffer: 16 * 1024 * 1024
   });
 }
 
