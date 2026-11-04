@@ -305,6 +305,11 @@ Maintainers: see the [release checklist](https://github.com/WJDdidi-1/ai-context
 - Better noise rules based on real reports from users.
 - Optional `--fix` that writes the suggested ignore entries, with a diff you approve first.
 
+## Changelog
+
+See [CHANGELOG.md](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/CHANGELOG.md)
+for what changed in each release.
+
 ## License
 
 Apache-2.0 — see [LICENSE](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/LICENSE)
