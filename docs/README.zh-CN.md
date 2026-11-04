@@ -25,8 +25,18 @@ AI Context Doctor
 Repo: demo-ai-context-noise-repo
 Scanned: 8 files, 1.50 MB
 
-AI Context Health: 22/100
+AI Context Health: 43/100
 Status: Too much noise for an AI coding agent
+
+What reaches the model: 78/100
+  strength 3 (Balanced) · 335.0 KB of 1.50 MB let through
+
+Where the points go:
+  context noise          - 21.3 / 30
+  context volume         - 16.2 / 25
+  one file dominating    -   20 / 20
+  file sprawl            -    0 / 15
+  binary payloads        -    0 / 10
 
 Context noise estimate:
 78% likely noise
@@ -49,6 +59,8 @@ dist/
 *.log
 package-lock.json
 
+At strength 3 the strength already blocks these, so they change nothing that reaches the model. They bite at a lower strength.
+
 Next step:
 Run this before asking your coding agent to inspect a larger repo.
 ```
@@ -60,7 +72,9 @@ Run this before asking your coding agent to inspect a larger repo.
 | 这一行 | 意思 |
 | --- | --- |
 | `Scanned: 8 files, 1.50 MB` | 实际扫了多少内容。`.git/` 和 `node_modules/` 不扫。 |
-| `AI Context Health: 22/100` | 100 减去「命中了噪音规则的文件」占的体积比例。22 分表示 AI 要读的东西里大部分是噪音。 |
+| `AI Context Health: 43/100` | 100 减去五类损失：噪音（30）、总体积（25）、单个文件占比（20）、文件数量（15）、二进制（10）。只有第一类能靠规则改善，后四类描述的是文件夹本身。 |
+| `What reaches the model` | 应用 `.aiignore` 规则和当前力度之后，模型实际会看到的分数和字节数。 |
+| `Where the points go` | 分数背后的五类损失，低分因此可以解释。 |
 | `Status:` | 把分数翻译成一句话：85 分以上干净，60–84 有噪音，60 分以下噪音太多。 |
 | `Top context waste` | 体积最大的五个噪音来源，以及各自被标出来的原因。 |
 | `Review before sharing` | 看起来像凭证或部署脚本的文件。**工具没有说它们一定是密钥**，只是提醒你：把这个仓库贴进聊天窗口之前先看一眼。 |
@@ -102,11 +116,34 @@ npm install -g ai-context-doctor
 ai-context-doctor              # 扫描当前目录
 ai-context-doctor ../some-repo # 扫描另一个仓库
 ai-context-doctor --json       # 机器可读输出
+ai-context-doctor --explain src/index.js   # 解释单个文件为什么被挡
 ai-context-doctor --write      # 把建议的规则写进 .aiignore
 ai-context-doctor --write --dry-run   # 只看会加什么，不写文件
 ai-context-doctor --help
 ai-context-doctor --version
 ```
+
+### 这个文件为什么被挡？
+
+```bash
+npx ai-context-doctor --explain src/index.js
+```
+
+它会打印这个路径的结论、做出决定的规则、所属类别，以及放行它会付出多少分：
+
+```text
+AI Context Doctor — explain
+
+Path: package-lock.json
+Verdict: blocked
+Rule: strength 3 (Balanced) skips lockfiles
+Category: lockfile
+Size: 35.2 KB (~8342–11700 tokens)
+Why: lockfile
+Score impact: allowing it would cost 4 points (78/100 -> 74/100).
+```
+
+如果决定它的是 `.aiignore` 里的某一行，`Rule:` 会打印那一行，而不是力度。没被挡的路径会显示 `Verdict: not blocked`。未知路径会报错并以退出码 2 结束，不会悄悄说「没被挡」。加 `--json` 可以得到同样内容的结构化对象。
 
 ### 写入 `.aiignore`
 
@@ -120,7 +157,7 @@ npx ai-context-doctor --write
 
 它不会顺着符号链接写到别处，也拒绝把恰好叫 `.aiignore` 的目录替换掉。
 
-扫描是基于文件名和大小的启发式判断，**不读 `.aiignore`**，所以写了文件分数不会变。这个文件是写给别的工具看的：你的助手、编辑器、以及你的同事。
+原始健康分是基于文件名和大小的启发式判断，写规则不会改变它。`What reaches the model` 会应用被扫描目录里的 `.aiignore` 规则和当前力度，所以写规则可以改变 AI 实际看到的内容。这个文件也是写给你的助手、编辑器和同事看的。
 
 ### JSON 输出
 
@@ -150,6 +187,8 @@ const { scanRepository } = require('ai-context-doctor');
 const report = scanRepository(process.cwd());
 console.log(report.healthScore, report.topNoise);
 ```
+
+`explainPath(root, relativePath, { rules, level })` 是 `--explain` 背后的判断函数，返回结论、决定规则、类别和分数影响，不打印任何内容。
 
 `scanRepository(root, { maxFiles, maxBytes })` 是同步的，没有任何依赖。传上限可以低成本扫超大目录，此时报告会带 `truncated: true`。
 
@@ -183,7 +222,7 @@ dsh plugin --profile web add dsh-aiignore
 - 不是 `gitignore` 检查器：它看的是「AI 会读到什么」，不是「git 跟踪什么」，所以被 git 忽略的文件照样会出现。
 - 不是密钥扫描器。`Review` 列表基于文件名，没有扩展名的 `id_rsa`、粘在 `config.js` 里的密钥都会漏掉。
 - 不统计 token，也不解析代码。分数是体积启发式：可以当真信号，不能当测量结果。
-- 没有配置文件。上限只能通过 API 和 Harness 插件设置。
+- 没有通用配置文件。当前力度存在被扫描目录的 `.aiignore.policy.json` 里；扫描上限只能通过 API 和 Harness 插件设置。
 
 ## 为什么建议 `.aiignore` 而不是 `.gitignore`
 
@@ -191,7 +230,7 @@ dsh plugin --profile web add dsh-aiignore
 
 ## 隐私
 
-全部在本地运行。工具只读取目录项和文件大小，不读文件内容，不建立网络连接，不存储任何东西。唯一会发到外面的数据，是你用 npm 安装它时 npm 自己发的。
+全部在本地运行。工具只读取目录项、文件大小，以及规则/策略文件（`.aiignore`、`.aiignore.policy.json`）；不读其他文件内容，不建立网络连接，不存储任何东西。唯一会发到外面的数据，是你用 npm 安装它时 npm 自己发的。
 
 ## 开发
 
