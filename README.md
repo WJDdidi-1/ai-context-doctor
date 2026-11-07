@@ -297,6 +297,52 @@ repository's own plugin is released with.
 - It does not count tokens or parse code. The score is a size heuristic — useful as a signal, not as a measurement.
 - It does not have a general config file. The chosen strength lives in `.aiignore.policy.json` in the scanned directory; scan caps are available through the API and the Harness plugin only.
 
+## FAQ
+
+**Is anything uploaded, and do I need an API key?**
+No account and no API key. A scan reads directory entries, file sizes, and `.aiignore` / `.aiignore.policy.json`; it does not read other file contents, open a network connection, or store anything.
+
+```bash
+npx ai-context-doctor .
+```
+
+**Why is this one file blocked — or not?**
+`--explain` prints the verdict, the rule that decided it, the category, the size, and what letting it through would cost:
+
+```bash
+npx ai-context-doctor --explain package-lock.json
+```
+
+An unknown path is an error with exit code 2, not a silent "not blocked". More in [Why is this file blocked?](#why-is-this-file-blocked).
+
+**Will it change my repository?**
+Only when you pass `--write`. A plain scan writes nothing. To see the lines first:
+
+```bash
+npx ai-context-doctor --write --dry-run
+```
+
+`--dry-run` only applies to `--write`, and it is rejected on its own.
+
+**Can a bad score fail my CI build?**
+Not by itself. A completed scan exits 0 even at 43/100; exit code 1 means the CLI could not run the scan (bad option or unreadable directory), and 2 means the path passed to `--explain` is not in the scanned directory. Use `--json` and fail on the fields you care about:
+
+```bash
+npx ai-context-doctor --json > context-report.json
+```
+
+Then check `healthScore`, `status`, or `blockedBytes` in your own CI step.
+
+**I wrote the suggested rules and the score did not move. Is that a bug?**
+No. `healthScore` is a size heuristic over file names and sizes, so writing `.aiignore` rules does not change it. At the default strength 3 the strength already blocks most of those categories, so `suggestedRulesChangeTheScore` is often `false`. `--json` answers whether writing the suggestions would move the effective score at the current strength:
+
+```bash
+npx ai-context-doctor --json
+```
+
+**Does the CLI stop my agent from reading these files?**
+No. The CLI reports and suggests, and `--write` edits `.aiignore`; it does not intercept reads. Inside DeepSeek Harness, [`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore) is what applies the rules to reads — see [DeepSeek Harness plugin](#deepseek-harness-plugin).
+
 ## Why `.aiignore` and not `.gitignore`
 
 Because the two questions are different. `dist/` is gitignored in most projects and still gets read by an agent that ignores git. The tool reports on bytes the agent would ingest, whatever git thinks of them.
