@@ -248,6 +248,52 @@ dsh plugin --profile web add dsh-aiignore
 - 不统计 token，也不解析代码。分数是体积启发式：可以当真信号，不能当测量结果。
 - 没有通用配置文件。当前力度存在被扫描目录的 `.aiignore.policy.json` 里；扫描上限只能通过 API 和 Harness 插件设置。
 
+## 常见问题
+
+**要上传东西吗？需要 API key 吗？**
+不需要账号，也不需要 API key。扫描只读取目录项、文件大小和 `.aiignore` / `.aiignore.policy.json`，不读其他文件内容，不建立网络连接，也不保存任何东西。
+
+```bash
+npx ai-context-doctor .
+```
+
+**为什么这个文件被挡，或者没被挡？**
+`--explain` 会打印结论、做决定的规则、类别、大小，以及放行它会付出多少分：
+
+```bash
+npx ai-context-doctor --explain package-lock.json
+```
+
+未知路径会报错并以退出码 2 结束，不会悄悄显示「没被挡」。详见[这个文件为什么被挡？](#这个文件为什么被挡)。
+
+**会改动我的仓库吗？**
+只有传 `--write` 才会。普通扫描不写任何文件。先看会加什么：
+
+```bash
+npx ai-context-doctor --write --dry-run
+```
+
+`--dry-run` 只配合 `--write` 使用，单独传会被拒绝。
+
+**分数低会让 CI 失败吗？**
+不会自己失败。扫描完成就返回 0，即使只有 43/100；退出码 1 表示 CLI 没能跑完扫描（选项错误或目录不可读），2 表示传给 `--explain` 的路径不在被扫描目录里。请用 `--json` 自己判断：
+
+```bash
+npx ai-context-doctor --json > context-report.json
+```
+
+然后在 CI 步骤里检查 `healthScore`、`status` 或 `blockedBytes`。
+
+**写了建议规则，分数没变，是 bug 吗？**
+不是。`healthScore` 是看文件名和大小的体积启发式，写 `.aiignore` 规则不会改变它。默认力度 3 下，力度本身已经挡住了其中大部分类别，所以 `suggestedRulesChangeTheScore` 常常是 `false`。`--json` 会回答：在当前力度下写出这些建议，是否会改变实际到达模型的分数：
+
+```bash
+npx ai-context-doctor --json
+```
+
+**CLI 会阻止我的助手读这些文件吗？**
+不会。CLI 只负责报告和建议，`--write` 会修改 `.aiignore`，但不会拦截读取。在 DeepSeek Harness 里，是由 [`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore) 把规则应用到读取上——见 [DeepSeek Harness 插件](#deepseek-harness-插件)。
+
 ## 为什么建议 `.aiignore` 而不是 `.gitignore`
 
 因为这是两个不同的问题。`dist/` 在大多数项目里都被 git 忽略了，但一个不看 git 规则的助手照样会去读它。这个工具报告的是「AI 会读进去多少字节」，跟 git 怎么想无关。
