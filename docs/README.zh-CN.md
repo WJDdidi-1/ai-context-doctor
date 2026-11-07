@@ -133,8 +133,10 @@ ai-context-doctor --version
 
 ### 这个文件为什么被挡？
 
+以随源码分发的 demo 仓库为例：
+
 ```bash
-npx ai-context-doctor --explain src/index.js
+node bin/ai-context-doctor.js ./demo-ai-context-noise-repo --explain package-lock.json
 ```
 
 它会打印这个路径的结论、做出决定的规则、所属类别，以及放行它会付出多少分：
@@ -152,6 +154,18 @@ Score impact: allowing it would cost 4 points (78/100 -> 74/100).
 ```
 
 如果决定它的是 `.aiignore` 里的某一行，`Rule:` 会打印那一行，而不是力度。没被挡的路径会显示 `Verdict: not blocked`。未知路径会报错并以退出码 2 结束，不会悄悄说「没被挡」。加 `--json` 可以得到同样内容的结构化对象。
+
+### 运行示例
+
+[`examples/`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/examples/README.md) 里有一个自包含的 `--explain` 演示。它会建一个临时仓库，用真实 CLI 跑两次——第一次没有 `.aiignore`，第二次加了一条规则——打印两个结论，然后删掉临时目录：
+
+```bash
+node examples/explain-blocked-path.js
+# 或者
+npm run example
+```
+
+不需要安装，也不联网；只用 Node.js 内置模块和本仓库的代码。第一个结论是 lockfile 被默认力度 3 挡住，第二个会点名 `.aiignore` 里的那一行。
 
 ### 写入 `.aiignore`
 
