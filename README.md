@@ -131,8 +131,10 @@ ai-context-doctor --version
 
 ### Why is this file blocked?
 
+From the shipped demo repository:
+
 ```bash
-npx ai-context-doctor --explain src/index.js
+node bin/ai-context-doctor.js ./demo-ai-context-noise-repo --explain package-lock.json
 ```
 
 Prints the verdict for one path, the rule that decided it, the category it
@@ -154,6 +156,23 @@ If a line in `.aiignore` decided it, the `Rule:` line prints that exact line
 instead of a strength. An unblocked path says `Verdict: not blocked`. An unknown
 path is an error with exit code 2, not a silent "not blocked". Add `--json` to
 get the same explanation as an object.
+
+### Run the example
+
+[`examples/`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/examples/README.md)
+has a self-contained walkthrough of `--explain`. It builds a throwaway
+repository, runs the real CLI twice — once with no `.aiignore`, then once after
+adding a rule — prints both verdicts, and deletes the fixture:
+
+```bash
+node examples/explain-blocked-path.js
+# or
+npm run example
+```
+
+No install or network access; it uses Node.js built-ins and the code in this
+checkout. The first verdict is a lockfile blocked by strength 3, the second
+names the exact `.aiignore` line.
 
 ### Writing `.aiignore`
 

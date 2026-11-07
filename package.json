@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node bin/ai-context-doctor.js",
+    "example": "node examples/explain-blocked-path.js",
     "test": "node scripts/run-tests.js",
     "smoke": "node scripts/smoke-test.js",
     "pack:check": "npm pack --dry-run",
@@ -19,6 +20,7 @@
   "files": [
     "bin/",
     "lib/",
+    "examples/",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
