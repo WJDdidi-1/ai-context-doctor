@@ -2,7 +2,7 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
-## Unreleased
+## 0.7.8
 
 - **TypeScript declarations now match the public API.** `lib/index.d.ts` covers
   every export from `lib/index.js`, including `buildReport` and `explainPath`,
