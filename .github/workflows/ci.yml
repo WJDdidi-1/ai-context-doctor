@@ -25,6 +25,11 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      # Keep devDependencies so the TypeScript declaration checks run here
+      # instead of skipping as they do in the production-only package install.
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run unit tests
         run: npm test
 
@@ -53,6 +58,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+
+      # Keep devDependencies so the TypeScript declaration checks run here
+      # instead of skipping as they do in the production-only package install.
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run unit tests
         run: npm test
