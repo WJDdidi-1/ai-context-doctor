@@ -2,6 +2,17 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## Unreleased
+
+- **TypeScript declarations now match the public API.** `lib/index.d.ts` covers
+  every export from `lib/index.js`, including `buildReport` and `explainPath`,
+  with the synchronous signatures the implementation actually has. `package.json`
+  advertises it through both the top-level `types` field and a `"types"`
+  condition in `exports["."]`, so `node16`, `nodenext` and `bundler` resolution
+  find it without relying on a sibling `.d.ts` guess. `npm test` compiles a
+  fixture that imports every runtime export and fails if a declaration is
+  missing. Thanks to @psfazila02-hub for the initial declarations in #185.
+
 ## 0.7.7
 
 - **Ask why one file is blocked: `--explain <path>`.** A report said which files

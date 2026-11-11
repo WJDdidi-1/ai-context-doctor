@@ -225,6 +225,8 @@ const report = scanRepository(process.cwd());
 console.log(report.healthScore, report.topNoise);
 ```
 
+The package ships TypeScript declarations for every export, so the same import type-checks under `node16`, `nodenext` and `bundler` resolution.
+
 `writeAiignore(aiignorePath, suggested, { dryRun })` is the writer behind `--write`, if you want the same behaviour from code.
 
 `explainPath(root, relativePath, { rules, level })` is the decision behind `--explain`; it returns the verdict, the deciding rule, the category and the score impact without printing anything.
