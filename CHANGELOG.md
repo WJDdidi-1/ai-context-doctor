@@ -12,6 +12,13 @@ Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.
   find it without relying on a sibling `.d.ts` guess. `npm test` compiles a
   fixture that imports every runtime export and fails if a declaration is
   missing. Thanks to @psfazila02-hub for the initial declarations in #185.
+- **Fix: `npm ci` works again and production installs no longer fail the type
+  test.** `typescript` was added as a devDependency without updating the
+  lockfile, so a clean clone failed with `EUSAGE`. The lockfile now carries it.
+  `test/types.test.js` skips the `tsc --noEmit` checks with an explicit reason
+  when TypeScript is absent (a packed-tarball or `--omit=dev` install) and still
+  runs them when it is present; CI installs devDependencies so the declarations
+  stay checked on every supported platform.
 
 ## 0.7.7
 

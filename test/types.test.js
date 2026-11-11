@@ -7,7 +7,20 @@ const { spawnSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
 const fixture = path.join(__dirname, 'types', 'exports.ts');
-const tsc = require.resolve('typescript/bin/tsc');
+
+// A production-only install (a packed tarball, or `npm install --omit=dev`)
+// has no devDependencies, so TypeScript is not there to compile the fixture.
+// Skip the compilation checks in that case instead of failing; they still run
+// wherever the compiler is installed (`npm ci && npm test`).
+let tsc = null;
+try {
+  tsc = require.resolve('typescript/bin/tsc');
+} catch {
+  // The skip reason below explains the missing compiler to the reader.
+}
+const tscSkipReason = tsc
+  ? false
+  : 'typescript is not installed (production-only install); run `npm ci` to type-check the declarations';
 
 // node16/nodenext are what Node itself implements; bundler is the common setting
 // for web tooling. All three use package.json "exports", so all three must find
@@ -19,7 +32,7 @@ const resolutions = [
 ];
 
 for (const config of resolutions) {
-  test(`declarations resolve under moduleResolution ${config.moduleResolution}`, () => {
+  test(`declarations resolve under moduleResolution ${config.moduleResolution}`, { skip: tscSkipReason }, () => {
     const result = spawnSync(
       process.execPath,
       [
