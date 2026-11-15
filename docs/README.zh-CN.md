@@ -239,6 +239,8 @@ dsh plugin --profile web add dsh-aiignore
 - **需要检查**：看起来像凭证的文件名（`.env*`、`secrets.env`、`credentials.json`、`*.pem`、`*.key`）以及路径里带 `deploy` 的文件。`.env.example` 会被识别成模板，标记为通常可以分享。
 - **不遍历**：`.git/`、`node_modules/`、`.venv/`、`venv/`、`__pycache__/`、`vendor/`
 
+如果你发现 AI Context Doctor 应该理解的仓库噪音模式，可以提交一个 [context noise example issue](https://github.com/WJDdidi-1/ai-context-doctor/issues/new?template=context-noise-example.md)。
+
 ## 它不做什么
 
 - 不调用任何 AI 服务，不需要 API key，不上传文件。
