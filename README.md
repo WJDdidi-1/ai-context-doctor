@@ -290,6 +290,8 @@ repository's own plugin is released with.
 - **Review hints:** credential-shaped names (`.env*`, `secrets.env`, `credentials.json`, `*.pem`, `*.key`) and paths containing `deploy`. `.env.example` is recognised as a template and marked usually safe.
 - **Never walked:** `.git/`, `node_modules/`, `.venv/`, `venv/`, `__pycache__/`, `vendor/`
 
+Found a repo noise pattern AI Context Doctor should understand? Open a [context noise example issue](https://github.com/WJDdidi-1/ai-context-doctor/issues/new?template=context-noise-example.md).
+
 ## What it does not do
 
 - It does not call an AI service, need an API key, or upload anything.
