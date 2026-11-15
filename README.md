@@ -1,153 +1,384 @@
 # AI Context Doctor
 
-[中文说明](./README.zh-CN.md)
+[![npm](https://img.shields.io/npm/v/ai-context-doctor)](https://www.npmjs.com/package/ai-context-doctor)
+[![CI](https://github.com/WJDdidi-1/ai-context-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/WJDdidi-1/ai-context-doctor/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/ai-context-doctor)](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/LICENSE)
+[![downloads](https://img.shields.io/npm/dm/ai-context-doctor)](https://www.npmjs.com/package/ai-context-doctor)
 
-Find what your AI coding agent should not read.
+[中文说明](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/docs/README.zh-CN.md)
 
-AI Context Doctor is an early usable local CLI prototype that scans a repository and shows files that are likely wasting context before you use Claude Code, Codex, Cursor, Cline, or another repo-aware coding agent.
-
-Demo output from `node bin/ai-context-doctor.js ./demo-ai-context-noise-repo`:
-
-![AI Context Doctor demo output showing context health, top context waste, review hints, and .aiignore suggestions](./assets/ai-context-doctor-demo-output.png)
-
-## Current status
-
-AI Context Doctor currently runs as a local Node.js CLI from this repository.
-
-- Usable today: clone the repo and run it with `node`.
-- Not published yet: `npx ai-context-doctor` is a future npm goal, not the current install path.
-- No login, API key, or file upload is required.
-- Results are heuristic, not precise token accounting or security analysis.
-
-## Quick start
-
-Clone the repository and run the built-in demo first:
-
-```bash
-git clone https://github.com/WJDdidi-1/ai-context-doctor.git
-cd ai-context-doctor
-node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
-```
-
-Then scan the current directory or another local repository.
-
-## Scan Current Directory
-
-```bash
-node bin/ai-context-doctor.js
-```
-
-## Scan Another Directory
-
-```bash
-node bin/ai-context-doctor.js ../some-repo
-```
-
-## CLI Help
-
-```bash
-node bin/ai-context-doctor.js --help
-node bin/ai-context-doctor.js --version
-```
-
-## Example Output
-
-```text
-AI Context Doctor
-
-Repo: my-project
-Scanned: 428 files, 31.6 MB
-
-AI Context Health: 62/100
-Status: Too much noise for an AI coding agent
-
-Context noise estimate:
-73% likely noise
-27% likely useful source context
-
-Top context waste:
-1. dist/                  18.4 MB   generated build output
-2. data/export.json        2.4 MB   large file
-3. package-lock.json       1.9 MB   lockfile
-4. coverage/               1.2 MB   test coverage output
-5. logs/dev.log            420 KB   local log file
-
-Review before sharing:
-- .env.example             environment-like file
-- scripts/deploy.sh        deployment script
-
-Suggested .aiignore:
-dist/
-coverage/
-*.log
-*.lock
-.env*
-
-Next step:
-Run this before asking your coding agent to inspect a larger repo.
-```
-
-## What It Does Now
-
-- Scans the current working directory or one directory path you pass in.
-- Detects common context noise such as build output, framework caches, coverage output, lockfiles, log files, and individual files over 1 MB.
-- Highlights environment-like files and deployment scripts for review before sharing.
-- Prints a screenshot-friendly terminal report.
-- Suggests starter `.aiignore` entries based on simple heuristics.
-
-## What It Does Not Do
-
-- It does not call an AI API.
-- It does not upload files.
-- It does not modify your repository.
-- It does not generate `.aiignore` automatically.
-- It does not provide JSON output or a configuration system.
-- It is not a security scanner or vulnerability detector.
-- It does not perform precise token counting or AST analysis.
-
-## Why It Exists
-
-AI coding tools work better when they read the right files. Real repositories often include generated output, caches, logs, lockfiles, coverage reports, and other files that add noise before the agent reaches the source code that matters.
-
-AI Context Doctor is meant to make that noise visible in a few seconds, before you send a repository to an AI coding agent.
-
-## Current Heuristics And Limits
-
-Current noise rules are intentionally simple:
-
-- Directories: `dist/`, `build/`, `coverage/`, `.next/`, `.turbo/`
-- Lockfiles: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`
-- Logs: `*.log`
-- Large files: individual files over 1 MB, unless a more specific rule already matched
-- Review hints: `.env*` files and paths containing `deploy`
-- Skipped traversal: `.git/` and `node_modules/`
-
-The health score and noise percentage are rough estimates based on matched file sizes. They should be treated as a quick signal, not an exact measurement.
-
-Found a repo noise pattern AI Context Doctor should understand? Open a [context noise example issue](https://github.com/WJDdidi-1/ai-context-doctor/issues/new?template=context-noise-example.md).
-
-## Maintainer Notes
-
-Maintainers can use the short [release checklist](./docs/release-checklist.md) before publishing. These checks are for repository maintenance and do not publish the package.
-
-## Future npm usage
-
-The package is not published to npm yet. The intended future usage is:
+**AI coding agents read your repository file by file. Some of those files are garbage — build output, logs, lockfiles, a 40 MB data dump. This tool finds them in a few seconds and tells you what to keep away from the agent.**
 
 ```bash
 npx ai-context-doctor
 ```
 
-Until then, use the local `node bin/ai-context-doctor.js` workflow shown above.
+No install, no login, no API key, nothing uploaded. It only reads file names, sizes, and your ignore/policy files.
 
-## Roadmap
+## What it looks like
 
-Near-term next steps:
+Real output of `node bin/ai-context-doctor.js ./demo-ai-context-noise-repo`, run from a clean checkout of this repository:
 
-- Keep scanning rules small and explainable.
-- Keep release checks fast and dependency-free.
-- Prepare the first npm publish once package contents and ownership are confirmed.
+```text
+AI Context Doctor
+
+Repo: demo-ai-context-noise-repo
+Scanned: 8 files, 1.50 MB
+
+AI Context Health: 43/100
+Status: Too much noise for an AI coding agent
+
+What reaches the model: 78/100
+  strength 3 (Balanced) · 335.0 KB of 1.50 MB let through
+
+Blocked from the model:
+- coverage/lcov.info           16.7 KB   build · category rule at strength 3 (Balanced)
+- data/export.json             1.00 MB   large · file > 1.00 MB at strength 3 (Balanced)
+- dist/app.bundle.js          106.9 KB   build · category rule at strength 3 (Balanced)
+- logs/dev.log                 18.4 KB   log · category rule at strength 3 (Balanced)
+- package-lock.json            35.2 KB   lockfile · category rule at strength 3 (Balanced)
+
+Where the points go:
+  context noise          - 21.3 / 30
+  context volume         - 16.2 / 25
+  one file dominating    -   20 / 20
+  file sprawl            -    0 / 15
+  binary payloads        -    0 / 10
+
+Context noise estimate:
+78% likely noise
+22% likely useful source context
+
+Top context waste:
+1. data/export.json            1.00 MB   large file
+2. dist/                      106.9 KB   generated build output
+3. package-lock.json           35.2 KB   lockfile
+4. logs/dev.log                18.4 KB   local log file
+5. coverage/                   16.7 KB   test coverage output
+
+Review before sharing:
+- .env.example             environment template (usually safe to share)
+- scripts/deploy.sh        deployment script
+
+Suggested .aiignore:
+coverage/
+dist/
+*.log
+package-lock.json
+
+At strength 3 the strength already blocks these, so they change nothing that reaches the model. They bite at a lower strength.
+
+Next step:
+Run this before asking your coding agent to inspect a larger repo.
+```
+
+## How to read it
+
+| Line | What it means |
+| --- | --- |
+| `Scanned: 8 files, 1.50 MB` | What was actually walked. `.git/` and `node_modules/` are skipped. |
+| `AI Context Health: 43/100` | Five separate losses, subtracted from 100: noise (30), sheer size (25), one file dominating (20), file count (15), binaries (10). The first is what rules can move; the other four describe the folder itself, so a clean but enormous repository no longer scores 100. |
+| `What reaches the model` | The same score after `.aiignore` rules and the chosen strength are applied, plus how many bytes they let through. |
+| `Blocked from the model` | Up to five blocked files, each with its category and the rule or strength cutoff that decided it. |
+| `Where the points go` | The five losses behind the health score, so a low number is explainable instead of mysterious. |
+| `Status:` | Just the score in words: 85+ clean, 60–84 some noise, below 60 too much. |
+| `Top context waste` | The five biggest offenders with the reason each was flagged. |
+| `Review before sharing` | Files that look like credentials or deploy scripts. **The tool does not claim they are secret** — it says look before you paste the repo into a chat. |
+| `Suggested .aiignore` | Lines you can paste into an ignore file. Nothing is written for you. |
+
+## How it decides
+
+![How a repository and a conversation are scored](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/architecture.svg)
+
+Two paths read the same decision function, which is why the number on the panel and the files the agent was actually kept from cannot disagree: the scan turns a folder into files, bytes and noise and scores it, and every read the agent makes is checked against the same `.aiignore` rules at the chosen strength. Optimize writes those rules, and the next scan and the next read both pick them up.
+
+## What you can do with it
+
+- **Before you hand a repo to an agent** — run it, then `--write` the suggested lines into `.aiignore` instead of copying them by hand.
+- **On a repo you just cloned** — see how much of it is generated output before the agent drowns in it.
+- **In CI** — `--json` gives a stable object, so you can fail a build when context health drops.
+- **In your own tool** — `require('ai-context-doctor')` exposes the same scan as a function.
+- **Inside DeepSeek Harness** — install [`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore) and the agent is told automatically when a session opens a noisy workspace, so you do not have to remember to run anything.
+
+## Install
+
+Run it without installing anything:
+
+```bash
+npx ai-context-doctor
+```
+
+Or install it once:
+
+```bash
+npm install -g ai-context-doctor
+```
+
+Requires Node.js 18 or newer.
+
+## Usage
+
+```bash
+ai-context-doctor              # scan the current directory
+ai-context-doctor ../some-repo # scan another repository
+ai-context-doctor --json       # machine-readable output
+ai-context-doctor --explain src/index.js   # explain one file's verdict
+ai-context-doctor --write      # add the suggested rules to .aiignore
+ai-context-doctor --write --dry-run   # show what --write would add
+ai-context-doctor --help
+ai-context-doctor --version
+```
+
+### Why is this file blocked?
+
+From the shipped demo repository:
+
+```bash
+node bin/ai-context-doctor.js ./demo-ai-context-noise-repo --explain package-lock.json
+```
+
+Prints the verdict for one path, the rule that decided it, the category it
+belongs to, and what letting it through would cost:
+
+```text
+AI Context Doctor — explain
+
+Path: package-lock.json
+Verdict: blocked
+Rule: strength 3 (Balanced) skips lockfiles
+Category: lockfile
+Size: 35.2 KB (~8342–11700 tokens)
+Why: lockfile
+Score impact: allowing it would cost 4 points (78/100 -> 74/100).
+```
+
+If a line in `.aiignore` decided it, the `Rule:` line prints that exact line
+instead of a strength. An unblocked path says `Verdict: not blocked`. An unknown
+path is an error with exit code 2, not a silent "not blocked". Add `--json` to
+get the same explanation as an object.
+
+### Run the example
+
+[`examples/`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/examples/README.md)
+has a self-contained walkthrough of `--explain`. It builds a throwaway
+repository, runs the real CLI twice — once with no `.aiignore`, then once after
+adding a rule — prints both verdicts, and deletes the fixture:
+
+```bash
+node examples/explain-blocked-path.js
+# or
+npm run example
+```
+
+No install or network access; it uses Node.js built-ins and the code in this
+checkout. The first verdict is a lockfile blocked by strength 3, the second
+names the exact `.aiignore` line.
+
+### Writing `.aiignore`
+
+```bash
+npx ai-context-doctor --write
+```
+
+`--write` appends the rules the report suggests to `.aiignore` in the scanned
+directory. It only appends: comments and rules you already have stay exactly as
+they are, and running it twice adds nothing the second time. If the file does
+not exist it is created with a two-line header.
+
+`--write --dry-run` prints what would be added and writes nothing.
+
+It will not follow a symbolic link, and it refuses to replace a directory that
+happens to be called `.aiignore`.
+
+The raw health score is a heuristic over file names and sizes and does not change
+when you write rules. The `What reaches the model` score applies the `.aiignore`
+rules in the scanned directory and the chosen strength, so writing rules can
+move what the agent actually sees. The file is also for your agent, your editor,
+and your teammates.
+
+### JSON output
+
+```bash
+npx ai-context-doctor ./some-repo --json
+```
+
+Returns `repo`, `healthScore`, `effectiveScore`, `status`, `noisePercent`, `usefulPercent`, `scannedBytes`, `scannedFiles`, `allowedBytes`, `allowedFiles`, `topNoise`, `review`, `suggestedAiignore`, `scoreBreakdown` (the five-dimension arithmetic behind each score) and `scoreLost`, `blockedFiles` / `blockedBytes` (what the rules held back), `blockedDetails` (alias `blockedReasons`: one entry per blocked path with its `rule`, `category`, `level`, `levelLabel`, `blockedBy`, and `levelReason` / `limitBytes` when a size limit did it), and `strength` / `strengthLabel` — the strength the score was computed at, so two runs stay comparable. The text output lists up to five blocked files and points at `--json` for the rest. `suggestedRulesChangeTheScore` answers the question the suggestion list raises: would writing these rules move the number at this strength? At the default strength 3 they usually do not — the strength already blocks those categories — and the text output says so instead of implying the file will help. `truncated: true` appears when a scan cap was hit.
+
+With `--write` it also carries a `write` object: `path`, `created`, `added`, `written`, `dryRun`.
+
+If the path is not a readable directory, `--json` still prints a single JSON object — never a banner — and exits with code 1, so a CI step can parse the failure:
+
+```json
+{
+  "error": "not-a-readable-directory",
+  "message": "/path/you/passed is not a readable directory.",
+  "target": "/path/you/passed"
+}
+```
+
+## Use it from code
+
+```js
+const { scanRepository } = require('ai-context-doctor');
+
+const report = scanRepository(process.cwd());
+console.log(report.healthScore, report.topNoise);
+```
+
+The package ships TypeScript declarations for every export, so the same import type-checks under `node16`, `nodenext` and `bundler` resolution.
+
+`writeAiignore(aiignorePath, suggested, { dryRun })` is the writer behind `--write`, if you want the same behaviour from code.
+
+`explainPath(root, relativePath, { rules, level })` is the decision behind `--explain`; it returns the verdict, the deciding rule, the category and the score impact without printing anything.
+
+`scanRepository(root, { maxFiles, maxBytes })` is synchronous and has no dependencies. Pass a cap for huge trees; the report then carries `truncated: true`.
+
+## DeepSeek Harness plugin
+
+[![checked with dsh-plugin-toolkit](https://raw.githubusercontent.com/WJDdidi-1/dsh-plugin-toolkit/main/docs/badge.svg)](https://github.com/WJDdidi-1/dsh-plugin-toolkit)
+
+[`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore) packages the same scan as a Host plugin. When a session opens a workspace, the agent gets one short note naming the files that would waste its context — and nothing at all when the workspace is clean.
+
+```bash
+dsh plugin --profile web add dsh-aiignore
+```
+
+The plugin also adds an **AIignore** tab to the right sidebar, opened from a
+folder button in the composer. It opens on **Protection**: how many reads in
+*this conversation* are junk and that your rules now hold back, and roughly how
+many tokens never reached the model. Before you optimize it says the honest
+version — "2 reads are junk and still reach the model" — so the button has
+something to be measured against. One primary button, *Optimize now*, rescans,
+writes what is missing, re-reads the conversation and reports the score before
+and after; when nothing is missing it says so. A second line offers **one notch stricter** with
+the number attached, so "raise the strength" is a decision instead of advice.
+Directly under the counters is the **strength ladder**: five notches, each
+labelled with the score this folder would have at that notch, so the trade is
+visible before you take it — and picking one applies it and rescores the page.
+**Files** browses the workspace a directory at a time and spells out what its
+three verdicts mean — `noise` is regenerated by a build, a lockfile or a log,
+`review` is worth a look first, `ignored` already has a rule — then offers the
+rules the scanner would still add, one click each; **Settings** holds the
+`.aiignore` lines with an × each, the note for the agent, and the
+five-dimension arithmetic. It follows the Harness light and dark themes.
+
+![The AIignore tab in the right sidebar](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/docs/assets/panel-protection-light.png)
+
+It declares `engines.dsh: ">=0.2.0"` — the Harness checks that range before installing, and refuses the plugin rather than half-loading it — and needs Node.js 18 or newer. In the [plugin market index](https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/market/index.json) it is filed under **Context quality** with three labels: *No network calls*, *Works with no setup*, *Lives in the sidebar*. Without a sidebar service the same button opens the panel as a floating card. The source, its configuration and its limits are in [`plugin/README.md`](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/plugin/README.md).
+
+## Building your own plugin?
+
+The checks that decide whether a Harness plugin installs — the host range, the
+root export the loader mounts, `dsh.client` agreeing with `exports["./client"]`,
+and whether `npm pack` actually ships the panel — are the ones
+[`dsh-plugin-toolkit`](https://github.com/WJDdidi-1/dsh-plugin-toolkit) runs
+before you publish:
+
+```bash
+npx dsh-plugin-toolkit@latest verify .
+```
+
+It also has a panel of the same checks inside the Harness, and it is what this
+repository's own plugin is released with.
+
+## What counts as noise
+
+- **Directories:** `dist/`, `build/`, `coverage/`, `.next/`, `.turbo/`
+- **Lockfiles:** `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`
+- **Logs:** `*.log`
+- **Large files:** any single file over 1 MB that no more specific rule already matched
+- **Review hints:** credential-shaped names (`.env*`, `secrets.env`, `credentials.json`, `*.pem`, `*.key`) and paths containing `deploy`. `.env.example` is recognised as a template and marked usually safe.
+- **Never walked:** `.git/`, `node_modules/`, `.venv/`, `venv/`, `__pycache__/`, `vendor/`
+
+## What it does not do
+
+- It does not call an AI service, need an API key, or upload anything.
+- It changes your repository only when you run `--write`, which appends the suggested rules to `.aiignore`; a plain scan writes nothing.
+- It is not a `gitignore` linter: it looks at what an agent *would read*, not what git tracks, so ignored files still show up.
+- It is not a secret scanner. The review list is a name heuristic; an `id_rsa` without an extension and a key pasted into `config.js` both slip through.
+- It does not count tokens or parse code. The score is a size heuristic — useful as a signal, not as a measurement.
+- It does not have a general config file. The chosen strength lives in `.aiignore.policy.json` in the scanned directory; scan caps are available through the API and the Harness plugin only.
+
+## FAQ
+
+**Is anything uploaded, and do I need an API key?**
+No account and no API key. A scan reads directory entries, file sizes, and `.aiignore` / `.aiignore.policy.json`; it does not read other file contents, open a network connection, or store anything.
+
+```bash
+npx ai-context-doctor .
+```
+
+**Why is this one file blocked — or not?**
+`--explain` prints the verdict, the rule that decided it, the category, the size, and what letting it through would cost:
+
+```bash
+npx ai-context-doctor --explain package-lock.json
+```
+
+An unknown path is an error with exit code 2, not a silent "not blocked". More in [Why is this file blocked?](#why-is-this-file-blocked).
+
+**Will it change my repository?**
+Only when you pass `--write`. A plain scan writes nothing. To see the lines first:
+
+```bash
+npx ai-context-doctor --write --dry-run
+```
+
+`--dry-run` only applies to `--write`, and it is rejected on its own.
+
+**Can a bad score fail my CI build?**
+Not by itself. A completed scan exits 0 even at 43/100; exit code 1 means the CLI could not run the scan (bad option or unreadable directory), and 2 means the path passed to `--explain` is not in the scanned directory. Use `--json` and fail on the fields you care about:
+
+```bash
+npx ai-context-doctor --json > context-report.json
+```
+
+Then check `healthScore`, `status`, or `blockedBytes` in your own CI step.
+
+**I wrote the suggested rules and the score did not move. Is that a bug?**
+No. `healthScore` is a size heuristic over file names and sizes, so writing `.aiignore` rules does not change it. At the default strength 3 the strength already blocks most of those categories, so `suggestedRulesChangeTheScore` is often `false`. `--json` answers whether writing the suggestions would move the effective score at the current strength:
+
+```bash
+npx ai-context-doctor --json
+```
+
+**Does the CLI stop my agent from reading these files?**
+No. The CLI reports and suggests, and `--write` edits `.aiignore`; it does not intercept reads. Inside DeepSeek Harness, [`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore) is what applies the rules to reads — see [DeepSeek Harness plugin](#deepseek-harness-plugin).
+
+## Why `.aiignore` and not `.gitignore`
+
+Because the two questions are different. `dist/` is gitignored in most projects and still gets read by an agent that ignores git. The tool reports on bytes the agent would ingest, whatever git thinks of them.
 
 ## Privacy
 
-AI Context Doctor runs locally. It does not require login, does not need an API key, does not call an AI service, and does not upload files.
+Everything runs locally. The tool reads directory entries, file sizes, and the rule/policy files (`.aiignore`, `.aiignore.policy.json`); it does not read other file contents, does not open a network connection, and stores nothing. The only thing it sends anywhere is what `npm` sends when you install it.
+
+## Development
+
+```bash
+git clone https://github.com/WJDdidi-1/ai-context-doctor.git
+cd ai-context-doctor
+npm test                       # unit and CLI tests
+node bin/ai-context-doctor.js ./demo-ai-context-noise-repo
+```
+
+The `demo-ai-context-noise-repo/` directory is a deliberately messy repository, shipped with the source (not with the npm package) to make the output easy to try.
+
+Maintainers: see the [release checklist](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/docs/release-checklist.md). Publishing happens in CI on a `v*` tag via npm trusted publishing, and `prepublishOnly` runs the tests first, so a broken package cannot go out.
+
+## Roadmap
+
+- Clear errors for unknown flags instead of treating them as directory names.
+- Better noise rules based on real reports from users.
+- Optional `--fix` that writes the suggested ignore entries, with a diff you approve first.
+
+## Changelog
+
+See [CHANGELOG.md](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/CHANGELOG.md)
+for what changed in each release.
+
+## License
+
+Apache-2.0 — see [LICENSE](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/LICENSE)
+and [NOTICE](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/NOTICE).
+The earlier releases were MIT; the licence change applies from 0.22.0 on.
