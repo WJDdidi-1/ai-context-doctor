@@ -1,0 +1,840 @@
+## 0.38.2
+
+- **Docs only.** The README still described the Protection card as showing a
+  `before → after` pair. 0.38.0 removed that pair: the card shows one number,
+  this conversation's current score, and the folder's own score lives on
+  Settings. Anyone reading the README and then opening the panel would have
+  looked for a line that is not there.
+
+## 0.38.1
+
+- **One score per conversation.** The card sits under a conversation's title and
+  lists that conversation's turns and files, but printed the folder's score, so
+  the same conversation read 74 in the overview and 71 on the card. The folder
+  score still lives in Settings ("On disk 22 · Reaches the model 71").
+- **The card no longer contradicts the page.** With rules in effect it said
+  "Nothing applied yet" right above "2 rules in effect". It now says how many of
+  this conversation's noisy reads the rules do not cover.
+- **The primary button is readable in the dark theme.** It filled with the
+  host's business colour and kept white text; in the dark theme that colour is a
+  light blue meant for text, so the pair measured about 2.1:1. It is now 8.6:1
+  in light and 5.47:1 in dark.
+
+## 0.38.0
+
+**One score, and the conversation you are actually looking at.**
+
+Two things made the first screen untrustworthy.
+
+- **The score is the current one.** The card showed the score *before* your rules
+  in a folder that had none, and the score *after* them in a folder that did — so
+  two folders answered the same question with different kinds of number. The
+  subline printed `71 → 43`: two numbers for a question with one answer. It now
+  shows the folder scored with the rules and the strength in force, and nothing
+  else. Writing a rule re-scores at once instead of leaving a number that
+  describes rules which no longer exist.
+- **Switching conversations switches the panel.** The panel asked the host for
+  "the conversation"; the host answered with whichever session had written last.
+  Switching back to an older conversation writes nothing, so the panel kept
+  describing the conversation you had just left. The slot already knows which
+  conversation it belongs to, so the panel names it.
+
+Both are covered by tests that drive the real bundle rather than the source: one
+asserts the request carries `?session=<id>`, one asserts the card prints a single
+current score, and one asserts a folder with no rules still shows the current one.
+
+## 0.37.1
+
+A baseline you cannot reproduce is an opinion, and a dash is not a score.
+
+- The preview now takes `?scenario=` and `?theme=` from the URL, so every
+  screenshot is a cold load of the address that produced it. The manifest
+  records that address per file, and both `check-baseline` and the test suite
+  fail when an image has no recipe — three of the eight had drifted because
+  they were captured with flags nobody wrote down.
+- A folder nobody has scanned says "Not scanned yet" instead of printing `—`
+  under "Score before rules". No score is not the score zero, and it is not a
+  broken scoreboard either: the line under it says what pressing Optimize does.
+
+## 0.37.0
+
+**The first screen is a score, and the button is always there.**
+
+The panel used to open on a counter of guard refusals. On an install where
+nothing had been refused it read `0`, and once 0.36.0 learned to explain that
+zero it also hid the button that explained it — opening the panel and finding
+no action at all is what a user reported. It also spent the first screen on
+five scores at once, which answers "what would one notch stricter cost" before
+anyone has asked.
+
+- The card leads with the folder's score: *before rules* when no rule has been
+  written yet, *after rules* once they exist, with `22 → 71` and the tokens
+  kept out underneath. The count of reads held back became a sentence in that
+  line rather than the headline.
+- **Optimize now** renders unconditionally; only the in-flight request disables
+  it. Pressing it re-scores this card in the same response, so the number moves
+  on the click instead of at the next poll.
+- The strength ladder moved into *Fine-tune the strength*, folded by default.
+  Each notch still carries the score it would leave, so nothing was lost —
+  only the insistence that all five be read first.
+- With nothing scanned, Protection showed a card whose score was `—`. It now
+  offers the same way in as Files: pick a folder or scan one.
+- The preview forwards its `?v=` to `client.js`, which is loaded as a plain
+  script and was otherwise cached across edits.
+
+## 0.36.0
+
+**A counter with nothing to report says so, instead of printing zero.**
+
+- When a conversation read nothing worth holding back, the panel used to show
+  `0` with the label "reads held back by your rules" — the shape of a result
+  with none of the information. It now shows *Nothing worth holding back* and
+  what the conversation did read: files and a token range. When the token
+  estimate is missing the sentence drops that clause instead of printing a dash.
+- The Optimize button is hidden in that state: there is nothing for it to write,
+  and a button that does nothing is worse than no button.
+- `fill()` turns the one-sentence copy into `{files}` / `{tokens}` slots, so
+  each language keeps its own word order instead of being glued from fragments.
+- Tests: `plugin/test/quiet.test.mjs` asserts no branch renders a numeric zero,
+  the card names both facts, and the button is gone.
+
+## 0.35.0
+
+**Eight screenshots the panel is measured against, and a check that they stay put.**
+
+- `docs/assets/baseline/` now holds four preview scenarios (noisy, healthy,
+  fresh, broken) in both themes, cropped to the 420 × 660 the sidebar gives the
+  panel.
+- `plugin/scripts/check-baseline.mjs` (`npm run check:baseline`) fails when a
+  baseline is missing, hand-edited, or missing from the manifest. There is no
+  headless browser in this repository, so the part that can be automated is
+  catching drift rather than pretending to re-render.
+- `plugin/test/baseline.test.mjs` asserts the set is complete, each file matches
+  its recorded size and digest, and the re-capture procedure is documented.
+- README explains how to re-capture after an intentional change, including the
+  fixed crop so new images stay comparable.
+
+## 0.34.0
+
+**One word per idea, and no copy nobody reads.**
+
+- The list under the counter is now *Held back from the model*, and the badge
+  says *held back*, matching the counter's own sentence. It used to say
+  "blocked" in two places and "held back" in a third for the same event.
+- 54 copy keys that no view rendered are gone, in both languages. The panel had
+  been carrying labels for tabs and views that were replaced two versions ago;
+  a key nobody renders is a claim about the UI that is no longer true.
+- New guards: every declared key must be rendered somewhere, and the
+  held-back vocabulary cannot drift back.
+- `plugin/README.md` gains a short table fixing what *held back*, *rule*,
+  *notch*, *score* and *noise* mean, so the panel and the docs cannot describe
+  the same thing two ways.
+
+## 0.33.0
+
+**The panel can be driven from the keyboard, and says where you are.**
+
+- The three tabs are a real tablist: Arrow Left/Right move between them, Home
+  and End jump to the ends, and the stop in the tab order follows the selection
+  instead of being three separate stops.
+- Each view is a tabpanel named by the tab that opened it, so a screen reader
+  announces which tab you are inside rather than reading an unlabelled box.
+- Icon-only buttons (refresh, choose folder, close) all carry an accessible
+  name; the toast and the Optimize steps remain live regions.
+- New guards in `plugin/test/a11y.test.mjs` keep all of that from being dropped
+  in a future restyle.
+
+## 0.32.0
+
+**Optimize shows the two steps it really performs, and stops reading the folder twice.**
+
+- The percentage bar is gone. It had to invent numbers: the Host answers
+  Optimize in one request, so the panel could only guess how far inside it was.
+  In its place are the two steps that actually happen — *Reading the folder*,
+  then *Writing rules and re-scoring* — each marked done only when its work has
+  returned.
+- Dropped a redundant pre-flight scan: `/aiignore/optimize` already reads the
+  folder before and after writing, so the warm-up scan only doubled the wait on
+  a large repository.
+- Copy: `phaseScore` and `phaseVerify` are gone; `phaseWrite` now says what the
+  second step does.
+
+## 0.31.0
+
+**Settings can now tell you what this install is, in the words a bug report needs.**
+
+- A **Diagnostics** fold at the foot of Settings: plugin version, Node, platform,
+  data folder, workspace, how many conversations it can see, how many rules are
+  in effect, and which surface you are looking at (sidebar tab or floating card).
+  One button copies all of it.
+- It is written to be pasted in public: the home directory is shortened to `~`,
+  there is no token, no session id and no conversation title. A test asserts the
+  home path can never appear.
+- The server answers `/aiignore/diagnostics` with what it can verify itself
+  (runtime, counts); the panel adds the surface it actually got. No guessing at a
+  Harness version it cannot read.
+- Removed a leftover `blockedReads` read in the panel: the counter has come from
+  the conversation since 0.28.0, and the old variable was dead weight.
+
+## 0.30.0
+
+**Density and hierarchy: one thing to look at first, everything else ranked under it.**
+
+- One elevated surface per view. On Protection that is the counter and the
+  single button that moves it; the strictness ladder, the next-step line and
+  the blocked list now sit flat on the page and are separated by space instead
+  of by three more boxes. Borders are kept only where a real boundary exists
+  (before the blocked list, between settings blocks).
+- A four-step interval (`4 / 8 / 14 / 22px`) and a four-step type ramp
+  (`11 / 12 / 13 / 30px`) replace the ad-hoc paddings, so a smaller gap always
+  means "same group" and a larger one always means "new group". The file list
+  uses the same rule: legend, suggestions, this session and the workspace are
+  four groups, and the rows inside each are not.
+- Text that was prose became captions: the six longest explanations
+  (why Optimize matters, how the ladder scores, what the legend means, what
+  the note is for, what a suggestion costs, what strictness moved) are now one
+  line each. Same information, half the height.
+- Settings lost a whole block: strictness is a one-row pointer to Protection
+  (`3 / 5 · Go to Protection`) instead of a paragraph saying the same thing.
+  "What the agent will read" is a fold that opens on demand, and the note
+  editor is three rows instead of four.
+- Files stopped printing the workspace path twice — the header already names
+  it; the path now appears only when you have walked into a subfolder, where
+  it is new information.
+- Four documentation screenshots retaken at the new density (Protection light
+  and dark, Files light, Settings dark).
+
+## 0.29.1
+
+**The requirements are written down where a reader looks before installing.**
+
+- `plugin/README.md` gained a Requirements table: Harness `>= 0.2.0` (the
+  release that ships `sidebarRightTabs`), Node.js 18, and no permissions at
+  all — no network, no key, no telemetry. It also says what happens on a
+  Harness without sidebar services: the same button opens a floating card.
+- The package keywords now name what people search for (`aiignore`,
+  `context-window`, `token-budget`, `noise`, `lockfile`, `sidebar`) instead of
+  only its own name.
+- The market index files the plugin under **Context quality** with three
+  labels — *No network calls*, *Works with no setup*, *Lives in the sidebar* —
+  and carries the same `engines.dsh` range on every version, so the Discover
+  page can filter it and an incompatible Harness can refuse it.
+
+## 0.29.0
+
+**The panel is rebuilt on the host's own measurements, so it stops looking like a widget bolted onto the sidebar.**
+
+- One visual source instead of six layers of overrides: `plugin/ui/panel.css`
+  went from ~2,400 lines of appended patches to a single pass with section
+  comments, and every colour, radius, elevation and type ramp now comes from
+  the host's design tokens. There is no hex left that a theme switch has to
+  disprove.
+- Measured against the built-in sidebar panels and matched: a 38px header with
+  a half-pixel rule and `0 6px 0 16px` padding, 28px controls, 15px icons at
+  1.3 stroke, 13px body text over 11px labels, list rows at `5px 10px` with
+  `radius-md` and the same hover fill, and inputs built from `bg-layer-1` plus
+  a half-pixel border that turns the accent colour on focus.
+- The header lost its second brand line. The tab is already titled — printing
+  the name again inside the panel was one underline too many.
+- Files reads as one column instead of a stack: search takes its own row, the
+  verdict chips and the file count share the next, and the sort control moved
+  into the list header it sorts. The bulk-action bar only appears when more
+  than one file is picked.
+- Smaller corrections found by measuring rather than eyeballing: chips carry a
+  hairline so they read as controls in the dark theme, the placeholder in the
+  note editor is quieter than the text it replaces, the settings section
+  counters sit on the right edge, and the rules footer no longer glues its
+  button to the count.
+
+## 0.28.0
+
+**The counter says what your rules are holding back, and Files says what its three words mean.**
+
+- The headline on Protection was counting refusals since install, so a fresh
+  reader saw `0 reads held back` on every folder and concluded the button did
+  nothing. It now counts this conversation: reads that are junk *and* covered
+  by your rules. Before you optimize it reads "2 reads are junk and still reach
+  the model"; on the same click it becomes "2 reads held back by your rules ·
+  about 30k–45k tokens never reached the model". Optimize, a new notch, and
+  Refresh all re-read the conversation, so the number moves with the click
+  instead of at the next poll.
+- Files explains itself. The three verdicts have a legend with the criteria
+  behind them — `noise` is regenerated by a build, a lockfile or a log;
+  `review` is worth a look first (env files, deploy scripts, big data);
+  `ignored` has a line in `.aiignore` already. `review` rows now show their
+  reason in the list, not only in the detail card.
+- Rules are suggested where the files are. "Worth a rule" lists the rules the
+  scanner proposes that are not written yet (`+ *.log`, `+ coverage/`); one
+  click writes the line and rescans. A noise file's detail card offers the
+  widest rule that covers it (`Add dist/`) instead of only the single path,
+  because `dist/bundle.js` is a rule you write again every build.
+- New route `POST /aiignore/rules` for writing a suggested rule with no file
+  to name. It validates shape (relative, no `..`, no leading `/`, ≤ 200
+  characters) rather than intent, and clears the scan caches so the next read
+  sees it.
+
+## 0.27.0
+
+**The strength ladder moved to the page it changes, and every notch shows its score.**
+
+- The five notches are on Protection now, directly under the counters they
+  affect, and each one carries the score this folder would have at that
+  notch (22 / 34 / 49 / 65 / 81 on the demo folder). Choosing one writes the
+  policy, rescans the folder, and repaints the page from the new report — so
+  the number you see after a click is the number that notch produced, not a
+  prediction the panel made on its own.
+- Settings no longer keeps a second copy of the ladder. It says where the
+  ladder went and offers the way there, because two controls for one setting
+  drift, and the copy that quietly stops being authoritative is always the one
+  on the page nobody is looking at.
+- The ladder is one request for all five notches (it was five scans in the
+  common case), and it keeps the shared loading/empty/failure behaviour: a
+  failed read says so instead of collapsing to a blank strip.
+
+## 0.26.3
+
+**One shape for loading, empty and failure — and a failure that says why.**
+
+- Three surfaces now render from one component instead of three ad-hoc
+  branches: the panel body, the left page behind the guide tile, and the
+  strength table. Each of them shows a skeleton while a request is in flight,
+  a sentence when there is nothing to show, and an error with the actual
+  status when a request fails.
+- The failures that used to be silent are said out loud. The strength table
+  used to disappear entirely while loading or after a failed read — a blank
+  space between the slider and the rules looked like a broken layout. The
+  conversation read on Protection used to fail without a word, because the
+  error was captured and never rendered.
+- The reason is the reason. `useConversation` used to turn any non-2xx
+  response into the word `unavailable`, so a 500 and a 404 read the same; it
+  now carries the status through to `status 500`. The left page no longer
+  claims the plugin server is unreachable — it names the failed read and
+  offers a retry.
+- Every error block has a retry that reuses the same request, and the left
+  page no longer keeps counting rows it failed to load.
+
+## 0.26.2
+
+**A dropdown that can be dismissed like every other menu.**
+
+- The folder dropdown now closes on Escape (anywhere inside it), on a click
+  outside it, and on the toggle button that opened it. Before, Escape and
+  outside clicks did nothing: only the tiny button or choosing an item could
+  close the menu, which reads as a trap.
+- Focus is part of the same contract: opening moves focus into the menu (the
+  first item that is not disabled), arrow keys walk the items, and closing
+  hands focus back to the folder button — tabbing still starts where the
+  user left off.
+- The preview page's mock now answers a rescan with the score of the current
+  strength and reports back the saved level, so the numbers the panel shows in
+  `plugin/dev/preview.html` can no longer drift from the levels table.
+
+## 0.26.1
+
+**The conversation is back in the header, and a failure stops pretending.**
+
+- The header's first line is the conversation title again (folder name when
+  there is none, `AIignore` when nothing is open); the second line reads
+  `AIignore · …/path · following this conversation`. Removing the title in
+  0.26.0 made the panel stop saying which chat it was looking at.
+- A toast now clears itself after seven seconds. Before, one failed click left
+  an error on screen until the next click — which reads as a permanent state.
+- The failure message no longer guesses a cause: it says the call did not
+  finish and appends the actual reason (`Could not finish that: 500`). The old
+  text claimed a write-permission problem on every error, including ones that
+  never reached the disk.
+- `POST /aiignore/optimize` with a session that has no projection falls back to
+  the workspace the panel is showing instead of answering `404`, so an optimise
+  with nothing to add reports "nothing to add" rather than an error.
+
+## 0.26.0
+
+**The panel, redrawn.**
+
+Nothing about what the plugin does changed; how it looks and reads did.
+
+- One header row: the name, then refresh and folder as icon buttons. The path
+  and a single follow/pinned chip sit underneath; a long chat title no longer
+  pushes the panel around.
+- Tabs are underlined rather than pill-shaped, and no longer change weight when
+  selected (the bold swap moved everything by a pixel).
+- **Protection** reads top to bottom: the counter and what it saved, one
+  full-width primary button, the conversation it belongs to, one hint about the
+  next notch, the files it kept out, the rules in force.
+- The blocked list is a list, not a table: reason and size on the second line,
+  hover to reveal "read once" / "never read", which stay visible on touch
+  devices.
+- **Files**: search alone in the toolbar, filters as small pills with a count,
+  sorting as one right-aligned control, section labels in small caps, rows on a
+  single 28px rhythm with tabular sizes.
+- **Settings**: one column of labelled blocks, the strength table as numbered
+  rows with the score each would produce, selection marked by a 2px accent
+  instead of a blue outline.
+- Every colour now comes from a host token with a fallback, so light and dark
+  are the same design rather than two guesses.
+
+## 0.25.0
+
+**One number that moves, one button that does something.**
+
+The panel opened on a score. A score describes a folder, and once the rules
+cover it the number stops moving — so nothing the plugin did was visible.
+
+- The first tab is now **Protection**: the count of reads the guard refused for
+  this workspace, and roughly how many tokens that kept out of the model. It
+  grows while you work; that is what makes it worth opening twice.
+- Counters live in `.aiignore.stats.json` next to the rules, and are incremented
+  on every refused read (the reason included in the refusal is unchanged).
+- One primary button, **Optimize now**: rescan, write what is missing, re-score,
+  and report `before → after`. When the rules already cover everything it says
+  so instead of pretending to work.
+- New: **one notch stricter**, with a number attached — "would block 2 more
+  files (about 65k–81k tokens)" — and a button that sets it and re-scans.
+- Files and Settings are still there; the score explanation, the strength table,
+  the rules list and the note editor moved into Settings.
+- `GET /aiignore/report` carries `stats` and `potential`.
+
+Requires `ai-context-doctor@^0.7.2`, which fixes rules being ignored by the
+scanner — the reason Optimize used to change nothing.
+
+## 0.24.5
+
+**The rules you are actually running, one removable line at a time.**
+
+Optimize could only say "4 rules added", and the only way back was to undo the
+whole batch. The Score tab now lists every line in `.aiignore`, with an × on
+each: removing one edits exactly that line and never touches the comments.
+
+- `GET /aiignore/report` carries `rules` (non-comment lines, verbatim).
+- `POST /aiignore/rules/delete` takes `{ rule }`, matches it against the file's
+  rules, and refuses anything that is not there (`404 no-such-rule`). The path
+  based `/aiignore/unignore` cannot express `dist/` or `*.log`, which is why the
+  rule route exists.
+- Empty state names what will fill it; the count sits in the card header.
+
+**Pinning a conversation now says so.** Choosing an older conversation in the
+Chat picker re-reads that conversation and puts a `showing an earlier
+conversation` chip in the header; the chip is the way back to the live one. The
+title, turn count and file list follow the pin instead of quietly describing the
+conversation you are not looking at.
+
+## 0.24.4
+
+- A conversation that has not opened a file no longer shows a 0% bar under
+  "0 B read": the Chat tab says **Nothing read yet** once, and explains that the
+  cost appears as the conversation works.
+- The conversation picker only appears when there is more than one conversation
+  to pick. With a single one it duplicated the title in the header.
+- Fixed a crash when the chat had nothing yet (`reads` was read before it was
+  declared) that the preview caught as a blank tab.
+
+## 0.24.3
+
+- A refused read never had a way back. The Chat tab now lists **Blocked from
+  context** with the same Read once / Never read buttons the tree rows have, so
+  the "no" the model was told can be answered without editing files by hand.
+- The refusal the model reads now says what to do instead: stop, do not look for
+  another way in, and tell the user — who has a Read once button waiting. It
+  still names the file, the size and the token cost.
+
+## 0.24.2
+
+- The strength table asks for all five scores at once, and the host used to
+  answer by walking the folder five times. It now walks once and scores the
+  same file list five ways: 44 ms → 9 ms on a 1,500-file folder, with every
+  score identical to the old per-strength scan.
+- Each row also reports how many files that strength blocks, not just bytes.
+- Requires `ai-context-doctor@^0.7.1`.
+
+## 0.24.1
+
+- The line under the two scores still described them as "this conversation"
+  against "what reaches the model", left over from when the left card was the
+  chat. Both cards are folder scores now, and the line says so.
+
+## 0.24.0
+
+- The Optimize button is the panel's centre. It sits under the tabs, and one
+  press runs the whole job in order: rescan the folder, re-score what is left,
+  write the rules, then re-score again and move the number on screen. The bar
+  only advances when the request behind that phase has actually returned.
+- Scores are five dimensions now (`noise`, `volume`, `concentration`, `sprawl`,
+  `binary`), with a chip to switch the table between what is on disk and what
+  still reaches the model. Same model as the core, so the panel and the CLI
+  cannot disagree.
+- "On disk" and "Reaches the model" are labelled as such instead of being two
+  unlabelled numbers, and the let-through bytes are shown under them.
+- The conversation score uses the same five dimensions: a chat that opened 300
+  files is expensive even when none of them is noise.
+- Requires `ai-context-doctor@^0.7.0`.
+
+## 0.23.1
+
+The left-rail page can now show that a clean-up worked, not just that it ran.
+
+- **A conversation has two scores.** `conversationReport` already scored what a
+  chat was handed; it now also re-runs the guard's own decision — your `.aiignore`
+  rules first, then your strength — over those same reads. History never moves;
+  the number that can move is the one your rules leave behind. `effectiveScore`,
+  `effectiveBreakdown`, `covered` and `coveredBytes` are returned, and
+  `conversationIndex` carries them, so the left page ranks and displays the
+  surviving score.
+- **A row proves it happened.** After **Clean up N**, the row's score goes
+  `74 → 100` and gains a `N kept out` badge, with the pre-rule score trailing in
+  the meta line. No second place to look.
+- **README caught up.** The left-rail section still described the old
+  workspace-overview page; it now documents the conversation index, both scores
+  and the route behind it.
+
+## 0.23.0
+
+The panel stops calling itself by the wrong name, Optimize proves what it did,
+and the left-rail page finally has a reason to exist.
+
+- **Why Optimize looked broken.** `buildReport` — the only thing the panel reads
+  — dropped `effectiveScore`, `effectiveBreakdown`, `blocked`, `blockedBytes`,
+  `topNoise` and `suggestedAiignore`. The rules were being written to disk and
+  the score kept showing the raw one. Every one of those fields now survives the
+  trip, and a regression test fails if any of them is dropped again.
+- **Optimize is a real button that reports back.** It sits *after* the strength
+  choice, names the rules it will write before you press it, then shows the new
+  score, the `before → after` it moved, and the files that stopped reaching the
+  model with their sizes. Undo still puts the file back byte for byte. The
+  response carries a fresh report, so the two numbers at the top move on the same
+  click instead of waiting for the next poll.
+- **The slider is gone.** Five buttons already score themselves against your
+  workspace; a sixth way to say the same thing was noise of its own kind.
+- **The left page lists conversations, not folders.** `GET /aiignore/conversations`
+  summarises every projected conversation (title, turns, files read, bytes,
+  noise aloud reads, score) and the page ranks them worst first with a one-click
+  clean-up per row. It is now called **AIignore**, like everything else.
+- **The refresh button says what it did.** It reports "Scanned N files ·
+  Reaches the model S" on success and disables itself while it runs.
+- **Copy pass, both languages.** Hints, empty states and button labels were
+  rewritten to explain in a sentence what a control does and what it costs.
+
+## 0.22.0
+
+A panel called what it does, told in the order a user needs it, and a licence that says what may be done with it.
+
+- **Renamed to Context Budget.** The panel is about the budget a conversation
+  spends on context, not an inventory of a folder, so the tab, the guide entry
+  and the manager entry now say so in English and Chinese. Nothing moved in the
+  protocol.
+- **All five notches are scored before you pick one.** `GET /aiignore/levels`
+  scans the workspace at 1–5 and returns `effectiveScore` per notch, so the
+  strength table shows "Off 22 / Balanced 49 / Strict 81" against your own
+  repository instead of describing the difference in prose.
+- **How the score is computed is folded away.** The bars stay; the weights and
+  the reason each category can cost at most its weight now sit behind a summary
+  you open when you want them.
+- **Optimize is a button, not a caption.** It is the primary action of the Score
+  tab, it names the rules it is about to write, and it reports the score before
+  and after plus how many of the conversation's reads those rules now block.
+- **The note shows what the agent will read.** The editor is three one-click
+  sentences plus a preview of the exact text injected before the next message,
+  with the account of what the note is for — not a command, background.
+- **The "follow" entry left the conversation picker.** The folder button already
+  means follow; the picker now only lists conversations and marks the current
+  one.
+- **The left-rail page acts.** *Context across your workspaces* ranks folders
+  worst-first by the score your rules leave behind, and offers Scan again,
+  Apply rules per folder, and Open the panel.
+- **Licence moved from MIT to Apache-2.0**, with a `NOTICE` file, because the
+  patent grant and the trademark clause are worth more to the people installing
+  this than brevity is. Earlier releases keep their MIT terms.
+
+## 0.21.0
+
+One strength, one number that moves, and a header that says which conversation this is.
+
+- **The score now counts what actually reaches the model.** `scanRepository`
+  learned two options, `rules` and `level`: a file the user's `.aiignore`
+  covers, or one the chosen strength would refuse, is still counted in the
+  folder — but no longer counted against the score. So the report carries both
+  `healthScore` (how noisy the folder is) and `effectiveScore` (how much of that
+  noise still gets through). Before this, the Optimize button changed nothing on
+  screen, because the scan never read `.aiignore` at all.
+- **The strength lives in the Score tab, and moving it moves the number.** The
+  slider is part of the score card instead of a separate tab; saving a notch
+  re-scans with that strength, so 3 → 5 visibly hides more. The guard and the
+  scan share one predicate, so the panel cannot claim to block what the guard
+  still allows.
+- **Two labelled numbers, not two of the same number.** *This conversation* is
+  what the chat read; *Still reaches the model* is what is left after rules and
+  strength. Optimize reports its before/after on the second one and how many of
+  the conversation's reads the new rules now block.
+- **The header is the conversation's title.** The folder moved to the second
+  line next to a single "following this conversation" badge; the refresh button
+  now re-scans instead of redrawing the same data.
+- **Strategy is folded into Score.** Three tabs instead of four: Chat, Files,
+  Score. The note editor sits at the bottom of the Score tab in a user's voice —
+  the templates say what to do ("Start here", "Do not open", "Check my work")
+  and the caption says what the note is for.
+- **An empty filter says which filter it is,** and offers the way back.
+
+## 0.19.0
+
+The unit of analysis is the conversation, not the folder.
+
+- **A Chat tab, and it comes first.** The panel reads the app's own session
+  projection (`storages/session_projcache/sessions/<id>.json`) instead of
+  guessing from folder scans: the conversation's title, its folder, how many
+  turns it has run, how many files it read, and how those bytes split across
+  assistant / tool / user / injected context. The score is computed from what
+  *this conversation* read — `scoreNoise` over the bytes it pulled in — so a
+  chat that never touched a build artefact scores 100 even in a noisy repo.
+- **Switching conversations is a control, not a guess.** The tab carries a
+  conversation picker built from `GET /aiignore/sessions`; `GET
+  /aiignore/conversation?session=` answers for any of them. Choosing *Follow the
+  open conversation* hands the decision back to the Host half.
+- **Optimize is scoped to the conversation, and it re-scores.** *Optimize this
+  conversation* sends `{ session }`, writes the rules derived from that
+  conversation's noise reads, then reports the workspace score before/after and
+  — the check that matters — how many of those reads the new rules would now
+  block. Undo still lives in the Score tab.
+- **Insights is now Score.** The tab is the workspace score, its arithmetic, and
+  the guard's record; calling it *Insights* made it sound like a different
+  subject from the number it explains.
+- Seventeen same-origin routes (was sixteen).
+
+## 0.18.0
+
+The score explains itself, the policy is one slider, and a suggestion can be applied.
+
+- **Following is by conversation, not by folder.** The Host half reads the first
+  zstd frame of the newest session log — a JSON header carrying the session id
+  and its `cwd` — so identity no longer depends on the workspace index. It used
+  to fall back to "the most recently updated workspace", which is why the panel
+  kept following the first folder it saw. `GET /aiignore/sessions` lists recent
+  conversations, each with its own folder.
+- **The score shows its arithmetic.** Insights draws one bar per category: what
+  it cost, out of the weight it could cost, with the total on the header and one
+  sentence for the rule. These are the numbers `scanRepository` computed; the
+  panel does not re-derive them.
+- **One click to optimize.** *Optimize this workspace* appends the suggested
+  rules to `.aiignore` (existing lines untouched), reports the score before and
+  after, and keeps the previous file for **Undo**. Both live at
+  `POST /aiignore/optimize` and `POST /aiignore/optimize/undo`.
+- **The note is no longer the whole strategy.** *Note* became *Strategy*: a
+  five-notch slider from Off to Strict, each notch stating what it stops and what
+  that costs, stored in `.aiignore.policy.json` and honoured by the read guard
+  itself (`decideRead({ level })`). The free-text note stays underneath, where it
+  belongs. Notches 4 and 5 warn that small but real source files can be skipped.
+- **New routes** — `GET /aiignore/sessions`, `GET|POST /aiignore/policy`,
+  `POST /aiignore/optimize`, `POST /aiignore/optimize/undo` (sixteen in total).
+- Requires `ai-context-doctor@^0.6.0`: weighted scoring, `scoreBreakdown`, and
+  the level table the slider shows come from the library.
+
+## 0.17.0
+
+The panel stopped asking which folder to audit. It reads the conversation.
+
+- **Follows the conversation, by default.** The Host half finds the session whose
+  log was written last under `~/.dsh/sessions`, maps it to a folder through
+  `~/.dsh/storages/workspace.json`, and scans that. Opening a conversation is the
+  whole interaction; the "No workspace yet" dead end is gone for good.
+- **Pinning is reversible.** The folder button now opens a menu: follow the
+  conversation, choose another folder, or stop pinning. Pinning only lasts as
+  long as the panel is open — nothing is written to disk.
+- **The aggregate view moved where it belongs.** *Context across your workspaces*
+  is a page in the left rail, under New Session: every folder this app has been
+  used in, ranked by health, so a noisy repository is visible before you open it.
+  It is cached for five minutes (`GET /aiignore/overview`).
+- **Faithful preview.** `dev/preview.html` now mounts the rail icon and the
+  overview page too, and a request that names its folder wins, exactly like the
+  Host half — that is what makes "stop pinning" observable without a restart.
+
+## 0.16.0
+
+
+- **The panel can no longer dead-end.** When it cannot tell which folder the
+  conversation runs in — the case that left 0.14.0 and 0.15.0 showing "No
+  workspace yet" — it now lists the folders this app has actually been used in
+  and opening one scans it. `GET /aiignore/workspaces` reads them from the app's
+  own workspace store.
+- **A mismatch leaves evidence.** `POST /aiignore/client-report` records what the
+  Host handed the panel (which props, whether a session came with them);
+  `GET /aiignore/debug` reads it back next to the Host's own state, so the next
+  disagreement is one request away instead of a round of guessing.
+- The header no longer repeats "No workspace yet"; the body says it once.
+
+## 0.15.0
+
+The panel now tells the Host which conversation it belongs to.
+
+- **Fixed: Scan still answered "no workspace" after 0.14.0.** Asking
+  `ctx.agents.list()` and `ctx.sessions.list()` did not produce a directory in a
+  real profile, so the panel had nothing to scan. The slot body is rendered with
+  its `sessionId` and a `useSessions` selector — a fact only the conversation
+  itself holds — so the panel now reads its session's `cwd` and passes it to the
+  Host as `?cwd=`, on the report, the tree and the scan.
+- The Host half accepts that directory only when it is an absolute path to an
+  existing directory; anything else is ignored and the previous fallbacks
+  (registries, then the last scanned workspace) still apply.
+- Reads now refuse a cross-origin caller with 403, not just writes.
+
+## 0.14.0
+
+The panel now finds its workspace instead of waiting to be told about it.
+
+- **Fixed: the panel could sit on "no workspace" forever.** The workspace was
+  learned only from the `agent/created` event. A bundle can be applied on a
+  branch of the context tree that never hears that event, and a session that
+  already existed when the bundle was installed never announces itself again.
+  The Host half now also asks `ctx.agents.list()` and `ctx.sessions.list()` for
+  the newest conversation directory, so the report appears either way.
+- **Scan this conversation.** The empty panel is no longer a dead end: a button
+  rescans the current conversation's workspace on demand and re-reads the tree
+  each time, so the numbers are fresh rather than replayed.
+- **The three views are always visible.** The Files / Insights / Note tabs used
+  to disappear when no workspace had been found yet, which made the panel look
+  like one blank screen. Each view now has its own empty state under a tab bar
+  that never vanishes.
+- `POST /aiignore/scan` is the eighth route: same-origin only, answers 404 when
+  the conversation has no directory yet.
+
+## 0.13.0
+
+The file list behaves like a file list, and a decision can be taken back.
+
+- **Multi-select.** Click selects one row, Cmd/Ctrl-click toggles a row, Shift-click
+  selects a range; with more than one selected the toolbar offers "Never read N
+  files" and "Clear". Batch ignore posts one rule at a time, so a failure stops
+  where it happened instead of half-writing a list.
+- **Undo.** After a file is written into `.aiignore` the panel shows what it did
+  and offers Undo, which calls `POST /aiignore/unignore` — a route that removes
+  exactly that one rule line and leaves every other line (and comment) untouched.
+  A symlink, a directory, or a missing file is refused rather than rewritten.
+- **Sort.** "Largest first" (the default — the biggest files waste the most
+  context) or "Name"; folders always stay above files.
+
+## 0.12.0
+
+Three things the panel could describe but not do.
+
+- **Uploads are visible.** Images the user dropped into the composer appear as
+  thumbnails, grouped by day (Today / Yesterday / date), newest first. The route
+  behind them (`GET /aiignore/upload?digest=`) serves only content inside the
+  attachment store, only image types, re-checked against the digest — and it
+  answers 404 for anything that is not a 64-hex digest.
+- **A note can start from a template.** Three one-click starting points (entry
+  point, what to skip, how to check) insert a sentence into the note instead of
+  making the user write it from scratch; the note still round-trips through
+  `.aiignore.notes.md` as before.
+- **The report can leave the window.** "Export report (.md)" writes a Markdown
+  copy of the current report — refused reads, reads, session files, uploads and
+  the note — through a client-side download, so nothing new needs to be served.
+- The browser half now declares named regions (`copy`, `styles`, `helpers`,
+  `components`, `views`, `shell`, `registration`). It ships as a single file
+  because the Harness loads it with `__ModuleLoader__.load({ factory })` and
+  there is no build step; a test keeps the regions in order and bounded.
+
+## 0.11.0
+
+The panel moved out of a floating box and into the right sidebar, and it now
+looks like the rest of the app instead of like a widget.
+
+- **The report is a sidebar tab.** The folder button in the composer opens the
+  right sidebar on the tab (and expands the sidebar if it is collapsed). When a
+  host has no sidebar services, the button falls back to the old floating panel,
+  so one plugin still works on both.
+- **Three tabs: Files, Insights, Note.** Files decides what may be read,
+  Insights reports what was read, Note is the message to the agent.
+- **Styled from the Host's design tokens.** Every color, radius, shadow and font
+  comes from `--dsw-*` variables with a fallback, so light and dark themes both
+  look right; the old hard-coded dark palette is gone.
+- Type hierarchy instead of one 12px size: 11px section labels, 13px rows,
+  20px figures with tabular numerals.
+- Icons are 14px line icons drawn inline; status shows as an icon plus a word,
+  not as a color dot alone.
+- Search, the four filter chips, the session file list, the breadcrumb and the
+  detail card all work from the keyboard: `Tab` reaches every control, `Enter`
+  activates, focus rings come from the Host.
+- Empty, loading and error states are real screens: a skeleton while the first
+  report loads, a centered empty state, and an error state with a human sentence
+  and a retry button.
+- The panel no longer repeats its own title — the tab title carries it.
+- `plugin/dev/preview.html` renders the panel against the Host's real tokens
+  with mock data, in both themes, without a Harness running. It is a development
+  page and is not part of the published package.
+- Guarded registration: a host without slots, without a sidebar, or with
+  services that mount late loads the plugin instead of failing.
+
+## 0.10.0
+
+- Files you upload during a session now appear in **Insights**, under "Files
+  received this session". The Host stores uploads by content digest and drops
+  the original name, so the row shows the digest prefix, the size and a type
+  guessed from the magic bytes — not a filename.
+- **Insights** gains a note field: write what the agent should know about this
+  workspace, and it is saved to `.aiignore.notes.md` and pushed to the running
+  agent immediately. The next session picks it up on its own.
+- An empty note deletes the file rather than leaving a blank one.
+
+## 0.9.0
+
+- The folder button now opens a menu with two entries, **Files** and
+  **Insights**, instead of a single panel. Files is where you decide what may be
+  read; Insights is the report that used to be the whole panel.
+- The Files view opens with **the files this session touched** — everything the
+  agent read and everything it wrote — so the panel is useful before anything
+  has been refused. It still browses the whole workspace underneath.
+- The Host half records write and edit tool calls, so files the agent created
+  appear in that list even when no read was ever blocked.
+- The panel no longer prints its own title twice.
+
+## 0.8.0
+
+The panel was a report. It is now a file manager: the workspace is browsable one
+directory at a time, and every row carries the scanner's verdict before the agent
+tries to read anything.
+
+- `GET /aiignore/tree?dir=` serves one directory with the same classification the
+  guard uses, so the tree and the report can never disagree. Paths outside the
+  workspace are refused with `400 outside-workspace`.
+- Folders sort first, files by size. Each row shows the verdict, its size, and for
+  files the token range reading it would cost; hidden `.git` entries are skipped.
+- Selecting a file opens a detail pane with two decisions: **Read once**
+  (pre-approves a path the session has not tried yet) and **Never read it**
+  (appends it to `.aiignore`).
+- A directory listing is capped at 200 rows and says so, so a huge folder cannot
+  stall the panel.
+
+# Changelog
+
+Notable changes to the `dsh-aiignore` plugin package. The CLI package keeps its own
+[changelog](../CHANGELOG.md).
+
+## 0.7.0
+
+The panel existed but was unreachable: the button rendered, and clicking it showed
+`title` and `allowFailed` instead of a report. Both causes were missing declarations,
+and both failed silently.
+
+- The browser half declared `inject: ['slots']`, so `ctx.locale` was undefined and
+  every label fell back to its raw key. It now declares `locale` too.
+- The Host half read `ctx.webServer` at apply time without asking cordis to wait for
+  it, so the report routes were never registered and every request answered 404 —
+  which the panel then reported as `allowFailed`. `tools` and `webServer` are now
+  installed through `ctx.inject`: a late-mounting service still gets its guard and
+  its routes, and a headless profile keeps the guard without a web server.
+- The button moved to `conversation.input.left`, the row that holds the add-files
+  button, and renders a folder glyph instead of the word "button".
+
+## 0.6.0
+
+- The guard reads the workspace `.aiignore`; a rule there refuses a file the size
+  and type heuristics would have passed.
+- The panel can write a decision back: "Never read it" appends the path to
+  `.aiignore`, so the choice survives a restart and lands in review.
+
+## 0.5.0
+
+- Every read inside the workspace is recorded, so the panel shows what the session
+  spent as well as what it kept out.
+
+## 0.4.0
+
+- First browser half: a button in the composer dock and a panel that opens on click,
+  served by two same-origin routes.

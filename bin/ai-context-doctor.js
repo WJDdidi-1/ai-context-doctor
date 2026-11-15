@@ -4,45 +4,59 @@
 const fs = require('fs');
 const path = require('path');
 const packageInfo = require('../package.json');
+const { scanRepository, explainPath, formatBytes, statusFor, writeAiignore, parseRules, readPolicy, levelFor } = require('../lib');
 
-const firstArg = process.argv[2];
+const args = process.argv.slice(2);
+const KNOWN_FLAGS = ['--json', '--write', '--dry-run', '--help', '--version', '--explain'];
 
-if (firstArg === '--help') {
+const unknownFlag = args.find((arg) => arg.startsWith('--') && !KNOWN_FLAGS.includes(arg));
+
+if (unknownFlag) {
+  console.error(`Unknown option: ${unknownFlag}`);
+  console.error('Run with --help to see the available options.');
+  process.exit(1);
+}
+
+const jsonOutput = args.includes('--json');
+const writeOutput = args.includes('--write');
+const dryRun = args.includes('--dry-run');
+
+if (args.includes('--help')) {
   printHelp();
   process.exit(0);
 }
 
-if (firstArg === '--version') {
+if (args.includes('--version')) {
   console.log(packageInfo.version);
   process.exit(0);
 }
 
+// --explain takes a value, so that value is not the directory to scan. Every
+// other positional argument is a candidate target directory.
+const explainIndex = args.indexOf('--explain');
+let explainArg = null;
+const consumedIndexes = new Set();
+
+if (explainIndex !== -1) {
+  explainArg = args[explainIndex + 1];
+  if (explainArg === undefined || explainArg.startsWith('--')) {
+    console.error('--explain needs a path, for example: --explain src/index.js');
+    process.exit(1);
+  }
+  consumedIndexes.add(explainIndex);
+  consumedIndexes.add(explainIndex + 1);
+}
+
+const positional = args.filter((arg, index) => !arg.startsWith('--') && !consumedIndexes.has(index));
+const firstArg = positional[0];
+
+if (dryRun && !writeOutput) {
+  console.error('--dry-run only applies to --write. Pass both, or drop --dry-run.');
+  process.exit(1);
+}
+
 const targetArg = firstArg;
 const cwd = targetArg ? path.resolve(process.cwd(), targetArg) : process.cwd();
-const repoName = path.basename(cwd);
-const noise = new Map();
-const review = new Map();
-const suggestions = new Set();
-let totalFiles = 0;
-let totalBytes = 0;
-
-const ignoredDirs = new Set(['.git', 'node_modules']);
-
-const noiseDirs = new Map([
-  ['dist', 'generated build output'],
-  ['build', 'generated build output'],
-  ['coverage', 'test coverage output'],
-  ['.next', 'framework output'],
-  ['.turbo', 'framework cache']
-]);
-
-const lockfiles = new Set([
-  'package-lock.json',
-  'pnpm-lock.yaml',
-  'yarn.lock'
-]);
-
-const largeFileThresholdBytes = 1024 * 1024;
 
 function printHelp() {
   console.log('AI Context Doctor');
@@ -51,14 +65,22 @@ function printHelp() {
   console.log('');
   console.log('Usage:');
   console.log('  node bin/ai-context-doctor.js [directory]');
+  console.log('  node bin/ai-context-doctor.js [directory] --explain <path>');
   console.log('');
   console.log('Options:');
   console.log('  --help      Show this help.');
   console.log('  --version   Print the package version.');
+  console.log('  --json      Print the report as JSON for scripts and CI.');
+  console.log('  --explain   Explain why one file is or is not blocked, and what letting it through would cost.');
+  console.log('  --write     Add the suggested rules to .aiignore in the scanned directory.');
+  console.log('  --dry-run   With --write, show what would be added without writing.');
   console.log('');
   console.log('Examples:');
   console.log('  node bin/ai-context-doctor.js');
   console.log('  node bin/ai-context-doctor.js ../some-repo');
+  console.log('  node bin/ai-context-doctor.js --explain src/index.js');
+  console.log('  node bin/ai-context-doctor.js --write');
+  console.log('  node bin/ai-context-doctor.js --write --dry-run');
   console.log('');
   console.log('What it does:');
   console.log('  Scans a local directory for obvious context noise.');
@@ -71,6 +93,14 @@ function printHelp() {
 
 function exitWithDirectoryError() {
   const target = targetArg || cwd;
+  if (jsonOutput) {
+    console.log(JSON.stringify({
+      error: 'not-a-readable-directory',
+      message: `${target} is not a readable directory.`,
+      target
+    }, null, 2));
+    process.exit(1);
+  }
   console.log('AI Context Doctor');
   console.log('');
   console.error(`Error: ${target} is not a readable directory.`);
@@ -92,111 +122,11 @@ function assertReadableDirectory(dir) {
   }
 }
 
-function walk(dir) {
-  let entries = [];
-
-  try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return;
+function printScoreBreakdown(breakdown) {
+  for (const item of breakdown) {
+    const lost = `${item.lost}`.padStart(5);
+    console.log(`  ${item.label.padEnd(22)} -${lost} / ${item.weight}`);
   }
-
-  for (const entry of entries) {
-    const absolutePath = path.join(dir, entry.name);
-    const relativePath = path.relative(cwd, absolutePath) || entry.name;
-
-    if (entry.isDirectory()) {
-      if (ignoredDirs.has(entry.name)) continue;
-      walk(absolutePath);
-      continue;
-    }
-
-    if (!entry.isFile()) continue;
-
-    let stats;
-    try {
-      stats = fs.statSync(absolutePath);
-    } catch {
-      continue;
-    }
-
-    totalFiles += 1;
-    totalBytes += stats.size;
-    classify(relativePath, stats.size);
-  }
-}
-
-function classify(relativePath, size) {
-  const normalized = relativePath.split(path.sep).join('/');
-  const parts = normalized.split('/');
-  const basename = parts[parts.length - 1];
-
-  for (const part of parts.slice(0, -1)) {
-    if (noiseDirs.has(part)) {
-      const label = `${part}/`;
-      addNoise(label, size, noiseDirs.get(part));
-      suggestions.add(label);
-      return;
-    }
-  }
-
-  if (lockfiles.has(basename)) {
-    addNoise(normalized, size, 'lockfile');
-    suggestions.add('*.lock');
-    return;
-  }
-
-  if (basename.endsWith('.log')) {
-    addNoise(normalized, size, 'local log file');
-    suggestions.add('*.log');
-    return;
-  }
-
-  if (size > largeFileThresholdBytes) {
-    addNoise(normalized, size, 'large file');
-    return;
-  }
-
-  if (basename.startsWith('.env')) {
-    addReview(normalized, 'environment-like file');
-    suggestions.add('.env*');
-  }
-
-  if (/deploy/i.test(normalized)) {
-    addReview(normalized, 'deployment script');
-  }
-}
-
-function addNoise(label, size, reason) {
-  const item = noise.get(label) || { size: 0, reason };
-  item.size += size;
-  noise.set(label, item);
-}
-
-function addReview(label, reason) {
-  if (!review.has(label)) {
-    review.set(label, reason);
-  }
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  const units = ['KB', 'MB', 'GB'];
-  let value = bytes / 1024;
-  let unit = units[0];
-
-  for (let index = 1; index < units.length && value >= 1024; index += 1) {
-    value /= 1024;
-    unit = units[index];
-  }
-
-  return `${value.toFixed(value >= 10 ? 1 : 2)} ${unit}`;
-}
-
-function statusFor(score) {
-  if (score >= 85) return 'Looks clean for an AI coding agent';
-  if (score >= 60) return 'Some context noise found';
-  return 'Too much noise for an AI coding agent';
 }
 
 function printTable(items, emptyMessage) {
@@ -205,54 +135,221 @@ function printTable(items, emptyMessage) {
     return;
   }
 
-  items.forEach(([label, item], index) => {
-    const name = `${index + 1}. ${label}`.padEnd(28);
-    const size = formatBytes(item.size).padStart(9);
+  items.forEach((item, index) => {
+    const name = `${index + 1}. ${item.path}`.padEnd(28);
+    const size = formatBytes(item.bytes).padStart(9);
     console.log(`${name} ${size}   ${item.reason}`);
   });
 }
 
-assertReadableDirectory(cwd);
-walk(cwd);
+function printExplanation(result) {
+  const category = result.category === null
+    ? result.kind === 'review' ? 'none (review hint, not scored as noise)' : 'none (not context noise)'
+    : result.category;
 
-const noiseBytes = [...noise.values()].reduce((sum, item) => sum + item.size, 0);
-const noisePercent = totalBytes === 0 ? 0 : Math.round((noiseBytes / totalBytes) * 100);
-const usefulPercent = Math.max(0, 100 - noisePercent);
-const healthScore = Math.max(0, Math.min(100, 100 - noisePercent));
-const topNoise = [...noise.entries()].sort((a, b) => b[1].size - a[1].size).slice(0, 5);
+  console.log('AI Context Doctor — explain');
+  console.log('');
+  console.log(`Path: ${result.path}`);
+  console.log(`Verdict: ${result.verdict}`);
+  console.log(`Rule: ${result.blocked ? result.rule.description : 'none — no .aiignore rule or strength cutoff matches this path'}`);
+  console.log(`Category: ${category}`);
+  console.log(`Size: ${formatBytes(result.size)} (~${result.tokenEstimate.min}–${result.tokenEstimate.max} tokens)`);
+  console.log(`Why: ${result.reason === null ? 'ordinary source file' : result.reason}`);
+
+  const { points, effectiveScore, effectiveScoreIfAllowed } = result.scoreImpact;
+  if (result.blocked !== true) {
+    console.log(`Score impact: none — it already reaches the model today (effective score ${effectiveScore}/100).`);
+  } else if (points > 0) {
+    console.log(`Score impact: allowing it would cost ${points} points (${effectiveScore}/100 -> ${effectiveScoreIfAllowed}/100).`);
+  } else if (points < 0) {
+    console.log(`Score impact: allowing it would raise what reaches the model by ${Math.abs(points)} points (${effectiveScore}/100 -> ${effectiveScoreIfAllowed}/100).`);
+  } else {
+    console.log(`Score impact: allowing it would not change what reaches the model (${effectiveScore}/100).`);
+  }
+}
+
+assertReadableDirectory(cwd);
+
+// The CLI reads the same two files the guard reads, so its numbers describe what
+// an agent in this folder would actually be handed — not a hypothetical scan.
+function localRules() {
+  try {
+    return parseRules(fs.readFileSync(path.join(cwd, '.aiignore'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+const level = readPolicy(cwd);
+
+if (explainArg !== null) {
+  const explanation = explainPath(cwd, explainArg, { rules: localRules(), level });
+
+  if (explanation.found !== true) {
+    const message = `${explainArg} is not a file in the scanned directory ${cwd}.`;
+    if (jsonOutput) {
+      fs.writeSync(1, `${JSON.stringify({
+        error: 'unknown-path',
+        message,
+        path: explainArg,
+        target: cwd
+      }, null, 2)}\n`);
+    } else {
+      console.error(`Error: ${message}`);
+      console.error('Pass a path relative to that directory, or run without --explain to see the scanned files.');
+    }
+    process.exit(2);
+  }
+
+  if (jsonOutput) {
+    fs.writeSync(1, `${JSON.stringify(explanation, null, 2)}\n`);
+  } else {
+    printExplanation(explanation);
+  }
+  process.exit(0);
+}
+
+const report = scanRepository(cwd, { rules: localRules(), level });
+
+let writeResult = null;
+
+if (writeOutput) {
+  try {
+    writeResult = writeAiignore(path.join(cwd, '.aiignore'), report.suggestedAiignore, { dryRun });
+  } catch (error) {
+    if (jsonOutput) {
+      fs.writeSync(1, `${JSON.stringify({
+        error: error.code || 'write-failed',
+        message: error.message,
+        target: path.join(cwd, '.aiignore')
+      }, null, 2)}\n`);
+      process.exit(1);
+    }
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+if (jsonOutput) {
+  // The score depends on the strength the rules were read at, so a script that
+  // compares two runs has to record which strength produced each number.
+  const strength = levelFor(level);
+  const output = {
+    ...report,
+    strength: strength.level,
+    strengthLabel: strength.label,
+    ...(writeResult
+      ? {
+          write: {
+            path: writeResult.path,
+            created: writeResult.created,
+            added: writeResult.added,
+            written: writeResult.written,
+            dryRun: writeResult.dryRun
+          }
+        }
+      : {})
+  };
+  // `process.exit` does not wait for a pipe to drain: on Node 18/20 a `--json`
+  // report larger than one pipe buffer (the blocked-file list pushed it past
+  // 8 KiB) arrived truncated, and `JSON.parse` then failed for scripts that
+  // capture stdout. Writing straight to the descriptor is synchronous, so the
+  // exit that follows cannot cut the document in half.
+  fs.writeSync(1, `${JSON.stringify(output, null, 2)}\n`);
+  process.exit(0);
+}
+
+const { repo, scannedFiles, scannedBytes, healthScore, noisePercent, usefulPercent } = report;
 
 console.log('AI Context Doctor');
 console.log('');
-console.log(`Repo: ${repoName}`);
-console.log(`Scanned: ${totalFiles} files, ${formatBytes(totalBytes)}`);
+console.log(`Repo: ${repo}`);
+console.log(`Scanned: ${scannedFiles} files, ${formatBytes(scannedBytes)}`);
 console.log('');
 console.log(`AI Context Health: ${healthScore}/100`);
 console.log(`Status: ${statusFor(healthScore)}`);
+console.log('');
+console.log(`What reaches the model: ${report.effectiveScore}/100`);
+console.log(`  strength ${levelFor(level).level} (${levelFor(level).label}) · ${formatBytes(report.allowedBytes)} of ${formatBytes(scannedBytes)} let through`);
+if (report.blockedDetails.length > 0) {
+  console.log('');
+  console.log('Blocked from the model:');
+  for (const item of report.blockedDetails.slice(0, 5)) {
+    const cause = item.rule !== null
+      ? `rule ${item.rule}`
+      : item.levelReason === 'size'
+        ? `file > ${formatBytes(item.limitBytes)}`
+        : 'category rule';
+    const atLevel = item.level === null ? '' : ` at strength ${item.level} (${item.levelLabel})`;
+    console.log(`- ${item.path.padEnd(26)} ${formatBytes(item.bytes).padStart(9)}   ${item.category} · ${cause}${atLevel}`);
+  }
+  if (report.blockedDetails.length > 5) {
+    console.log(`  ... and ${report.blockedDetails.length - 5} more (see --json).`);
+  }
+}
+console.log('');
+console.log('Where the points go:');
+printScoreBreakdown(report.scoreBreakdown);
 console.log('');
 console.log('Context noise estimate:');
 console.log(`${noisePercent}% likely noise`);
 console.log(`${usefulPercent}% likely useful source context`);
 console.log('');
 console.log('Top context waste:');
-printTable(topNoise, 'No obvious context waste found.');
+printTable(report.topNoise, 'No obvious context waste found.');
 console.log('');
 console.log('Review before sharing:');
-if (review.size === 0) {
+if (report.review.length === 0) {
   console.log('No environment-like files or deployment scripts found.');
 } else {
-  for (const [label, reason] of review.entries()) {
-    console.log(`- ${label.padEnd(24)} ${reason}`);
+  for (const item of report.review) {
+    console.log(`- ${item.path.padEnd(24)} ${item.reason}`);
   }
 }
 console.log('');
 console.log('Suggested .aiignore:');
-if (suggestions.size === 0) {
+if (report.suggestedAiignore.length === 0) {
   console.log('No suggestions yet.');
 } else {
-  for (const suggestion of suggestions) {
+  for (const suggestion of report.suggestedAiignore) {
     console.log(suggestion);
   }
+  if (report.suggestedRulesChangeTheScore !== true) {
+    // Saying "here are the rules" without saying "they change nothing at this
+    // strength" invites people to write a file and wonder why the number did
+    // not move.
+    console.log('');
+    console.log(
+      `At strength ${levelFor(level).level} the strength already blocks these, so they change nothing that reaches the model. They bite at a lower strength.`
+    );
+  }
 }
+if (writeResult) {
+  console.log('');
+  console.log('.aiignore:');
+  const relative = path.relative(cwd, writeResult.path) || '.aiignore';
+  if (writeResult.added.length === 0) {
+    console.log(report.suggestedAiignore.length === 0
+      ? 'Nothing to suggest for this directory.'
+      : `${relative} already covers every suggestion.`);
+  } else if (writeResult.dryRun) {
+    console.log(`Would add ${writeResult.added.length} rule(s) to ${relative} (dry run, nothing written).`);
+  } else if (writeResult.created) {
+    console.log(`Created ${relative} with ${writeResult.added.length} rule(s).`);
+  } else {
+    console.log(`Added ${writeResult.added.length} rule(s) to ${relative}.`);
+  }
+  if (writeResult.added.length > 0 && report.suggestedRulesChangeTheScore !== true) {
+    console.log(
+      `They do not change the score at strength ${levelFor(level).level}: the strength already blocks those files.`
+    );
+  }
+}
+
 console.log('');
 console.log('Next step:');
-console.log('Run this before asking your coding agent to inspect a larger repo.');
+if (writeResult && writeResult.written) {
+  console.log('Commit .aiignore so your agent and your teammates share the same list.');
+} else {
+  console.log('Run this before asking your coding agent to inspect a larger repo.');
+}

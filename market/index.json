@@ -1,0 +1,1290 @@
+{
+  "format": 1,
+  "title": {
+    "en": "AI Context Doctor",
+    "zh-cn": "AI 上下文医生"
+  },
+  "description": {
+    "en": "A plugin index for AI Context Doctor, which warns you when a repository would flood your agent's context.",
+    "zh-cn": "AI Context Doctor 的插件索引：当仓库会淹没智能体上下文时给出提醒。"
+  },
+  "metadata": {
+    "categories": {
+      "context": {
+        "title": {
+          "en": "Context quality",
+          "zh-cn": "上下文质量"
+        }
+      },
+      "developer": {
+        "title": {
+          "en": "Developer tools",
+          "zh-cn": "开发者工具"
+        }
+      }
+    },
+    "labels": {
+      "no-network": {
+        "title": {
+          "en": "No network calls",
+          "zh-cn": "不联网"
+        }
+      },
+      "zero-setup": {
+        "title": {
+          "en": "Works with no setup",
+          "zh-cn": "装好即用"
+        }
+      },
+      "sidebar-tab": {
+        "title": {
+          "en": "Lives in the sidebar",
+          "zh-cn": "在侧栏里"
+        }
+      },
+      "network-optional": {
+        "title": {
+          "en": "Network only when asked",
+          "zh-cn": "按需联网"
+        }
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "dsh-aiignore",
+      "title": "AIignore",
+      "description": "See what a conversation feeds the model, what your rules hold back, and which rules the scanner would still add.",
+      "author": "WJDdidi-1",
+      "homepage": "https://github.com/WJDdidi-1/ai-context-doctor",
+      "repository": {
+        "url": "https://github.com/WJDdidi-1/ai-context-doctor",
+        "directory": "plugin"
+      },
+      "icon": "https://raw.githubusercontent.com/WJDdidi-1/ai-context-doctor/main/plugin/icon.svg",
+      "metadata": {
+        "category": "context",
+        "keywords": [
+          "aiignore",
+          "context-window",
+          "token-budget",
+          "noise",
+          "lockfile",
+          "log-files",
+          "repo-hygiene",
+          "sidebar"
+        ],
+        "labels": [
+          "no-network",
+          "zero-setup",
+          "sidebar-tab"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.38.2",
+          "publishTimestamp": 1793516973,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.38.1",
+          "publishTimestamp": 1793499798,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.38.0",
+          "publishTimestamp": 1793454253,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.37.0",
+          "publishTimestamp": 1793400000,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.36.0",
+          "publishTimestamp": 1793361273,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.35.0",
+          "publishTimestamp": 1793353348,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.34.0",
+          "publishTimestamp": 1793351894,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.33.0",
+          "publishTimestamp": 1793350844,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.32.0",
+          "publishTimestamp": 1793369890,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.31.0",
+          "publishTimestamp": 1793368004,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.30.0",
+          "publishTimestamp": 1793346795,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.29.1",
+          "publishTimestamp": 1793345358,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.29.0",
+          "publishTimestamp": 1793344122,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.28.0",
+          "publishTimestamp": 1793342328,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.27.0",
+          "publishTimestamp": 1793340538,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.26.3",
+          "publishTimestamp": 1793326611,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.26.2",
+          "publishTimestamp": 1793281848,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.26.1",
+          "publishTimestamp": 1793259512,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.26.0",
+          "publishTimestamp": 1793257323,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.25.0",
+          "publishTimestamp": 1793255312,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.24.5",
+          "publishTimestamp": 1793249914,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.24.4",
+          "publishTimestamp": 1793247073,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.24.3",
+          "publishTimestamp": 1793246691,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.24.2",
+          "publishTimestamp": 1793246476,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.24.1",
+          "publishTimestamp": 1793245033,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.24.0",
+          "publishTimestamp": 1793244120,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.23.1",
+          "publishTimestamp": 1793239937,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.23.0",
+          "publishTimestamp": 1793239193,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.22.0",
+          "publishTimestamp": 1793237207,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.21.0",
+          "publishTimestamp": 1793200715,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.19.0",
+          "publishTimestamp": 1793196518,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.18.0",
+          "publishTimestamp": 1793187810,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.17.0",
+          "publishTimestamp": 1793190716,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.16.0",
+          "publishTimestamp": 1793187568,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.15.0",
+          "publishTimestamp": 1793185413,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.14.0",
+          "publishTimestamp": 1793178525,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.0",
+          "publishTimestamp": 1793177075,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.12.0",
+          "publishTimestamp": 1793175999,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.11.0",
+          "publishTimestamp": 1793174424,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.10.0",
+          "publishTimestamp": 1793170924,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.9.0",
+          "publishTimestamp": 1793170228,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.8.0",
+          "publishTimestamp": 1793168738,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.7.0",
+          "publishTimestamp": 1793167178,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.6.0",
+          "publishTimestamp": 1793162734,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.5.0",
+          "publishTimestamp": 1793160607,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.4.0",
+          "publishTimestamp": 1793159595,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.3.0",
+          "publishTimestamp": 1793158361,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.2.1",
+          "publishTimestamp": 1793090177,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.2.0",
+          "publishTimestamp": 1793088640,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-plugin-example",
+      "title": "Example plugin",
+      "description": "A ~70-line plugin to copy from: one sidebar tab, two languages, one behaviour test, and CI that runs doctor.",
+      "author": "WJDdidi-1",
+      "homepage": "https://github.com/WJDdidi-1/dsh-plugin-example",
+      "repository": {
+        "url": "https://github.com/WJDdidi-1/dsh-plugin-example"
+      },
+      "metadata": {
+        "category": "developer",
+        "keywords": [
+          "example",
+          "starter",
+          "sidebar",
+          "testing"
+        ],
+        "labels": [
+          "zero-setup",
+          "sidebar-tab"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.2",
+          "publishTimestamp": 1793513490,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-plugin-toolkit",
+      "title": "Plugin doctor",
+      "description": "Runs the checks the market runs on any plugin folder or GitHub repository — manifest, host range, and whether the tarball actually ships the panel — and says which one would fail. Same package also ships the CLI: init, verify, mount, dev and release.",
+      "author": "WJDdidi-1",
+      "homepage": "https://github.com/WJDdidi-1/dsh-plugin-toolkit",
+      "repository": {
+        "url": "https://github.com/WJDdidi-1/dsh-plugin-toolkit"
+      },
+      "metadata": {
+        "category": "developer",
+        "keywords": [
+          "plugin-tooling",
+          "preflight",
+          "release",
+          "testing",
+          "github",
+          "sidebar"
+        ],
+        "labels": [
+          "sidebar-tab",
+          "zero-setup",
+          "network-optional"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.20.33",
+          "publishTimestamp": 1794614362,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.32",
+          "publishTimestamp": 1794605518,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.29",
+          "publishTimestamp": 1794525699,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.26",
+          "publishTimestamp": 1794463014,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.25",
+          "publishTimestamp": 1794458364,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.23",
+          "publishTimestamp": 1794343763,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.22",
+          "publishTimestamp": 1794339767,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.21",
+          "publishTimestamp": 1794336632,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.20",
+          "publishTimestamp": 1794269374,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.19",
+          "publishTimestamp": 1794265849,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.18",
+          "publishTimestamp": 1794261674,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.17",
+          "publishTimestamp": 1794258519,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.16",
+          "publishTimestamp": 1794251669,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.15",
+          "publishTimestamp": 1794178767,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.14",
+          "publishTimestamp": 1794174394,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.13",
+          "publishTimestamp": 1794165720,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.12",
+          "publishTimestamp": 1793993982,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.11",
+          "publishTimestamp": 1793989108,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.10",
+          "publishTimestamp": 1793974834,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.9",
+          "publishTimestamp": 1793971123,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.8",
+          "publishTimestamp": 1793942793,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.7",
+          "publishTimestamp": 1793914279,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.6",
+          "publishTimestamp": 1793910385,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.5",
+          "publishTimestamp": 1793905375,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.4",
+          "publishTimestamp": 1793902443,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.3",
+          "publishTimestamp": 1793863257,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.2",
+          "publishTimestamp": 1793824418,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.1",
+          "publishTimestamp": 1793819260,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.20.0",
+          "publishTimestamp": 1793802257,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.19.0",
+          "publishTimestamp": 1793792646,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.18.1",
+          "publishTimestamp": 1793788295,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.18.0",
+          "publishTimestamp": 1793779464,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.17.0",
+          "publishTimestamp": 1793776079,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.16.0",
+          "publishTimestamp": 1793771426,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.15.0",
+          "publishTimestamp": 1793755368,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.14.0",
+          "publishTimestamp": 1793640746,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.13",
+          "publishTimestamp": 1793594845,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.12",
+          "publishTimestamp": 1793586840,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.11",
+          "publishTimestamp": 1793536631,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.10",
+          "publishTimestamp": 1793536146,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.9",
+          "publishTimestamp": 1793518390,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.8",
+          "publishTimestamp": 1793514966,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.7",
+          "publishTimestamp": 1793514604,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.6",
+          "publishTimestamp": 1793452961,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.5",
+          "publishTimestamp": 1793450639,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.4",
+          "publishTimestamp": 1793449211,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.3",
+          "publishTimestamp": 1793447228,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.2",
+          "publishTimestamp": 1793446755,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.1",
+          "publishTimestamp": 1793438388,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.13.0",
+          "publishTimestamp": 1793437467,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.12.0",
+          "publishTimestamp": 1793435225,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.11.0",
+          "publishTimestamp": 1793434483,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.10.0",
+          "publishTimestamp": 1793431417,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.9.7",
+          "publishTimestamp": 1793430646,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.9.6",
+          "publishTimestamp": 1793430149,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.9.5",
+          "publishTimestamp": 1793429200,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.9.4",
+          "publishTimestamp": 1793428537,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.9.3",
+          "publishTimestamp": 1793427196,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.9.2",
+          "publishTimestamp": 1793425752,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.9.1",
+          "publishTimestamp": 1793424507,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.9.0",
+          "publishTimestamp": 1793424156,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.8.8",
+          "publishTimestamp": 1793423698,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.8.7",
+          "publishTimestamp": 1793422644,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.8.6",
+          "publishTimestamp": 1793422248,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        },
+        {
+          "version": "0.8.5",
+          "publishTimestamp": 1793421599,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        }
+      ]
+    }
+  ]
+}

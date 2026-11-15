@@ -1,24 +1,30 @@
 {
   "name": "ai-context-doctor",
-  "version": "0.1.0",
+  "version": "0.7.8",
   "description": "Find the files your AI coding agent should not read before sending it your repo.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bin": {
-    "ai-context-doctor": "./bin/ai-context-doctor.js"
+    "ai-context-doctor": "bin/ai-context-doctor.js"
   },
   "scripts": {
     "start": "node bin/ai-context-doctor.js",
+    "example": "node examples/explain-blocked-path.js",
+    "test": "node scripts/run-tests.js",
     "smoke": "node scripts/smoke-test.js",
-    "pack:check": "npm pack --dry-run"
+    "pack:check": "npm pack --dry-run",
+    "prepublishOnly": "npm run test && npm run smoke"
   },
   "engines": {
     "node": ">=18"
   },
   "files": [
     "bin/",
+    "lib/",
+    "examples/",
     "README.md",
-    "README.zh-CN.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md",
+    "NOTICE"
   ],
   "repository": {
     "type": "git",
@@ -39,6 +45,19 @@
     "cli",
     "developer-tools",
     "local-first",
-    "repository"
-  ]
+    "repository",
+    "library"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
 }

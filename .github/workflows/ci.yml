@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # Keep devDependencies so the TypeScript declaration checks run here
+      # instead of skipping as they do in the production-only package install.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run smoke tests
+        run: npm run smoke
+
+      - name: Check package contents
+        run: npm run pack:check
+
+  # macOS arm64 runners are capacity constrained. Requesting all four Node
+  # versions at once can leave one job unacquired until GitHub times it out
+  # ("The job was not acquired by Runner of type hosted", run 41489729400).
+  # Queue the same matrix one job at a time rather than dropping coverage.
+  smoke-macos:
+    name: Smoke (macos-latest, Node ${{ matrix.node }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        node: [18, 20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # Keep devDependencies so the TypeScript declaration checks run here
+      # instead of skipping as they do in the production-only package install.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run smoke tests
+        run: npm run smoke
+
+      - name: Check package contents
+        run: npm run pack:check
+
+  packaged:
+    name: Packaged install (ubuntu, Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # installs the tarball the way a user would, which is the only check that
+      # notices a file missing from "files" (the CLI requires ../lib/rules.js)
+      - name: Install the packed tarball and run the CLI
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          mkdir -p "$RUNNER_TEMP/try" && cd "$RUNNER_TEMP/try"
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund "$RUNNER_TEMP"/ai-context-doctor-*.tgz
+          ./node_modules/.bin/ai-context-doctor --version
+          ./node_modules/.bin/ai-context-doctor --json . > out.json
+          node -e "const j=require('./out.json'); if (typeof j.healthScore !== 'number') { console.error('unexpected JSON payload'); process.exit(1); }"
+          node -e "const { scanRepository } = require('ai-context-doctor'); const r = scanRepository(process.cwd()); if (typeof r.healthScore !== 'number') { console.error('library API broken'); process.exit(1); }"
+
+  plugin:
+    name: Plugin bundle (ubuntu, Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pack the library the plugin depends on
+        run: npm pack --pack-destination "$RUNNER_TEMP"
+
+      - name: Install the bundle's own dev dependencies
+        working-directory: plugin
+        run: npm ci
+
+      - name: Install the bundle against the packed library and test it
+        working-directory: plugin
+        run: |
+          npm install --no-save --no-audit --no-fund "$RUNNER_TEMP"/ai-context-doctor-*.tgz
+          npm run check
+          npm test
+
+  market:
+    name: Market index (ubuntu, Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate market/index.json with the Harness parser
+        run: |
+          npm install --no-save --no-audit --no-fund @deepseek-ai/dsh-plugin-market-index
+          node scripts/check-market-index.mjs

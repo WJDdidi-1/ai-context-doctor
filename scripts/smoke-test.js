@@ -13,7 +13,12 @@ const node = process.execPath;
 function run(args, options = {}) {
   return spawnSync(node, [cliPath, ...args], {
     cwd: options.cwd || repoRoot,
-    encoding: 'utf8'
+    encoding: 'utf8',
+    // The report now carries one entry per blocked file, so `--json` on the
+    // demo repository is larger than the buffer older Node versions give a
+    // synchronous child (8 KiB on Node 18/20). Without this the capture is cut
+    // mid-object and valid JSON looks invalid on exactly those two versions.
+    maxBuffer: 16 * 1024 * 1024
   });
 }
 
@@ -42,9 +47,32 @@ assert(currentDir.status === 0, 'current directory scan should exit with 0');
 assertIncludes(currentDir, 'AI Context Health', 'current directory output');
 assertIncludes(currentDir, 'Top context waste', 'current directory output');
 
+const jsonScan = run(['--json', './demo-ai-context-noise-repo']);
+assert(jsonScan.status === 0, '--json scan should exit with 0');
+let parsedJson;
+try {
+  parsedJson = JSON.parse(jsonScan.stdout);
+} catch {
+  assert(false, '--json output should be valid JSON');
+}
+assert(typeof parsedJson.healthScore === 'number', '--json output should include healthScore');
+assert(Array.isArray(parsedJson.topNoise), '--json output should include topNoise array');
+
 const missingDir = run(['./missing-smoke-test-directory']);
 assert(missingDir.status !== 0, 'missing directory scan should fail');
 assertIncludes(missingDir, 'not a readable directory', 'missing directory output');
+
+// --json is for scripts and CI, so its failure path must stay parseable too.
+const missingDirJson = run(['--json', './missing-smoke-test-directory']);
+assert(missingDirJson.status !== 0, '--json missing directory scan should fail');
+let jsonError;
+try {
+  jsonError = JSON.parse(missingDirJson.stdout);
+} catch {
+  assert(false, '--json output on failure should be valid JSON');
+}
+assert(jsonError.error === 'not-a-readable-directory', '--json failure should carry an error code');
+assert(typeof jsonError.message === 'string', '--json failure should carry a message');
 
 const fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-context-doctor-smoke-'));
 const largeFile = path.join(fixtureDir, 'export.json');
@@ -56,6 +84,37 @@ assert(largeFileScan.status === 0, 'large file fixture scan should exit with 0')
 assertIncludes(largeFileScan, 'export.json', 'large file fixture output');
 assertIncludes(largeFileScan, 'large file', 'large file fixture output');
 
+// Review rules: credential-style names must be flagged; templates and
+// unrelated names containing "env"/"key" must not be flagged as secrets.
+const reviewDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-context-doctor-review-'));
+for (const name of ['secrets.env', 'credentials.json', '.env.production', 'server.pem', '.env.example', 'keyboard.js', 'environment.md']) {
+  fs.writeFileSync(path.join(reviewDir, name), 'x\n');
+}
+const reviewScan = run(['--json', reviewDir]);
+assert(reviewScan.status === 0, 'review fixture scan should exit with 0');
+const reviewed = JSON.parse(reviewScan.stdout).review;
+const flagged = (name) => reviewed.find((item) => item.path === name);
+assert(flagged('secrets.env') && flagged('secrets.env').reason === 'environment-like file', 'secrets.env should be flagged');
+assert(flagged('credentials.json') && flagged('credentials.json').reason === 'environment-like file', 'credentials.json should be flagged');
+assert(flagged('server.pem') && flagged('server.pem').reason === 'environment-like file', 'server.pem should be flagged');
+assert(flagged('.env.example') && flagged('.env.example').reason.startsWith('environment template'), '.env.example should be a template, not a secret');
+assert(!flagged('keyboard.js'), 'keyboard.js must not be flagged');
+assert(!flagged('environment.md'), 'environment.md must not be flagged');
+fs.rmSync(reviewDir, { recursive: true, force: true });
+
 fs.rmSync(fixtureDir, { recursive: true, force: true });
+
+// npm 11 silently drops `bin` entries whose target starts with "./" when
+// publishing. The result is a package with no executable at all, so
+// `npx ai-context-doctor` fails with "could not determine executable to
+// run" -- and neither `npm pack` nor a local install applies that
+// correction, so nothing else here would notice before the registry does.
+const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
+const binEntries = Object.entries(manifest.bin || {});
+assert(binEntries.length > 0, 'package.json should declare a bin entry');
+for (const [name, target] of binEntries) {
+  assert(!target.startsWith('./'), `bin "${name}" must not start with "./" (npm strips it on publish)`);
+  assert(fs.existsSync(path.join(repoRoot, target)), `bin "${name}" points at a missing file: ${target}`);
+}
 
 console.log('Smoke tests passed.');

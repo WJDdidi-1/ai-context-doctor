@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 456" role="img" aria-labelledby="t d">
+  <title id="t">How ai-context-doctor scores a context window</title>
+  <desc id="d">A repository is scanned into files, bytes and noise, and scored. The agent's reads are checked one by one against the .aiignore rules and the chosen strength, so the panel can show what was held back and what still gets through. Optimize writes the rules that the next scan and the next read both use.</desc>
+  <style>
+    .box{fill:#ffffff;stroke:#c9ced6;stroke-width:1.5}
+    .box-a{fill:#f4f7ff;stroke:#9db4e8}
+    .box-b{fill:#f7f7f8;stroke:#cfd3da}
+    .t{font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;fill:#1d2129}
+    .s{font:400 11px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;fill:#5b6472}
+    .m{font:400 9px ui-monospace,SFMono-Regular,Menlo,monospace;fill:#7a8494}
+    .a{stroke:#8d99ab;stroke-width:1.5;fill:none;marker-end:url(#ah)}
+    .dash{stroke:#9db4e8;stroke-width:1.5;fill:none;stroke-dasharray:5 4;marker-end:url(#ahb)}
+    .label{font:400 10px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;fill:#6b7480}
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8d99ab"/>
+    </marker>
+    <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#9db4e8"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="456" fill="#fbfcfd"/>
+
+  <!-- inputs -->
+  <rect class="box box-b" x="24" y="36" width="188" height="84" rx="10"/>
+  <text class="t" x="40" y="62">Repository</text>
+  <text class="s" x="40" y="80">files, sizes, noise</text>
+  <text class="m" x="40" y="100">scanRepository()</text>
+
+  <rect class="box box-b" x="24" y="168" width="188" height="96" rx="10"/>
+  <text class="t" x="40" y="194">What the agent read</text>
+  <text class="s" x="40" y="212">per conversation</text>
+  <text class="m" x="40" y="232">session projection</text>
+
+  <rect class="box box-b" x="24" y="312" width="188" height="96" rx="10"/>
+  <text class="t" x="40" y="338">Rules + strength</text>
+  <text class="s" x="40" y="356">.aiignore, level 1-5</text>
+  <text class="m" x="40" y="376">readPolicy()</text>
+
+  <!-- engine -->
+  <rect class="box box-a" x="292" y="36" width="196" height="84" rx="10"/>
+  <text class="t" x="308" y="62">Score</text>
+  <text class="s" x="308" y="80">waste, big files,</text>
+  <text class="s" x="308" y="96">duplicates</text>
+  <text class="m" x="308" y="112">contextScore()</text>
+
+  <rect class="box box-a" x="292" y="168" width="196" height="96" rx="10"/>
+  <text class="t" x="308" y="194">Verdict per read</text>
+  <text class="s" x="308" y="212">allowed or blocked,</text>
+  <text class="s" x="308" y="228">with a reason</text>
+  <text class="m" x="308" y="248">decideRead()</text>
+
+  <rect class="box box-a" x="292" y="312" width="196" height="96" rx="10"/>
+  <text class="t" x="308" y="338">Conversation report</text>
+  <text class="s" x="308" y="356">score, held back,</text>
+  <text class="s" x="308" y="372">still getting through</text>
+  <text class="m" x="308" y="392">buildReport()</text>
+
+  <!-- outputs -->
+  <rect class="box" x="560" y="140" width="200" height="104" rx="10"/>
+  <text class="t" x="576" y="166">Sidebar panel</text>
+  <text class="s" x="576" y="184">one current score,</text>
+  <text class="s" x="576" y="200">follows the open</text>
+  <text class="s" x="576" y="216">conversation</text>
+  <text class="m" x="576" y="234">plugin/client.js</text>
+
+  <rect class="box" x="560" y="288" width="200" height="92" rx="10"/>
+  <text class="t" x="576" y="314">CLI</text>
+  <text class="s" x="576" y="332">same numbers,</text>
+  <text class="s" x="576" y="348">--json for CI</text>
+  <text class="m" x="576" y="366">bin/ai-context-doctor.js</text>
+
+  <rect class="box box-a" x="820" y="140" width="156" height="104" rx="10"/>
+  <text class="t" x="836" y="166">Optimize</text>
+  <text class="s" x="836" y="184">writes the rules</text>
+  <text class="s" x="836" y="200">this folder needs,</text>
+  <text class="s" x="836" y="216">then rescans</text>
+
+  <!-- arrows -->
+  <path class="a" d="M212 78 L288 78"/>
+  <path class="a" d="M488 78 L556 78 L556 138"/>
+  <text class="label" x="498" y="70">score</text>
+
+  <path class="a" d="M212 216 L288 216"/>
+  <path class="a" d="M488 216 L520 216 L520 176 L556 176"/>
+  <text class="label" x="486" y="206">verdict</text>
+
+  <path class="a" d="M212 360 L250 360 L250 246 L288 246"/>
+  <text class="label" x="232" y="322">rules</text>
+
+  <path class="a" d="M488 360 L524 360 L524 330 L556 330"/>
+
+  <path class="a" d="M760 196 L816 196"/>
+  <path class="dash" d="M898 244 L898 424 L118 424 L118 414"/>
+  <text class="label" x="640" y="418">the next scan and the next read both use the new rules</text>
+
+  <text class="label" x="24" y="448">The guard and the score read the same decision function, so the number on the panel and the files the agent was actually kept from cannot disagree.</text>
+</svg>

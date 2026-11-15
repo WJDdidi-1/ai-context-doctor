@@ -1,0 +1,79 @@
+{
+  "name": "dsh-aiignore",
+  "version": "0.38.2",
+  "description": "See what a conversation feeds the model, what your rules keep out, and what one click would change.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "report.js",
+    "tree.js",
+    "client.js",
+    "ui/panel.css",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "CHANGELOG.md",
+    "NOTICE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "dependencies": {
+    "ai-context-doctor": "^0.7.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WJDdidi-1/ai-context-doctor.git",
+    "directory": "plugin"
+  },
+  "homepage": "https://github.com/WJDdidi-1/ai-context-doctor#readme",
+  "bugs": {
+    "url": "https://github.com/WJDdidi-1/ai-context-doctor/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node scripts/check-bundle.mjs",
+    "check:baseline": "node scripts/check-baseline.mjs"
+  },
+  "engines": {
+    "node": ">=18",
+    "dsh": ">=0.2.0"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "dsh-aiignore",
+    "aiignore",
+    "ai-context-doctor",
+    "context-window",
+    "token-budget",
+    "noise",
+    "lockfile",
+    "sidebar"
+  ],
+  "devDependencies": {
+    "dsh-plugin-toolkit": "^0.2.2",
+    "jsdom": "^26.1.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}

@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <script>window.__errors = []; window.addEventListener('error', (e) => window.__errors.push('error: ' + String(e.message))); window.addEventListener('unhandledrejection', (e) => window.__errors.push('rejection: ' + String(e.reason && e.reason.stack || e.reason))); const __ce = console.error; console.error = (...a) => { window.__errors.push(a.map(String).join(' ')); __ce(...a); };</script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI context panel — preview</title>
+<link rel="stylesheet" href="./tokens.css" />
+<style>
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--dsw-font-family, -apple-system, "Segoe UI", sans-serif);
+    background: var(--dsw-alias-bg-overlay, #f4f5f7);
+    color: var(--dsw-alias-label-primary, #0f1115);
+  }
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,0.06));
+    background: var(--dsw-alias-bg-base, #fff);
+  }
+  .toolbar strong { font-weight: 600; font-size: 12px; margin-right: 4px; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar button {
+    font: inherit; font-size: 12px;
+    padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,0.1));
+    background: transparent; color: var(--dsw-alias-label-secondary, #61666b);
+  }
+  .toolbar button[aria-pressed="true"] {
+    background: var(--dsw-alias-state-business-primary, #4d6bfe);
+    border-color: transparent;
+    color: #fff;
+  }
+  .stage {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    height: calc(100vh - 45px);
+  }
+  .main {
+    display: flex; flex-direction: column;
+    gap: 12px; padding: 24px;
+    color: var(--dsw-alias-label-caption, #adb2b8);
+    font-size: 13px;
+  }
+  .bubble {
+    max-width: 520px; padding: 10px 14px;
+    border-radius: var(--dsw-radius-md, 12px);
+    background: var(--dsw-alias-bg-layer-1, #fff);
+    border: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,0.06));
+    color: var(--dsw-alias-label-secondary, #61666b);
+  }
+  .composer {
+    margin-top: auto;
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 10px;
+    border-radius: var(--dsw-radius-lg, 16px);
+    border: 1px solid var(--dsw-alias-border-l2, rgba(0,0,0,0.1));
+    background: var(--dsw-alias-bg-base, #fff);
+  }
+  .composer .plus {
+    width: 26px; height: 26px; border-radius: 8px;
+    display: grid; place-items: center;
+    color: var(--dsw-alias-label-tertiary, #81858c);
+  }
+  .composer .hint {
+    flex: 1; font-size: 13px; color: var(--dsw-alias-label-caption, #adb2b8);
+  }
+  aside {
+    border-left: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,0.06));
+    background: var(--dsw-alias-bg-base, #fff);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  #panel-root { flex: 1; min-height: 0; display: flex; }
+  #panel-root > * { flex: 1; min-width: 0; }
+
+/* Screenshot mode: add data-shot="1" to <html> to hide preview chrome. */
+html[data-shot='1'] .preview-bar, html[data-shot='1'] #rail-note, html[data-shot='1'] .rail-note { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <strong>Preview</strong>
+    <span>scenario</span>
+    <button data-scenario="noisy" aria-pressed="true">noisy repo</button>
+    <button data-scenario="healthy" aria-pressed="false">healthy repo</button>
+    <button data-scenario="fresh" aria-pressed="false">nothing scanned</button>
+    <button data-scenario="broken" aria-pressed="false">request fails</button>
+    <span class="spacer"></span>
+    <button id="theme">dark</button>
+  </div>
+
+  <div class="stage">
+    <div class="main" style="position: relative;">
+      <div class="rail" id="rail-root"></div>
+      <div id="stage-root"></div>
+      <div class="bubble">A mock conversation, so the composer row is where it really is.</div>
+      <div class="composer" id="composer-root">
+        <span class="plus">+</span>
+        <span class="hint">Ask, or drop a file…</span>
+      </div>
+    </div>
+    <aside>
+      <div class="rail-note">left rail icon ↑ / overview page ↓</div>
+      <div id="chip-root" style="padding: 8px 12px; border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(0,0,0,0.06));"></div>
+      <div id="panel-root"></div>
+    </aside>
+  </div>
+
+  <script src="./react-lite.js"></script>
+  <script>
+    // ---- mock host data -------------------------------------------------
+    const now = Date.now();
+    const TOK = (bytes) => ({ min: Math.round(bytes / 4), max: Math.round(bytes / 3.2), bytes });
+
+    const conversationRows = [
+      {
+        id: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50',
+        title: 'Make the panel follow this conversation',
+        cwd: '/Users/you/code/demo-noise',
+        turns: 12,
+        tokens: 1219286,
+        readFiles: 48,
+        readBytes: 457486,
+        score: 74,
+        effectiveScore: 71,
+        coveredCount: 1,
+        noiseCount: 3,
+        covered: 0,
+        noise: 3,
+        at: 1793237207000
+      },
+      {
+        id: 'session-5e22-4390-9aeb-1a9f1e8cde50-x',
+        title: 'Clean up the release workflow',
+        cwd: '/Users/you/code/other-project',
+        turns: 31,
+        tokens: 300000,
+        readFiles: 22,
+        readBytes: 118000,
+        score: 96,
+        effectiveScore: 96,
+        covered: 0,
+        noise: 0,
+        at: 1793230000000
+      }
+    ];
+
+    const SCENARIOS = {
+      noisy: {
+        workspace: '/Users/you/code/demo-noise',
+        scanned: { files: 8, bytes: 1572864, healthScore: 22, noisePercent: 78, tokenEstimate: TOK(1572864) },
+        skipped: [
+          { path: 'dist/bundle.js', bytes: 918273, reason: 'generated build output', attempts: 2 },
+          { path: 'package-lock.json', bytes: 36044, reason: 'lockfile', attempts: 1 },
+          { path: 'logs/dev.log', bytes: 18841, reason: 'local log file', attempts: 1 }
+        ],
+        reads: [
+          { path: 'src/index.js', bytes: 2048, verdict: 'useful' },
+          { path: 'src/legacy.js', bytes: 90112, verdict: 'review' },
+          { path: 'src/gen/schema.js', bytes: 6144, verdict: 'allowed' }
+        ],
+        sessionFiles: [
+          { path: 'docs/plan.md', bytes: 4096, kind: 'written', tokens: TOK(4096) },
+          { path: 'src/index.js', bytes: 2048, kind: 'read', tokens: TOK(2048) },
+          { path: 'src/legacy.js', bytes: 90112, kind: 'read', tokens: TOK(90112) }
+        ],
+        savedTokens: TOK(973158),
+        stats: { blockedReads: 12, savedTokens: 973158, since: '2026-10-21T09:12:00.000Z', lastAt: new Date().toISOString() },
+        potential: { level: 4, label: 'Strong', extraFiles: 2, extraBytes: 260000, extraTokens: TOK(260000), gain: 8 },
+        uploads: [
+          { name: 'f4ff838c', digest: 'f4ff838c' + '0'.repeat(56), bytes: 18026, type: 'png', receivedAt: now - 12 * 60000 },
+          { name: '9c2e1ab4', digest: '9c2e1ab4' + '0'.repeat(56), bytes: 20480, type: 'pdf', receivedAt: now - 3 * 3600000 },
+          { name: '11ab7d02', digest: '11ab7d02' + '0'.repeat(56), bytes: 4096, type: 'png', receivedAt: now - 26 * 3600000 }
+        ],
+        notes: 'Prefer lib/ over legacy/. Never read dist/.'
+      },
+      healthy: {
+        workspace: '/Users/you/code/clean-app',
+        scanned: { files: 42, bytes: 380000, healthScore: 91, noisePercent: 4, tokenEstimate: TOK(380000) },
+        skipped: [{ path: 'pnpm-lock.yaml', bytes: 12044, reason: 'lockfile', attempts: 1 }],
+        reads: [{ path: 'src/app.ts', bytes: 5120, verdict: 'useful' }],
+        sessionFiles: [{ path: 'src/app.ts', bytes: 5120, kind: 'read', tokens: TOK(5120) }],
+        savedTokens: TOK(12044),
+        stats: { blockedReads: 3, savedTokens: 12044, since: '2026-10-27T11:00:00.000Z', lastAt: new Date().toISOString() },
+        potential: null,
+        uploads: [],
+        notes: ''
+      },
+      fresh: {
+        workspace: null,
+        skipped: [],
+        allowed: [],
+        savedTokens: TOK(0),
+        stats: { blockedReads: 0, savedTokens: 0, since: null, lastAt: null },
+        potential: null
+      },
+      broken: null
+    };
+
+    const LEVELS = [
+      { level: 1, key: 'off', label: 'Off', maxBytes: 0, categories: [], note: 'Nothing is filtered except your own rules.' },
+      { level: 2, key: 'light', label: 'Light', maxBytes: 4194304, categories: ['build'], note: 'Skips generated output and files over 4 MB.' },
+      { level: 3, key: 'balanced', label: 'Balanced', maxBytes: 1048576, categories: ['build', 'lockfile', 'log'], note: 'Skips generated output, lockfiles, logs and files over 1 MB. The recommended default.' },
+      { level: 4, key: 'strong', label: 'Strong', maxBytes: 262144, categories: ['build', 'lockfile', 'log'], note: 'Also skips files over 256 KB.' },
+      { level: 5, key: 'strict', label: 'Strict', maxBytes: 65536, categories: ['build', 'lockfile', 'log', 'large'], note: 'Also skips files over 64 KB.' }
+    ];
+
+    // Scoring, mirrored from lib/rules.js so the bars show what the Host would
+    // compute: each category can cost its weight, scaled by its share.
+    // Same five dimensions the real scorer produces: one of them can be moved by
+    // rules (noise), the other four describe the folder itself.
+    const BREAKDOWN_NOISY = [
+      { id: 'noise', label: 'waste', hint: 'Generated output, lockfiles and log files.', weight: 30, bytes: 980000, lost: 26.4 },
+      { id: 'volume', label: 'sheer size', hint: 'How much text the agent has to read.', weight: 25, bytes: 1572864, lost: 25 },
+      { id: 'concentration', label: 'one big file', hint: 'The largest file, as a share of the folder.', weight: 20, bytes: 1048576, lost: 20 },
+      { id: 'sprawl', label: 'file count', hint: 'How many files the agent has to pick from.', weight: 15, bytes: 0, lost: 0 },
+      { id: 'binary', label: 'binaries', hint: 'Bytes no model can read as text.', weight: 10, bytes: 0, lost: 0 }
+    ];
+    const BREAKDOWN_CLEAN = [
+      { id: 'noise', label: 'waste', hint: 'Generated output, lockfiles and log files.', weight: 30, bytes: 0, lost: 0 },
+      { id: 'volume', label: 'sheer size', hint: 'How much text the agent has to read.', weight: 25, bytes: 204800, lost: 3.1 },
+      { id: 'concentration', label: 'one big file', hint: 'The largest file, as a share of the folder.', weight: 20, bytes: 40960, lost: 0 },
+      { id: 'sprawl', label: 'file count', hint: 'How many files the agent has to pick from.', weight: 15, bytes: 0, lost: 0 },
+      { id: 'binary', label: 'binaries', hint: 'Bytes no model can read as text.', weight: 10, bytes: 0, lost: 0 }
+    ];
+    Object.entries(SCENARIOS).forEach(([name, scenario]) => {
+      if (scenario === null) return;
+      scenario.levels = LEVELS;
+      if (typeof scenario.level !== 'number') scenario.level = 3;
+      if (!scenario.scanned) {
+        scenario.suggestedAiignore = [];
+        return;
+      }
+      if (!Array.isArray(scenario.suggestedAiignore)) {
+        scenario.suggestedAiignore = name === 'noisy' ? ['dist/', 'package-lock.json', '*.log', 'coverage/'] : [];
+      }
+      // The real report carries the suggestion inside `scanned`, next to the
+      // effective score it explains.
+      scenario.scanned.suggestedAiignore = scenario.suggestedAiignore;
+      scenario.rules = Array.isArray(scenario.rules) ? scenario.rules : undefined;
+      if (!Array.isArray(scenario.rules)) {
+        scenario.rules = scenario.rulesSeed ? scenario.rulesSeed.slice() : (name === 'noisy' ? ['dist/', 'package-lock.json'] : []);
+      }
+      if (!scenario.scanned.scoreBreakdown) {
+        const rows = name === 'noisy' ? BREAKDOWN_NOISY : BREAKDOWN_CLEAN;
+        scenario.scanned.scoreBreakdown = rows;
+        scenario.scanned.scoreLost = Math.round(rows.reduce((sum, row) => sum + row.lost, 0) * 10) / 10;
+      }
+      // The effective numbers exist because rules and strength hide part of the
+      // noise; the preview shows a realistic gap instead of two identical scores.
+      if (scenario.scanned.effectiveScore === undefined) {
+        const factor = name === 'noisy' ? 0.4 : 0.5;
+        scenario.scanned.effectiveBreakdown = scenario.scanned.scoreBreakdown.map((row) => ({
+          ...row,
+          lost: Math.round(row.lost * factor * 10) / 10
+        }));
+        scenario.scanned.effectiveLost = Math.round(
+          scenario.scanned.effectiveBreakdown.reduce((sum, row) => sum + row.lost, 0) * 10
+        ) / 10;
+        scenario.scanned.effectiveScore = Math.max(0, Math.round(100 - scenario.scanned.effectiveLost));
+        scenario.scanned.blockedBytes = name === 'noisy' ? 400000 : 0;
+        scenario.scanned.allowedBytes = name === 'noisy' ? 862208 : 204800;
+        scenario.scanned.allowedFiles = name === 'noisy' ? 4 : 2;
+        scenario.scanned.blockedFiles = name === 'noisy' ? 2 : 0;
+      }
+    });
+
+    const TREES = {
+      '': {
+        dir: '', parent: null, total: 8, truncated: false,
+        entries: [
+          { name: 'src', path: 'src', type: 'dir', bytes: 0, badge: 'useful', ignored: false },
+          { name: 'dist', path: 'dist', type: 'dir', bytes: 918273, badge: 'noise', reason: 'generated build output', ignored: false, suggestion: 'dist/' },
+          { name: 'docs', path: 'docs', type: 'dir', bytes: 4096, badge: 'useful', ignored: false },
+          { name: 'package-lock.json', path: 'package-lock.json', type: 'file', bytes: 36044, badge: 'noise', reason: 'lockfile', ignored: true, suggestion: null },
+          { name: 'README.md', path: 'README.md', type: 'file', bytes: 6210, badge: 'useful', ignored: false },
+          { name: '.env.example', path: '.env.example', type: 'file', bytes: 412, badge: 'review', ignored: false },
+          { name: 'big-export.json', path: 'big-export.json', type: 'file', bytes: 4194304, badge: 'noise', reason: 'large file', ignored: false, suggestion: null },
+          { name: 'dev.log', path: 'dev.log', type: 'file', bytes: 18841, badge: 'noise', reason: 'local log file', ignored: false, suggestion: '*.log' }
+        ]
+      },
+      src: {
+        dir: 'src', parent: '', total: 3, truncated: false,
+        entries: [
+          { name: 'gen', path: 'src/gen', type: 'dir', bytes: 0, badge: 'useful', ignored: false },
+          { name: 'index.js', path: 'src/index.js', type: 'file', bytes: 2048, badge: 'useful', ignored: false },
+          { name: 'legacy.js', path: 'src/legacy.js', type: 'file', bytes: 90112, badge: 'review', ignored: false }
+        ]
+      },
+      dist: {
+        dir: 'dist', parent: '', total: 2, truncated: false,
+        entries: [
+          { name: 'bundle.js', path: 'dist/bundle.js', type: 'file', bytes: 153600, badge: 'noise', reason: 'generated build output', ignored: false, suggestion: 'dist/' },
+          { name: 'bundle.js.map', path: 'dist/bundle.js.map', type: 'file', bytes: 402000, badge: 'noise', reason: 'generated build output', ignored: false, suggestion: 'dist/' }
+        ]
+      },
+      'src/gen': {
+        dir: 'src/gen', parent: 'src', total: 1, truncated: false,
+        entries: [
+          { name: 'schema.js', path: 'src/gen/schema.js', type: 'file', bytes: 6144, badge: 'noise', reason: 'generated build output', ignored: false }
+        ]
+      }
+    };
+
+    // A baseline has to be reproducible from its URL alone: `?scenario=broken&theme=dark`
+    // is the whole recipe, so a stale image is a diff and not an argument.
+    const PARAMS = new URLSearchParams(location.search);
+    let scenario = PARAMS.get('scenario') || 'noisy';
+    const initialTheme = PARAMS.get('theme') === 'dark' ? 'dark' : 'light';
+    // Set before anything renders: a screenshot taken after a late flip is a
+    // baseline of the wrong theme.
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    const calls = [];
+
+    // Thumbnails are real <img> requests, which the mock fetch cannot answer:
+    // rewrite them to one inline gradient so the preview shows what the panel
+    // will look like with images present.
+    (function stubThumbnails() {
+      const gradient = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAJ0lEQVR4nGNg4JfTtfGOyqxon7Z0y+FLD0+ggQo0wDCqYVTD8NUAALb8sJCsDR8gAAAAAElFTkSuQmCC';
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+      Object.defineProperty(HTMLImageElement.prototype, 'src', {
+        configurable: true,
+        get() { return descriptor.get.call(this); },
+        set(value) {
+          descriptor.set.call(this, String(value).indexOf('/aiignore/upload') === 0 ? gradient : value);
+        }
+      });
+    })();
+
+    window.fetch = function (url, init) {
+      const method = (init && init.method) || 'GET';
+      let body = null;
+      try {
+        body = init && init.body ? JSON.parse(init.body) : null;
+      } catch {
+        body = null;
+      }
+      calls.push(method + ' ' + url);
+      const answer = (body, status) => ({
+        ok: status === undefined || status < 400,
+        status: status || 200,
+        json: () => Promise.resolve(body)
+      });
+      const record = (body, status) =>
+        Promise.resolve(answer(body, status));
+
+      const data = SCENARIOS[scenario];
+      if (data === null) return record({ error: 'boom' }, 500);
+
+      const scannedCwd = url.match(/[?&]cwd=([^&]+)/);
+      // A real folder takes a moment: the delay is what makes the step list
+      // observable instead of a flash.
+      const slow = (body, status, ms) =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(answer(body, status));
+          }, ms === undefined ? 260 : ms);
+        });
+
+      if (url.indexOf('/aiignore/scan') === 0 && scannedCwd !== null) {
+        bound = decodeURIComponent(scannedCwd[1]);
+      }
+      if (url.indexOf('/aiignore/report') === 0) {
+        if (window.__failReport === true) return record({ error: 'no' }, 503);
+        // `?nocwd=1` models the real failure: the panel has no session, so it
+        // asks without a cwd and the Host has nothing to answer with.
+        const blind = location.search.indexOf('nocwd') !== -1 && bound === null && url.indexOf('cwd=') === -1;
+        // A request that names its folder wins, exactly like the Host half: that
+        // is what lets the panel go back to following the conversation.
+        const asked = url.match(/[?&]cwd=([^&]+)/);
+        const workspace = asked !== null ? decodeURIComponent(asked[1]) : (bound === null ? data.workspace : bound);
+        const source = asked !== null ? 'request' : (bound === null ? 'session' : 'last');
+        const answer = blind
+          ? Object.assign({}, data, { workspace: null, policy: null, source: 'none', rules: [] })
+          // `?first=1` models a folder nobody has written rules for yet, so the
+          // card can be checked in the state a new install actually opens in.
+          : Object.assign({}, data, {
+              workspace: workspace,
+              source: source,
+              // `?first=1` models a folder nobody has written rules for yet. Once
+              // Optimize has run here, the rules are real for the rest of the visit.
+              rules: window.__optimized === true || location.search.indexOf('first') === -1
+                ? (data.rules || []).slice()
+                : [],
+              level: window.__level ? window.__level.level : 3
+            });
+        window.__lastReport = answer;
+        return slow(answer);
+      }
+
+      if (url.indexOf('/aiignore/tree') === 0) {
+        const found = url.match(/[?&]dir=([^&]*)/);
+        const dir = found === null ? '' : decodeURIComponent(found[1]);
+        return record(TREES[dir] || { dir, parent: '', total: 0, truncated: false, entries: [] });
+      }
+      // The Scan button: report the noisy workspace as if the host had just
+      // scanned it, so the empty state can be driven end to end.
+      if (url.indexOf('/aiignore/scan') === 0) {
+        scenario = 'noisy';
+        document.querySelectorAll('[data-scenario]').forEach(function (button) {
+          button.setAttribute('aria-pressed', button.getAttribute('data-scenario') === 'noisy' ? 'true' : 'false');
+        });
+        // Score the rescan with the CURRENT strength, exactly like the Host:
+        // otherwise the toast can announce a number that the levels table
+        // never showed, and the preview stops being able to prove anything.
+        const scanned = SCENARIOS.noisy;
+        const factors = [0, 0, 0.15, 0.35, 0.55, 0.75, 0.9];
+        const level = window.__level ? window.__level.level : 3;
+        const raw = scanned.scanned.healthScore;
+        const factor = factors[level] || 0;
+        scanned.scanned.effectiveScore = Math.round(raw + (100 - raw) * factor);
+        scanned.scanned.level = level;
+        window.__lastReport = scanned;
+        return slow(scanned);
+      }
+      if (url.indexOf('/aiignore/workspaces') === 0) {
+        return record({
+          current: null,
+          workspaces: [
+            { path: '/Users/you/code/demo-noise', title: 'demo-noise', sessions: 3 },
+            { path: '/Users/you/code/other', title: 'other-project', sessions: 1 }
+          ]
+        });
+      }
+      if (url.indexOf('/aiignore/diagnostics') === 0) {
+        if (window.__failDiag === true) return record({ error: 'no' }, 503);
+        return record({
+          plugin: '0.31.0',
+          node: 'v24.15.0',
+          platform: 'darwin arm64',
+          home: '~/.dsh',
+          workspace: '~/you/code/demo-noise',
+          sessions: 2,
+          rules: 2
+        });
+      }
+      if (url.indexOf('/aiignore/conversations') === 0) {
+        if (window.__failConversations === true) return record({ error: 'no' }, 500);
+        return record({ current: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50', conversations: conversationRows });
+      }
+      if (url.indexOf('/aiignore/conversation') === 0) {
+        if (window.__failConversations === true) return record({ error: 'no' }, 500);
+        // A pinned conversation must answer with ITS numbers, otherwise the
+        // preview cannot tell a working picker from a decorative one.
+        const asked = url.match(/[?&]session=([^&]+)/);
+        if (asked !== null) {
+          const picked = conversationRows.find((row) => row.id === decodeURIComponent(asked[1]));
+          if (picked !== undefined) {
+            return record({
+              id: picked.id,
+              title: picked.title,
+              cwd: picked.cwd,
+              turns: picked.turns,
+              steps: picked.turns * 20,
+              score: picked.score,
+              readFiles: picked.readFiles,
+              readBytes: picked.readBytes,
+              noiseBytes: 0,
+              tokens: { user: 900, inject: 8000, skill: 0, assistant: 120000, tool: 40000 },
+              noise: [],
+              suggestedAiignore: [],
+              reads: [],
+              available: conversationRows.map((row) => ({ id: row.id, at: row.at || 1793190000000, cwd: row.cwd }))
+            });
+          }
+        }
+        if (scenario === 'fresh') {
+          return record({
+            id: 'session-new-0000-0000-0000-000000000000',
+            title: 'A conversation that has not read anything',
+            cwd: '/Users/you/code/demo-noise',
+            turns: 0,
+            steps: 0,
+            score: 100,
+            readFiles: 0,
+            readBytes: 0,
+            noiseBytes: 0,
+            tokens: { user: 0, inject: 0, skill: 0, assistant: 0, tool: 0 },
+            noise: [],
+            suggestedAiignore: [],
+            reads: [],
+            available: []
+          });
+        }
+        return record({
+          id: 'session-8d5d3637-5e22-4390-9aeb-1a9f1e8cde50',
+          title: 'Make the panel follow this conversation',
+          cwd: '/Users/you/code/demo-noise',
+          turns: 12,
+          steps: 240,
+          score: 74,
+          effectiveScore: 71,
+          coveredCount: 1,
+          noiseCount: 3,
+          readFiles: 9,
+          readBytes: 233472,
+          noiseBytes: 180224,
+          tokens: { user: 3200, inject: 41000, skill: 900, assistant: 402000, tool: 188000 },
+          noise: [
+            { path: 'dist/bundle.js', relativePath: 'dist/bundle.js', bytes: 150000, reason: 'generated build output' },
+            { path: 'package-lock.json', relativePath: 'package-lock.json', bytes: 30224, reason: 'lockfile' }
+          ],
+          // Two of the reads are junk, and whether the rules hold them back is
+          // what the headline counter reports. `__covered` lets the preview
+          // rehearse "after Optimize" without inventing a second scenario.
+          coveredCount: window.__covered ? 2 : 0,
+          noiseCount: window.__quiet ? 0 : 2,
+          coveredTokens: { min: 30000, max: 45000 },
+          stillNoiseTokens: { min: 30000, max: 45000 },
+          coveredBytes: window.__covered ? 180224 : 0,
+          covered: window.__covered
+            ? [
+                { path: 'dist/bundle.js', bytes: 150000, reason: 'listed in .aiignore' },
+                { path: 'package-lock.json', bytes: 30224, reason: 'listed in .aiignore' }
+              ]
+            : [],
+          // Two of these are already written into the scenario's .aiignore;
+          // the rest are what the Files page offers as one-click rules.
+          suggestedAiignore: ['dist/', 'package-lock.json', '*.log', 'coverage/'],
+          reads: [
+            { path: 'src/index.js', relativePath: 'src/index.js', bytes: 24000 },
+            { path: 'src/legacy.js', relativePath: 'src/legacy.js', bytes: 90000 }
+          ],
+          available: conversationRows.map((row) => ({ id: row.id, at: row.at || 1793190000000, cwd: row.cwd }))
+        });
+      }
+      if (url.indexOf('/aiignore/client-report') === 0) return record({ received: true });
+      if (url.indexOf('/aiignore/overview') === 0) {
+        return record({
+          current: '/Users/you/code/demo-noise',
+          source: 'session',
+          workspaces: [
+            { path: '/Users/you/code/demo-noise', title: 'demo-noise', sessions: 3, healthScore: 22, effectiveScore: 62, suggested: 4, files: 8, bytes: 1572864, noisePercent: 78, noise: ['dist/', 'package-lock.json'] },
+            { path: '/Users/you/code/other', title: 'other-project', sessions: 1, healthScore: 91, effectiveScore: 97, suggested: 0, files: 24, bytes: 204800, noisePercent: 9, noise: [] }
+          ]
+        });
+      }
+      if (url === '/aiignore/allow') return record({ allowed: true });
+      if (url === '/aiignore/ignore') return record({ ignored: true, rule: String((body && body.path) || '') });
+      if (url === '/aiignore/rules') return record({ rule: String((body && body.rule) || ''), added: 1, created: false });
+      if (url === '/aiignore/unignore') return record({ removed: true });
+      if (url === '/aiignore/notes') return record({ written: true, removed: false });
+      const FACTORS = [0, 0, 0.15, 0.35, 0.55, 0.75, 0.9];
+      if (url.indexOf('/aiignore/levels') === 0) {
+        if (window.__failLevels === true) return record({ error: 'no' }, 500);
+        const target = SCENARIOS[scenario];
+        const raw = target && target.scanned ? target.scanned.healthScore : 22;
+        return record({
+          workspace: '/Users/you/code/demo-noise',
+          level: window.__level ? window.__level.level : 3,
+          levels: LEVELS.map((entry) => ({
+            level: entry.level,
+            label: entry.label,
+            note: entry.note,
+            maxBytes: entry.maxBytes,
+            effectiveScore: Math.round(raw + (100 - raw) * (FACTORS[entry.level] || 0)),
+            blockedFiles: entry.level === 1 ? 0 : Math.round(entry.level * 1.6),
+            blockedBytes: entry.level === 1 ? 0 : entry.level * 380 * 1024
+          }))
+        });
+      }
+      if (url === '/aiignore/policy') {
+        const next = Number((body && body.level) || 3);
+        LEVELS.forEach((entry) => { if (entry.level === next) window.__level = entry; });
+        // The real Host re-scans with the new strength, so the score moves.
+        const target = SCENARIOS[scenario];
+        if (target && target.scanned) {
+          const raw = target.scanned.healthScore;
+          const factor = FACTORS[next] || 0;
+          target.scanned.effectiveScore = Math.round(raw + (100 - raw) * factor);
+          target.scanned.effectiveBreakdown = target.scanned.scoreBreakdown.map((row) => ({
+            ...row,
+            lost: Math.round(row.lost * (1 - factor) * 10) / 10
+          }));
+          target.scanned.effectiveLost = Math.round(
+            target.scanned.effectiveBreakdown.reduce((sum, row) => sum + row.lost, 0) * 10
+          ) / 10;
+          target.scanned.level = next;
+        }
+        return record({ level: next, levels: LEVELS, policy: 'deny' });
+      }
+      if (url === '/aiignore/rules/delete') {
+        let rule = '';
+        try {
+          rule = JSON.parse((init && init.body) || '{}').rule || '';
+        } catch {}
+        const list = Array.isArray(data.rules) ? data.rules : (data.rules = []);
+        const at = list.indexOf(rule);
+        if (at < 0) return record({ error: 'no-such-rule' }, 404);
+        list.splice(at, 1);
+        return slow({ removed: true, rule });
+      }
+      if (url === '/aiignore/optimize') {
+        // Real hosts take a few hundred ms; the step list is only meaningful if
+        // the answer is not instantaneous.
+        const delay = window.__optimizeDelay === undefined ? 900 : window.__optimizeDelay;
+        const asked = body === null || body === undefined ? {} : body;
+        if (typeof asked.session === 'string') {
+          const row = conversationRows.find((entry) => entry.id === asked.session);
+          if (row !== undefined) {
+            row.covered = row.noise;
+            row.noise = 0;
+            row.effectiveScore = 100;
+          }
+        }
+
+        // The Host reports the effective score on both sides: rules change what
+        // still reaches the model, not how noisy the folder is.
+        const named = body && typeof body.cwd === 'string' ? body.cwd : null;
+        const before = (window.__lastReport && window.__lastReport.scanned.effectiveScore) || 0;
+        const target = SCENARIOS[scenario];
+        if (target && target.scanned) {
+          target.scanned.effectiveScore = Math.min(100, before + 6);
+          target.scanned.suggestedAiignore = [];
+          delete target.scanned.effectiveBreakdown;
+          // Rules now exist, so the card switches from "before" to "after".
+          window.__optimized = true;
+          if (!Array.isArray(target.rules)) target.rules = [];
+          ['dist/', 'package-lock.json'].forEach(function (rule) {
+            if (target.rules.indexOf(rule) === -1) target.rules.push(rule);
+          });
+          window.__lastReport = null;
+        }
+        return slow({
+          workspace: named || '/Users/you/code/demo-noise',
+          added: ['dist/', 'package-lock.json'],
+          written: true,
+          before: before,
+          after: Math.min(100, before + 6),
+          saved: ['dist/', 'package-lock.json'],
+          blockedNow: [
+            { path: 'dist/bundle.js', blocked: true },
+            { path: 'package-lock.json', blocked: true }
+          ],
+          covered: [
+            { path: 'dist/bundle.js', bytes: 146000, reason: 'generated build output' },
+            { path: 'package-lock.json', bytes: 30000, reason: 'lockfile' }
+          ],
+          report: window.__lastReport === null
+            ? null
+            : Object.assign({}, window.__lastReport, {
+                scanned: Object.assign({}, window.__lastReport.scanned, {
+                  effectiveScore: Math.min(100, before + 6),
+                  suggestedAiignore: []
+                })
+              })
+        }, undefined, delay);
+      }
+      if (url === '/aiignore/optimize/undo') return record({ undone: true, restored: 'previous' });
+      return record({ error: 'unknown route' }, 404);
+    };
+
+    // ---- mock host: services, slots, locale -----------------------------
+    const dicts = {};
+    let bound = null;
+    let language = 'en';
+
+    const slots = {
+      inject: function (name, register) { register(); },
+      register: function (definition, component) {
+        const mount = function (id, path) {
+          const root = document.getElementById(id);
+          if (root === null) return;
+          // `?nocwd=1` drops the session props, which is exactly the state the
+          // real Host put the panel in — the picker has to carry it from there.
+          const props = location.search.indexOf('nocwd') !== -1
+            ? {}
+            : {
+                sessionId: 'preview-session',
+                useSessions: function (select) {
+                  return select({ byId: { 'preview-session': { cwd: '/Users/you/code/demo-noise' } } });
+                }
+              };
+          window.ReactLite.render(window.ReactLite.createElement(component, props), root, path);
+        };
+        if (definition.name === 'sidebar.right.pane.tab') mount('panel-root', 'panel');
+        if (definition.name === 'main') {
+          // The left-rail overview opens here in the real app; the preview gives
+          // it the whole conversation column so its layout can be judged.
+          const stage = document.getElementById('stage-root');
+          if (stage !== null) {
+            const props = { t: function (key) { return key; } };
+            window.ReactLite.render(window.ReactLite.createElement(component, props), stage, 'stage');
+          }
+        }
+        if (definition.name === 'sidebar.panellist') {
+          const rail = document.getElementById('rail-root');
+          if (rail !== null) {
+            window.ReactLite.render(window.ReactLite.createElement(component, null), rail, 'rail');
+          }
+        }
+        if (definition.name === 'conversation.input.left') mount('composer-root', 'composer');
+        if (definition.name === 'sidebar.right.pane.tab.title') {
+          const root = document.getElementById('chip-root');
+          if (root !== null) {
+            window.ReactLite.render(window.ReactLite.createElement(component, null), root, 'chip');
+          }
+        }
+        return function () {};
+      }
+    };
+
+    const hostCtx = {
+      locale: {
+        register: function (ns, dict) { dicts[ns] = dict; },
+        bind: function (ns) {
+          return function (key) {
+            const dict = dicts[ns] || {};
+            const table = dict[language] || dict.en || {};
+            return table[key] === undefined ? key : table[key];
+          };
+        }
+      },
+      slots: slots,
+      sidebarRightTabs: { register: function () { return function () {}; } },
+      sidebarRight: location.search.indexOf('nosidebar') !== -1
+        ? undefined
+        : { openTab: function () { /* the pane is already mounted */ } },
+      inject: function (deps, callback) {
+        if (location.search.indexOf('nosidebar') !== -1 && deps.indexOf('sidebarRight') !== -1) return;
+        callback({
+          slots: slots,
+          sidebarRightTabs: hostCtx.sidebarRightTabs,
+          sidebarRight: hostCtx.sidebarRight,
+          effect: function (run) { run(); return function () {}; }
+        });
+      },
+      effect: function (run) { return run(); }
+    };
+
+    // ---- load the real plugin ------------------------------------------
+    window.__ModuleLoader__ = {
+      load: function (definition) {
+        const panel = definition.factory(function (name) {
+          if (name === 'react') return window.ReactLite;
+          throw new Error('preview has no module ' + name);
+        });
+        panel.apply(hostCtx);
+        window.__panel = panel;
+      }
+    };
+  </script>
+  <script>
+    // The panel is a plain script, so the browser caches it by URL alone. The
+    // page's own `?v=` (used to bust preview.html) is forwarded here too, so a
+    // reloaded preview never runs yesterday's panel.
+    document.write('<script src="../client.js?v=' + (new URLSearchParams(location.search).get('v') || '0') + '"><\/script>');
+  </script>
+  <script>
+    // ---- controls -------------------------------------------------------
+    document.querySelectorAll('[data-scenario]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        scenario = button.getAttribute('data-scenario');
+        document.querySelectorAll('[data-scenario]').forEach(function (other) {
+          other.setAttribute('aria-pressed', other === button ? 'true' : 'false');
+        });
+        window.ReactLite.rerender();
+      });
+    });
+
+    document.getElementById('theme').addEventListener('click', function () {
+      const dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      this.textContent = dark ? 'light' : 'dark';
+    });
+
+    document.getElementById('theme').textContent = initialTheme === 'dark' ? 'light' : 'dark';
+    document.querySelectorAll('[data-scenario]').forEach(function (button) {
+      button.setAttribute('aria-pressed', button.getAttribute('data-scenario') === scenario ? 'true' : 'false');
+    });
+
+    // Failure switches as URL flags, so the three states can be opened cold
+    // (a state that only appears after a retry hides the first impression).
+    if (location.search.indexOf('quiet') !== -1) window.__quiet = true;
+    if (location.search.indexOf('failconv') !== -1) window.__failConversations = true;
+    if (location.search.indexOf('faillevels') !== -1) window.__failLevels = true;
+    if (location.search.indexOf('failreport') !== -1) window.__failReport = true;
+
+    window.__preview = {
+      scenario: function (name) {
+        scenario = name;
+        document.querySelectorAll('[data-scenario]').forEach(function (button) {
+          button.setAttribute('aria-pressed', button.getAttribute('data-scenario') === name ? 'true' : 'false');
+        });
+        window.ReactLite.rerender();
+      },
+      tab: function (index) {
+        const tabs = document.querySelectorAll('.aicd-tab');
+        if (tabs[index]) tabs[index].click();
+      },
+      theme: function (name) {
+        document.documentElement.setAttribute('data-theme', name);
+        document.getElementById('theme').textContent = name === 'dark' ? 'light' : 'dark';
+      },
+      row: function (path) {
+        const rows = Array.prototype.slice.call(document.querySelectorAll('.aicd-row'));
+        const hit = rows.find(function (row) { return row.textContent.indexOf(path) !== -1; });
+        if (hit) hit.click();
+      },
+      calls: calls
+    };
+
+    window.__calls = calls;
+  </script>
+</body>
+</html>

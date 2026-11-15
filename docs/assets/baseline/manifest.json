@@ -1,0 +1,58 @@
+{
+  "crop": {
+    "height": 660,
+    "width": 420,
+    "x": 861,
+    "y": 100
+  },
+  "files": {
+    "broken-dark.png": {
+      "bytes": 15268,
+      "sha256": "65b2a06df0be1f3272a1dfe71c2009f2779ec0ad93536e38b962db1b8ef3ac47"
+    },
+    "broken-light.png": {
+      "bytes": 14762,
+      "sha256": "d8eac67c4aad2b5712b70e3305f4e28f49ebc9700eadccf4922dfc5be935ab22"
+    },
+    "fresh-dark.png": {
+      "bytes": 34087,
+      "sha256": "e4ce3f37cb7bd71b69f1a43d68876b6311322bc3dac76008fa8e9fea1b96da6a"
+    },
+    "fresh-light.png": {
+      "bytes": 32932,
+      "sha256": "af169a6be73798961f98c7186ae847508da6ec616555ce500475ff1f21952649"
+    },
+    "healthy-dark.png": {
+      "bytes": 34889,
+      "sha256": "0857f827bb4235d0c372e54c2853cf66d14816423a9b6571c1e19105609166e8"
+    },
+    "healthy-light.png": {
+      "bytes": 33862,
+      "sha256": "bd86a893b56a0262b9269e77152a3ed22882051d3b30014d5567ce11c602fa78"
+    },
+    "noisy-dark.png": {
+      "bytes": 45433,
+      "sha256": "bc80fcd4177893841fa131c217d60e297a1edef4820d14e8fcc8644b9d760610"
+    },
+    "noisy-light.png": {
+      "bytes": 44085,
+      "sha256": "0146cb106790444cbf616222c76859d3f0d7ae88908b33e1a3ca0c2c23bbef1d"
+    }
+  },
+  "note": "Visual baselines of the panel in dev/preview.html. Re-capture after an intentional visual change; checkBaseline fails when a file drifts.",
+  "source": "plugin/dev/preview.html",
+  "urls": {
+    "broken-dark.png": "preview.html?scenario=broken&theme=dark",
+    "broken-light.png": "preview.html?scenario=broken&theme=light",
+    "fresh-dark.png": "preview.html?scenario=fresh&theme=dark",
+    "fresh-light.png": "preview.html?scenario=fresh&theme=light",
+    "healthy-dark.png": "preview.html?scenario=healthy&theme=dark",
+    "healthy-light.png": "preview.html?scenario=healthy&theme=light",
+    "noisy-dark.png": "preview.html?scenario=noisy&theme=dark",
+    "noisy-light.png": "preview.html?scenario=noisy&theme=light"
+  },
+  "viewport": {
+    "height": 660,
+    "width": 420
+  }
+}
