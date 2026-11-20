@@ -2,7 +2,7 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
-## Unreleased
+## 0.7.9
 
 - **`--json` now carries a versioned contract: `schemaVersion: 1`.** Every
   payload — the scan report, `--json --explain`, and each error object
