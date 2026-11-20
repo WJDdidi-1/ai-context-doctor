@@ -9,6 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { findDuplicateVersions, describeDuplicateVersions } from './market-index.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const indexPath = join(root, 'market', 'index.json');
@@ -30,6 +31,15 @@ try {
 }
 
 const raw = JSON.parse(readFileSync(indexPath, 'utf8'));
+
+// Check the version-level rule before the parser so the log says what to do
+// about a re-listed version instead of only naming the parser's internal path.
+const duplicates = findDuplicateVersions(raw);
+if (duplicates.length > 0) {
+  console.error(`market/index.json is invalid:\n${describeDuplicateVersions(duplicates)}`);
+  process.exit(1);
+}
+
 let index;
 try {
   index = parseMarketIndex(raw, indexUrl);
