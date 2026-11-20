@@ -13,6 +13,13 @@ Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.
   1; renaming, removing, retyping, or redefining a field bumps it. The README's
   JSON output section documents the rule, and `test/json-contract.test.mjs`
   asserts the version plus every documented top-level field.
+- **The contract is verified from the published tarball.** `npm test` now runs
+  `npm pack`, installs the tarball into an empty temporary directory, and
+  asserts that both the report and the unreadable-directory error start with
+  `schemaVersion: 1` (`test/packed-contract.test.js`). The README's JSON output
+  section has a JSON contract subsection with the upgrade rule — the number
+  moves only for a breaking shape change — and a test parses the documented
+  number so it cannot drift from the one the CLI emits.
 
 ## 0.7.8
 
