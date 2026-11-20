@@ -401,4 +401,4 @@ for what changed in each release.
 
 Apache-2.0 — see [LICENSE](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/LICENSE)
 and [NOTICE](https://github.com/WJDdidi-1/ai-context-doctor/blob/main/NOTICE).
-The earlier releases were MIT; the licence change applies from 0.22.0 on.
+The package was MIT through 0.6.0; Apache-2.0 applies from 0.6.1 on.

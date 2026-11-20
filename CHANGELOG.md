@@ -2,6 +2,17 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## 0.7.10
+
+- **Plugin market index refreshed.** `market/index.json` now advertises
+  `dsh-aiignore` 0.37.1 and `dsh-plugin-toolkit` 0.20.46 through 0.20.49, and
+  corrects the publication timestamps for several `dsh-aiignore` releases. The
+  CLI and library are unchanged from 0.7.9; the market index is served from the
+  repository rather than from the npm tarball.
+- **Docs: the licence note names the release that changed it.** The README said
+  the MIT-to-Apache-2.0 switch applied from 0.22.0, a version this package never
+  shipped; the change landed in 0.6.1. The note now points at that release.
+
 ## 0.7.9
 
 - **`--json` now carries a versioned contract: `schemaVersion: 1`.** Every
