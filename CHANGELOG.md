@@ -2,6 +2,18 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## Unreleased
+
+- **`--json` now carries a versioned contract: `schemaVersion: 1`.** Every
+  payload — the scan report, `--json --explain`, and each error object
+  (`not-a-readable-directory`, `unknown-path`, and write failures) — starts with
+  `schemaVersion: 1`. No existing field was renamed or removed. A CI script can
+  assert the version before reading fields, so a future breaking change fails
+  loudly instead of being parsed as today's shape. Additive fields keep version
+  1; renaming, removing, retyping, or redefining a field bumps it. The README's
+  JSON output section documents the rule, and `test/json-contract.test.mjs`
+  asserts the version plus every documented top-level field.
+
 ## 0.7.8
 
 - **TypeScript declarations now match the public API.** `lib/index.d.ts` covers
