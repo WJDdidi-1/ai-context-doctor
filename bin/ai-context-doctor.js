@@ -9,6 +9,12 @@ const { scanRepository, explainPath, formatBytes, statusFor, writeAiignore, pars
 const args = process.argv.slice(2);
 const KNOWN_FLAGS = ['--json', '--write', '--dry-run', '--help', '--version', '--explain'];
 
+// Version of the `--json` contract, not of the package. It is part of every
+// payload, errors included, so a consumer can pin the shape it parses. Bump it
+// only for a breaking change (a field renamed, removed, retyped, or redefined);
+// additive fields keep the same version. See README "JSON output".
+const SCHEMA_VERSION = 1;
+
 const unknownFlag = args.find((arg) => arg.startsWith('--') && !KNOWN_FLAGS.includes(arg));
 
 if (unknownFlag) {
@@ -95,6 +101,7 @@ function exitWithDirectoryError() {
   const target = targetArg || cwd;
   if (jsonOutput) {
     console.log(JSON.stringify({
+      schemaVersion: SCHEMA_VERSION,
       error: 'not-a-readable-directory',
       message: `${target} is not a readable directory.`,
       target
@@ -189,6 +196,7 @@ if (explainArg !== null) {
     const message = `${explainArg} is not a file in the scanned directory ${cwd}.`;
     if (jsonOutput) {
       fs.writeSync(1, `${JSON.stringify({
+        schemaVersion: SCHEMA_VERSION,
         error: 'unknown-path',
         message,
         path: explainArg,
@@ -202,7 +210,7 @@ if (explainArg !== null) {
   }
 
   if (jsonOutput) {
-    fs.writeSync(1, `${JSON.stringify(explanation, null, 2)}\n`);
+    fs.writeSync(1, `${JSON.stringify({ schemaVersion: SCHEMA_VERSION, ...explanation }, null, 2)}\n`);
   } else {
     printExplanation(explanation);
   }
@@ -219,6 +227,7 @@ if (writeOutput) {
   } catch (error) {
     if (jsonOutput) {
       fs.writeSync(1, `${JSON.stringify({
+        schemaVersion: SCHEMA_VERSION,
         error: error.code || 'write-failed',
         message: error.message,
         target: path.join(cwd, '.aiignore')
@@ -235,6 +244,7 @@ if (jsonOutput) {
   // compares two runs has to record which strength produced each number.
   const strength = levelFor(level);
   const output = {
+    schemaVersion: SCHEMA_VERSION,
     ...report,
     strength: strength.level,
     strengthLabel: strength.label,

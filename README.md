@@ -96,7 +96,7 @@ Two paths read the same decision function, which is why the number on the panel 
 
 - **Before you hand a repo to an agent** — run it, then `--write` the suggested lines into `.aiignore` instead of copying them by hand.
 - **On a repo you just cloned** — see how much of it is generated output before the agent drowns in it.
-- **In CI** — `--json` gives a stable object, so you can fail a build when context health drops.
+- **In CI** — `--json` gives a versioned object (`schemaVersion: 1`), so you can pin the shape and fail a build when context health drops.
 - **In your own tool** — `require('ai-context-doctor')` exposes the same scan as a function.
 - **Inside DeepSeek Harness** — install [`dsh-aiignore`](https://www.npmjs.com/package/dsh-aiignore) and the agent is told automatically when a session opens a noisy workspace, so you do not have to remember to run anything.
 
@@ -202,6 +202,8 @@ and your teammates.
 npx ai-context-doctor ./some-repo --json
 ```
 
+Every `--json` payload — the report, `--explain`, and errors — starts with `"schemaVersion": 1`. That number versions this output contract, not the package: adding a field keeps it at `1`, while renaming, removing, retyping, or redefining an existing field is a breaking change and must bump `schemaVersion` and document the migration in the [changelog](CHANGELOG.md). A CI script should assert `schemaVersion === 1` before reading anything else, so a future breaking change fails loudly instead of being parsed as today's shape.
+
 Returns `repo`, `healthScore`, `effectiveScore`, `status`, `noisePercent`, `usefulPercent`, `scannedBytes`, `scannedFiles`, `allowedBytes`, `allowedFiles`, `topNoise`, `review`, `suggestedAiignore`, `scoreBreakdown` (the five-dimension arithmetic behind each score) and `scoreLost`, `blockedFiles` / `blockedBytes` (what the rules held back), `blockedDetails` (alias `blockedReasons`: one entry per blocked path with its `rule`, `category`, `level`, `levelLabel`, `blockedBy`, and `levelReason` / `limitBytes` when a size limit did it), and `strength` / `strengthLabel` — the strength the score was computed at, so two runs stay comparable. The text output lists up to five blocked files and points at `--json` for the rest. `suggestedRulesChangeTheScore` answers the question the suggestion list raises: would writing these rules move the number at this strength? At the default strength 3 they usually do not — the strength already blocks those categories — and the text output says so instead of implying the file will help. `truncated: true` appears when a scan cap was hit.
 
 With `--write` it also carries a `write` object: `path`, `created`, `added`, `written`, `dryRun`.
@@ -210,6 +212,7 @@ If the path is not a readable directory, `--json` still prints a single JSON obj
 
 ```json
 {
+  "schemaVersion": 1,
   "error": "not-a-readable-directory",
   "message": "/path/you/passed is not a readable directory.",
   "target": "/path/you/passed"
@@ -335,7 +338,7 @@ Not by itself. A completed scan exits 0 even at 43/100; exit code 1 means the CL
 npx ai-context-doctor --json > context-report.json
 ```
 
-Then check `healthScore`, `status`, or `blockedBytes` in your own CI step.
+Then check `schemaVersion`, `healthScore`, `status`, or `blockedBytes` in your own CI step.
 
 **I wrote the suggested rules and the score did not move. Is that a bug?**
 No. `healthScore` is a size heuristic over file names and sizes, so writing `.aiignore` rules does not change it. At the default strength 3 the strength already blocks most of those categories, so `suggestedRulesChangeTheScore` is often `false`. `--json` answers whether writing the suggestions would move the effective score at the current strength:
