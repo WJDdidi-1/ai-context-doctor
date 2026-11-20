@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const bin = path.join(here, '..', 'bin', 'ai-context-doctor.js');
+const readmePath = path.join(here, '..', 'README.md');
 
 // The fields the README documents at the top level of a successful report.
 // A rename or removal changes this list and must be treated as a breaking
@@ -137,4 +138,29 @@ test('--json --write carries schemaVersion 1 on success and on a write error', (
   const payload = JSON.parse(failed.stdout);
   assert.equal(payload.schemaVersion, 1);
   assert.equal(payload.error, 'not-a-file');
+});
+
+function documentedSchemaVersions() {
+  const text = fs.readFileSync(readmePath, 'utf8');
+  const mentions = [...text.matchAll(/schemaVersion[^0-9\n]{0,24}(\d+)/g)];
+  return {
+    text,
+    versions: [...new Set(mentions.map((match) => Number(match[1])))].sort((a, b) => a - b)
+  };
+}
+
+test('README documents the schemaVersion the CLI emits', (t) => {
+  const root = tempRepo({ 'src/index.js': 'const a = 1;\n' });
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  const report = runJson(['--json', root]);
+  const { text, versions } = documentedSchemaVersions();
+
+  assert.match(text, /^#### JSON contract$/m, 'README should have a JSON contract subsection');
+  assert.ok(versions.length > 0, 'README does not document a numeric schemaVersion');
+  assert.deepEqual(
+    versions,
+    [report.schemaVersion],
+    `README documents schemaVersion ${versions.join(', ')} but the CLI emits ${report.schemaVersion}; update the JSON contract and the changelog together`
+  );
 });

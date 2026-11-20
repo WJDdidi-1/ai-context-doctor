@@ -202,7 +202,22 @@ and your teammates.
 npx ai-context-doctor ./some-repo --json
 ```
 
-Every `--json` payload — the report, `--explain`, and errors — starts with `"schemaVersion": 1`. That number versions this output contract, not the package: adding a field keeps it at `1`, while renaming, removing, retyping, or redefining an existing field is a breaking change and must bump `schemaVersion` and document the migration in the [changelog](CHANGELOG.md). A CI script should assert `schemaVersion === 1` before reading anything else, so a future breaking change fails loudly instead of being parsed as today's shape.
+#### JSON contract
+
+Every `--json` payload — the report, `--explain`, and errors — starts with `"schemaVersion": 1`. That number versions the shape of this output, not the package version.
+
+`schemaVersion` increments only when the shape changes in a breaking way: a field is renamed, removed, retyped, or redefined. Adding a field keeps the same number. A break ships the new number here, in the [`CHANGELOG`](CHANGELOG.md) migration note, and in the payload together.
+
+A CI script should pin the version before it reads anything else, so a future break fails loudly instead of being parsed as today's shape:
+
+```js
+const report = JSON.parse(stdout);
+if (report.schemaVersion !== 1) {
+  throw new Error(`ai-context-doctor JSON schema ${report.schemaVersion} is not supported`);
+}
+```
+
+`npm test` verifies the contract from the published artifact, not just this checkout: it runs `npm pack`, installs the tarball into an empty directory, and asserts both the report and its error payload start with `schemaVersion: 1`. Another test reads this section, so the documented number cannot drift from the number the CLI emits.
 
 Returns `repo`, `healthScore`, `effectiveScore`, `status`, `noisePercent`, `usefulPercent`, `scannedBytes`, `scannedFiles`, `allowedBytes`, `allowedFiles`, `topNoise`, `review`, `suggestedAiignore`, `scoreBreakdown` (the five-dimension arithmetic behind each score) and `scoreLost`, `blockedFiles` / `blockedBytes` (what the rules held back), `blockedDetails` (alias `blockedReasons`: one entry per blocked path with its `rule`, `category`, `level`, `levelLabel`, `blockedBy`, and `levelReason` / `limitBytes` when a size limit did it), and `strength` / `strengthLabel` — the strength the score was computed at, so two runs stay comparable. The text output lists up to five blocked files and points at `--json` for the rest. `suggestedRulesChangeTheScore` answers the question the suggestion list raises: would writing these rules move the number at this strength? At the default strength 3 they usually do not — the strength already blocks those categories — and the text output says so instead of implying the file will help. `truncated: true` appears when a scan cap was hit.
 
