@@ -2,6 +2,19 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## Unreleased
+
+- **`!` negation in `.aiignore` now works, and the last matching rule decides.**
+  Previously a `!` line was treated as a pattern that matched nothing, so
+  `*.md` followed by `!README.md` still blocked the README and reported `*.md`
+  as the deciding rule. `decideAiignore` now applies the rules in order and lets
+  the last match win: a positive line blocks, a `!` line releases, and a broad
+  rule placed below a negation blocks again. `scanRepository` and `--explain`
+  use that decision, so the report no longer names a rule for a path a later
+  line kept. `matchesAiignore` keeps its string/undefined API for existing
+  callers and now goes through the same ordered decision. The README documents
+  the ordering and the fact that `!` cancels a rule, not the chosen strength.
+
 ## 0.7.10
 
 - **Plugin market index refreshed.** `market/index.json` now advertises

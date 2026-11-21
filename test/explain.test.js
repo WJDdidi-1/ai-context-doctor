@@ -53,6 +53,25 @@ test('--explain names the exact .aiignore rule when one decided the verdict', ()
   assert.match(result.stdout, /Score impact:/);
 });
 
+test('--explain honours a later ! line that keeps a file', () => {
+  const root = tempRepo({
+    'README.md': '# demo\n',
+    'NOTES.md': '# notes\n',
+    '.aiignore': '*.md\n!README.md\n'
+  });
+
+  const kept = explain(root, 'README.md');
+  assert.equal(kept.status, 0);
+  assert.match(kept.stdout, /Verdict: not blocked/);
+  assert.match(kept.stdout, /Rule: none/);
+
+  // The broad rule still decides the sibling that the negation does not match.
+  const blocked = explain(root, 'NOTES.md');
+  assert.equal(blocked.status, 0);
+  assert.match(blocked.stdout, /Verdict: blocked/);
+  assert.match(blocked.stdout, /Rule: \.aiignore rule "\*\.md"/);
+});
+
 test('--explain says an unblocked path is not blocked', () => {
   const root = tempRepo({ 'src/index.js': 'const a = 1;\n' });
   const result = explain(root, 'src/index.js');

@@ -190,6 +190,29 @@ not exist it is created with a two-line header.
 It will not follow a symbolic link, and it refuses to replace a directory that
 happens to be called `.aiignore`.
 
+#### Order and `!`
+
+Rules are applied in file order and the **last matching line decides**, the same
+way gitignore works. A leading `!` is an exception: it releases a path that an
+earlier line would have blocked.
+
+```text
+*.md
+!README.md
+```
+
+`README.md` reaches the model; every other Markdown file is still blocked by
+`*.md`. Order matters: put the negation after the broad rule. If the lines are
+reversed, `*.md` matches last and the README is blocked again. A `!` line that
+matches nothing changes nothing, and a broad rule below a negation re-blocks
+whatever that negation had kept.
+
+An exception only cancels a matching `.aiignore` rule. It does not override the
+chosen strength: at the default strength 3, a file that is a lockfile, a log or
+over 1 MiB is still left out even if a `!` line matches it. Use strength 1
+(`Off`) when a negation should be the only thing standing between the agent and
+the rest of the folder.
+
 The raw health score is a heuristic over file names and sizes and does not change
 when you write rules. The `What reaches the model` score applies the `.aiignore`
 rules in the scanned directory and the chosen strength, so writing rules can

@@ -117,6 +117,38 @@ test('reports a token range instead of one invented number', () => {
   });
 });
 
+test('a ! rule keeps one file while the broad rule still blocks the rest', () => {
+  const root = makeRepo({
+    'README.md': 10,
+    'NOTES.md': 10
+  });
+
+  const report = scanRepository(root, { rules: ['*.md', '!README.md'], level: 1 });
+
+  assert.equal(report.blockedFiles, 1);
+  assert.equal(report.allowedFiles, 1);
+  assert.deepEqual(
+    report.blockedDetails.map((item) => [item.path, item.rule, item.blockedBy]),
+    [['NOTES.md', '*.md', 'rule']]
+  );
+  assert.equal(report.blockedDetails.some((item) => item.path === 'README.md'), false);
+});
+
+test('the last matching rule decides in scan, not just the first', () => {
+  const root = makeRepo({
+    'README.md': 10,
+    'NOTES.md': 10
+  });
+
+  const report = scanRepository(root, { rules: ['!README.md', '*.md'], level: 1 });
+
+  assert.equal(report.blockedFiles, 2);
+  assert.deepEqual(
+    report.blockedDetails.map((item) => [item.path, item.rule]).sort(),
+    [['NOTES.md', '*.md'], ['README.md', '*.md']]
+  );
+});
+
 test('classifyPath is exported so the plugin blocks the same files the report flags', () => {
   const { classifyPath } = require('../lib');
 
