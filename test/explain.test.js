@@ -53,7 +53,7 @@ test('--explain names the exact .aiignore rule when one decided the verdict', ()
   assert.match(result.stdout, /Score impact:/);
 });
 
-test('--explain honours a later ! line that keeps a file', () => {
+test('--explain honours a later ! line that keeps a file and names that rule', () => {
   const root = tempRepo({
     'README.md': '# demo\n',
     'NOTES.md': '# notes\n',
@@ -63,13 +63,78 @@ test('--explain honours a later ! line that keeps a file', () => {
   const kept = explain(root, 'README.md');
   assert.equal(kept.status, 0);
   assert.match(kept.stdout, /Verdict: not blocked/);
-  assert.match(kept.stdout, /Rule: none/);
+  assert.match(kept.stdout, /Rule: \.aiignore rule "!README\.md" \(re-included\)/);
+  assert.match(kept.stdout, /Score impact: none/);
 
   // The broad rule still decides the sibling that the negation does not match.
   const blocked = explain(root, 'NOTES.md');
   assert.equal(blocked.status, 0);
   assert.match(blocked.stdout, /Verdict: blocked/);
   assert.match(blocked.stdout, /Rule: \.aiignore rule "\*\.md"/);
+});
+
+test('explainPath reports a releasing ! rule without calling the path blocked', () => {
+  const root = tempRepo({
+    'README.md': '# demo\n',
+    'NOTES.md': '# notes\n',
+    '.aiignore': '*.md\n!README.md\n'
+  });
+
+  const kept = explainPath(root, 'README.md', { rules: ['*.md', '!README.md'] });
+  assert.equal(kept.found, true);
+  assert.equal(kept.verdict, 'not blocked');
+  assert.equal(kept.blocked, false);
+  assert.equal(kept.rule.source, 'aiignore');
+  assert.equal(kept.rule.rule, '!README.md');
+  assert.equal(kept.rule.description, '.aiignore rule "!README.md" (re-included)');
+
+  const blocked = explainPath(root, 'NOTES.md', { rules: ['*.md', '!README.md'] });
+  assert.equal(blocked.verdict, 'blocked');
+  assert.equal(blocked.blocked, true);
+  assert.equal(blocked.rule.rule, '*.md');
+});
+
+test('--json --explain keeps blocked false while naming the releasing ! rule', () => {
+  const root = tempRepo({
+    'README.md': '# demo\n',
+    'NOTES.md': '# notes\n',
+    '.aiignore': '*.md\n!README.md\n'
+  });
+  const result = spawnSync(process.execPath, [bin, '--json', '--explain', 'README.md', root], {
+    encoding: 'utf8'
+  });
+  const explanation = JSON.parse(result.stdout);
+
+  assert.equal(result.status, 0);
+  assert.equal(explanation.verdict, 'not blocked');
+  assert.equal(explanation.blocked, false);
+  assert.equal(explanation.rule.rule, '!README.md');
+  assert.match(explanation.rule.description, /\(re-included\)$/);
+});
+
+test('a ! line that matches an already-allowed path does not claim a release', () => {
+  const root = tempRepo({
+    'README.md': '# demo\n',
+    '.aiignore': '!README.md\n'
+  });
+
+  const result = explain(root, 'README.md');
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Verdict: not blocked/);
+  assert.match(result.stdout, /Rule: none/);
+});
+
+test('a ! line does not hide the strength cutoff that still blocks the file', () => {
+  const root = tempRepo({
+    'package-lock.json': 'x'.repeat(1000),
+    '.aiignore': '!package-lock.json\n'
+  });
+
+  const result = explain(root, 'package-lock.json');
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Verdict: blocked/);
+  assert.match(result.stdout, /Rule: strength 3 \(Balanced\) skips lockfiles/);
+  assert.doesNotMatch(result.stdout, /re-included/);
 });
 
 test('--explain says an unblocked path is not blocked', () => {

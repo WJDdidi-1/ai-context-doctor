@@ -5,7 +5,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { decideAiignore, matchesAiignore } = require('../lib/aiignore');
+const { evaluateAiignore, decideAiignore, matchesAiignore } = require('../lib/aiignore');
 
 const { planAiignore, renderAiignore, writeAiignore } = require('../lib/aiignore');
 
@@ -130,6 +130,28 @@ test('matchesAiignore tolerates empty input and malformed rules', () => {
   assert.equal(matchesAiignore(['# a comment', ''], 'a.js'), undefined);
   assert.equal(matchesAiignore(['['], 'a.js'), undefined);
   assert.equal(matchesAiignore(['!', '!   '], 'a.js'), undefined);
+});
+
+test('evaluateAiignore reports whether a ! line released an earlier block', () => {
+  assert.deepEqual(evaluateAiignore(['*.md', '!README.md'], 'README.md'), {
+    blocked: false,
+    rule: '!README.md',
+    released: true
+  });
+
+  // A negation with nothing before it leaves the path allowed, but it did not
+  // change a verdict, so callers must not present it as a release.
+  assert.deepEqual(evaluateAiignore(['!README.md'], 'README.md'), {
+    blocked: false,
+    rule: '!README.md',
+    released: false
+  });
+
+  assert.deepEqual(evaluateAiignore(['*.md'], 'NOTES.md'), {
+    blocked: true,
+    rule: '*.md',
+    released: false
+  });
 });
 
 test('the last matching rule decides, and ! can keep one file', () => {
