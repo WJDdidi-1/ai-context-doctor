@@ -2,7 +2,7 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
-## Unreleased
+## 0.7.11
 
 - **`!` negation in `.aiignore` now works, and the last matching rule decides.**
   Previously a `!` line was treated as a pattern that matched nothing, so
