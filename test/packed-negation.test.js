@@ -153,6 +153,14 @@ test('the packed CLI keeps README.md and still blocks NOTES.md for the README ex
   const keptExplanation = JSON.parse(kept.stdout);
   assert.equal(keptExplanation.found, true);
   assert.equal(keptExplanation.verdict, 'not blocked');
+  assert.equal(keptExplanation.rule.rule, '!README.md');
+
+  // The text renderer keys the Rule line on a different field than the JSON
+  // verdict, so check the packed CLI prints the releasing line too.
+  const keptText = runInstalledCli(installedBin, ['--explain', 'README.md', repoDir]);
+  assert.equal(keptText.status, 0, `packed text --explain README.md failed:\n${keptText.stdout}\n${keptText.stderr}`);
+  assert.match(keptText.stdout, /Verdict: not blocked/);
+  assert.match(keptText.stdout, /Rule: \.aiignore rule "!README\.md" \(re-included\)/);
 
   const stopped = runInstalledCli(installedBin, ['--json', '--explain', 'NOTES.md', repoDir]);
   assert.equal(stopped.status, 0, `packed --explain NOTES.md failed:\n${stopped.stdout}\n${stopped.stderr}`);

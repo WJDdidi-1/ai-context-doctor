@@ -2,6 +2,20 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
+## Unreleased
+
+- **`--explain` names the `!` rule that kept a path.** With `.aiignore` set to
+  `*.md` followed by `!README.md`, the README is correctly allowed but
+  `--explain README.md` used to say `Rule: none — no .aiignore rule or strength
+  cutoff matches this path`. The negation did match and did decide the verdict.
+  `evaluateAiignore` now reports whether a `!` line actually released an
+  earlier block, and the explanation prints
+  `Rule: .aiignore rule "!README.md" (re-included)` while still reporting
+  `Verdict: not blocked`. A path blocked by `*.md` keeps naming `*.md`; a `!`
+  line that matches a path nothing blocked says no rule decided it. In `--json`
+  the explanation names the same `!` line while keeping `blocked: false`,
+  because the path still reaches the model.
+
 ## 0.7.11
 
 - **`!` negation in `.aiignore` now works, and the last matching rule decides.**

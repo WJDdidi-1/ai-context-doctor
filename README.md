@@ -153,9 +153,13 @@ Score impact: allowing it would cost 4 points (78/100 -> 74/100).
 ```
 
 If a line in `.aiignore` decided it, the `Rule:` line prints that exact line
-instead of a strength. An unblocked path says `Verdict: not blocked`. An unknown
-path is an error with exit code 2, not a silent "not blocked". Add `--json` to
-get the same explanation as an object.
+instead of a strength. When a `!` line is what kept the path — for example
+`*.md` followed by `!README.md` — the line is named too, with
+`(re-included)` after it, so the explanation does not claim that no rule
+matched. An unblocked path says `Verdict: not blocked`. An unknown path is an
+error with exit code 2, not a silent "not blocked". Add `--json` to get the same
+explanation as an object; a released path keeps `blocked: false` because it
+still reaches the model, while `rule` names the `!` line that kept it.
 
 ### Run the example
 
@@ -205,7 +209,8 @@ earlier line would have blocked.
 `*.md`. Order matters: put the negation after the broad rule. If the lines are
 reversed, `*.md` matches last and the README is blocked again. A `!` line that
 matches nothing changes nothing, and a broad rule below a negation re-blocks
-whatever that negation had kept.
+whatever that negation had kept. `--explain README.md` names the deciding line,
+printing `Rule: .aiignore rule "!README.md" (re-included)` for this example.
 
 An exception only cancels a matching `.aiignore` rule. It does not override the
 chosen strength: at the default strength 3, a file that is a lockfile, a log or
