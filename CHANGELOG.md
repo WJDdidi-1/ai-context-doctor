@@ -14,6 +14,12 @@ Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.
   line kept. `matchesAiignore` keeps its string/undefined API for existing
   callers and now goes through the same ordered decision. The README documents
   the ordering and the fact that `!` cancels a rule, not the chosen strength.
+- **The negation is verified from the packed tarball.** `npm test` now packs the
+  package, installs it into an empty directory, and runs the installed CLI on a
+  fixture whose `.aiignore` is the README's `*.md` / `!README.md` example:
+  `README.md` is allowed while `NOTES.md` is still blocked by `*.md`, and
+  `--explain` agrees for both. The test reads the example out of the README, so
+  the documented code block and the fixture cannot drift apart.
 
 ## 0.7.10
 

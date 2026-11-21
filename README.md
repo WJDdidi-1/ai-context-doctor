@@ -213,6 +213,13 @@ over 1 MiB is still left out even if a `!` line matches it. Use strength 1
 (`Off`) when a negation should be the only thing standing between the agent and
 the rest of the folder.
 
+`npm test` checks the example above on the packed artifact, not just in this
+checkout: it packs the tarball, installs it into an empty directory, and runs the
+installed CLI on a fixture whose `.aiignore` is exactly those two lines. The
+installed CLI allows `README.md` and still reports `NOTES.md` blocked by `*.md`;
+the test reads the example from this section, so the code block and the fixture
+cannot drift apart.
+
 The raw health score is a heuristic over file names and sizes and does not change
 when you write rules. The `What reaches the model` score applies the `.aiignore`
 rules in the scanned directory and the chosen strength, so writing rules can
