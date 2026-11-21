@@ -5,7 +5,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { matchesAiignore } = require('../lib/aiignore');
+const { decideAiignore, matchesAiignore } = require('../lib/aiignore');
 
 const { planAiignore, renderAiignore, writeAiignore } = require('../lib/aiignore');
 
@@ -129,4 +129,52 @@ test('matchesAiignore tolerates empty input and malformed rules', () => {
   assert.equal(matchesAiignore([], 'a.js'), undefined);
   assert.equal(matchesAiignore(['# a comment', ''], 'a.js'), undefined);
   assert.equal(matchesAiignore(['['], 'a.js'), undefined);
+  assert.equal(matchesAiignore(['!', '!   '], 'a.js'), undefined);
+});
+
+test('the last matching rule decides, and ! can keep one file', () => {
+  const rules = ['*.md', '!README.md'];
+
+  assert.deepEqual(decideAiignore(rules, 'README.md'), {
+    blocked: false,
+    rule: '!README.md'
+  });
+  assert.equal(matchesAiignore(rules, 'README.md'), undefined);
+
+  // The broad rule still blocks every other Markdown file.
+  assert.deepEqual(decideAiignore(rules, 'NOTES.md'), {
+    blocked: true,
+    rule: '*.md'
+  });
+  assert.equal(matchesAiignore(rules, 'NOTES.md'), '*.md');
+});
+
+test('order matters: a later broad rule blocks a file an earlier ! released', () => {
+  const rules = ['!README.md', '*.md'];
+
+  assert.deepEqual(decideAiignore(rules, 'README.md'), {
+    blocked: true,
+    rule: '*.md'
+  });
+  assert.equal(matchesAiignore(rules, 'README.md'), '*.md');
+});
+
+test('a ! that matches nothing leaves the earlier rule in force', () => {
+  const rules = ['*.md', '!CHANGELOG.md'];
+
+  assert.deepEqual(decideAiignore(rules, 'README.md'), {
+    blocked: true,
+    rule: '*.md'
+  });
+  assert.equal(matchesAiignore(rules, 'README.md'), '*.md');
+});
+
+test('the newest match wins even across several overlapping lines', () => {
+  const rules = ['*.md', '!README.md', 'README.md', '!README.md'];
+
+  assert.deepEqual(decideAiignore(rules, 'README.md'), {
+    blocked: false,
+    rule: '!README.md'
+  });
+  assert.equal(matchesAiignore(rules, 'README.md'), undefined);
 });
