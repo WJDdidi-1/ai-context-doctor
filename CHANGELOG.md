@@ -2,7 +2,7 @@
 
 Notable changes to `ai-context-doctor`. Versions follow [SemVer](https://semver.org/).
 
-## Unreleased
+## 0.7.12
 
 - **`--explain` names the `!` rule that kept a path.** With `.aiignore` set to
   `*.md` followed by `!README.md`, the README is correctly allowed but
