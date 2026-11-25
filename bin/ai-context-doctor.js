@@ -339,9 +339,12 @@ if (writeResult) {
   console.log('.aiignore:');
   const relative = path.relative(cwd, writeResult.path) || '.aiignore';
   if (writeResult.added.length === 0) {
-    console.log(report.suggestedAiignore.length === 0
-      ? 'Nothing to suggest for this directory.'
-      : `${relative} already covers every suggestion.`);
+    // 2026-11-25: the report now filters rules the folder already has, so the
+    // old test on report.suggestedAiignore would say "nothing to suggest" even
+    // when the file is exactly what covered them. Count the existing rules.
+    console.log(writeResult.existingRules > 0
+      ? `${relative} already covers every suggestion.`
+      : 'Nothing to suggest for this directory.');
   } else if (writeResult.dryRun) {
     console.log(`Would add ${writeResult.added.length} rule(s) to ${relative} (dry run, nothing written).`);
   } else if (writeResult.created) {
