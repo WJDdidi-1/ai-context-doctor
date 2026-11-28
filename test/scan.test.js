@@ -163,3 +163,19 @@ test('classifyPath is exported so the plugin blocks the same files the report fl
   });
   assert.deepEqual(classifyPath('src/app.js', 10), { suggestion: null });
 });
+
+test('does not suggest a rule the folder already has', () => {
+  // 2026-11-25 product review: a folder whose .aiignore already said `dist/`
+  // was still told "Suggested .aiignore: dist/", while `--write` said
+  // ".aiignore already covers every suggestion". The report has to give the
+  // same answer the writer does.
+  const root = makeRepo({
+    'src/index.js': 100,
+    'dist/bundle.js': 100,
+    'logs/dev.log': 100
+  });
+
+  const report = scanRepository(root, { rules: ['dist/'] });
+
+  assert.deepEqual([...report.suggestedAiignore].sort(), ['*.log']);
+});
